@@ -459,10 +459,16 @@ function resetLoanDisplay() {
 // LOAD LOAN BY SEARCH
 // =====================================================
 
+// =====================================================
+// SEARCH LOAN
+// =====================================================
+
 async function searchLoan() {
 
     const searchValue =
-        loanSearchInput.value.trim();
+        loanSearchInput?.value
+            ?.trim()
+            ?.toLowerCase() || "";
 
 
     if (!searchValue) {
@@ -473,6 +479,11 @@ async function searchLoan() {
 
         return;
 
+    }
+
+
+    if (!searchLoanBtn) {
+        return;
     }
 
 
@@ -493,70 +504,86 @@ async function searchLoan() {
 
 
         /*
-         * First try exact Loan ID.
+         * Load loan records.
+         *
+         * We compare Loan ID / Customer ID /
+         * Vehicle Number in JavaScript so that
+         * upper/lower case and accidental spaces
+         * do not cause search failure.
          */
 
-        let snapshot =
+        const snapshot =
             await getDocs(
-                query(
-                    loansRef,
-                    where(
-                        "loanId",
-                        "==",
-                        searchValue
-                    )
-                )
+                loansRef
             );
 
 
-        /*
-         * If not found, try Customer ID.
-         */
+        const matches = [];
 
-        if (
-            snapshot.empty
-        ) {
 
-            snapshot =
-                await getDocs(
-                    query(
-                        loansRef,
-                        where(
-                            "customerId",
-                            "==",
-                            searchValue
-                        )
+        snapshot.forEach(
+            loanDoc => {
+
+                const data =
+                    loanDoc.data();
+
+
+                const loanId =
+                    String(
+                        data.loanId ||
+                        data.loanNumber ||
+                        loanDoc.id ||
+                        ""
                     )
-                );
+                    .trim()
+                    .toLowerCase();
 
-        }
 
-
-        /*
-         * If not found, try Vehicle Number.
-         */
-
-        if (
-            snapshot.empty
-        ) {
-
-            snapshot =
-                await getDocs(
-                    query(
-                        loansRef,
-                        where(
-                            "vehicleNumber",
-                            "==",
-                            searchValue
-                        )
+                const customerId =
+                    String(
+                        data.customerId ||
+                        ""
                     )
-                );
+                    .trim()
+                    .toLowerCase();
 
-        }
 
+                const vehicleNumber =
+                    String(
+                        data.vehicleNumber ||
+                        ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
+
+                if (
+                    loanId === searchValue ||
+                    customerId === searchValue ||
+                    vehicleNumber === searchValue
+                ) {
+
+                    matches.push({
+
+                        id:
+                            loanDoc.id,
+
+                        ...data
+
+                    });
+
+                }
+
+            }
+        );
+
+
+        // =================================================
+        // NO MATCH
+        // =================================================
 
         if (
-            snapshot.empty
+            matches.length === 0
         ) {
 
             currentLoan =
@@ -565,43 +592,89 @@ async function searchLoan() {
             currentLoanId =
                 null;
 
+
             resetLoanDisplay();
 
             disablePaymentEntry();
 
+
             showMessage(
-                "Loan not found."
+                `No loan found for "${loanSearchInput.value.trim()}".`
             );
+
 
             return;
 
         }
 
 
-        /*
-         * If multiple records match,
-         * use the first exact result.
-         *
-         * Loan ID should normally be unique.
-         */
+        // =================================================
+        // EXACT MATCH
+        // =================================================
 
-        const loanDoc =
-            snapshot.docs[0];
+        const exactMatch =
+            matches.find(
+                loan => {
 
+                    const loanId =
+                        String(
+                            loan.loanId ||
+                            loan.loanNumber ||
+                            loan.id ||
+                            ""
+                        )
+                        .trim()
+                        .toLowerCase();
+
+
+                    const customerId =
+                        String(
+                            loan.customerId ||
+                            ""
+                        )
+                        .trim()
+                        .toLowerCase();
+
+
+                    const vehicleNumber =
+                        String(
+                            loan.vehicleNumber ||
+                            ""
+                        )
+                        .trim()
+                        .toLowerCase();
+
+
+                    return (
+                        loanId === searchValue ||
+                        customerId === searchValue ||
+                        vehicleNumber === searchValue
+                    );
+
+                }
+            );
+
+
+        const selectedLoan =
+            exactMatch ||
+            matches[0];
+
+
+        // =================================================
+        // SET CURRENT LOAN
+        // =================================================
 
         currentLoanId =
-            loanDoc.id;
+            selectedLoan.id;
 
 
-        currentLoan = {
+        currentLoan =
+            selectedLoan;
 
-            id:
-                loanDoc.id,
 
-            ...loanDoc.data()
-
-        };
-
+        // =================================================
+        // DISPLAY
+        // =================================================
 
         renderLoan();
 
@@ -625,9 +698,23 @@ async function searchLoan() {
             error
         );
 
+
+        currentLoan =
+            null;
+
+        currentLoanId =
+            null;
+
+
+        resetLoanDisplay();
+
+        disablePaymentEntry();
+
+
         showMessage(
-            "Unable to search loan."
+            "Unable to search loan. Please check Firestore access and try again."
         );
+
 
     } finally {
 
@@ -640,7 +727,6 @@ async function searchLoan() {
     }
 
 }
-
 
 // =====================================================
 // RENDER LOAN
