@@ -1086,10 +1086,17 @@ function renderReceipt(
                     Receipt generated from
                     <strong>
                         SR Auto Finance ERP
-                    </strong>
-     Powered by VTOOS Software Solutions
-    </span>
-                    <br>
+    
+        <br>
+
+        <span style="
+            font-weight:600;
+            color:#64748b;
+        ">
+            Powered by VTOOS Software Solutions
+        </span>
+
+        <br>
 
                     Generated:
                     ${formatDateTime(
