@@ -290,13 +290,7 @@ function getLoanAmount(loan) {
 function getOutstanding(loan) {
 
     return Number(
-
-        loan.balanceAmount ??
-        loan.outstandingAmount ??
-        loan.pendingAmount ??
-        loan.remainingAmount ??
-        0
-
+        loan.outstanding ?? 0
     );
 
 }
