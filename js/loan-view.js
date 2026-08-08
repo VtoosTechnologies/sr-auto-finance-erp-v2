@@ -37,6 +37,11 @@ const documentTableBody =
         "documentTableBody"
     );
 
+const headerCloseLoanBtn =
+    document.getElementById(
+        "headerCloseLoanBtn"
+    );
+
 
 // =====================================================
 // URL LOAN ID
@@ -52,7 +57,7 @@ const loanDocumentId =
 
 
 // =====================================================
-// CURRENT USER
+// STATE
 // =====================================================
 
 let currentUser = null;
@@ -211,6 +216,46 @@ function setText(
 
 
 // =====================================================
+// GET NUMBER FROM MULTIPLE FIELDS
+// =====================================================
+
+function getNumber(
+    ...values
+) {
+
+    for (
+        const value of values
+    ) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            const number =
+                Number(value);
+
+
+            if (
+                !isNaN(number)
+            ) {
+
+                return number;
+
+            }
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
+
+// =====================================================
 // LOAD LOAN
 // =====================================================
 
@@ -297,9 +342,9 @@ function renderLoan() {
         currentLoan;
 
 
-    // ---------------------------------------------
-    // LOAN
-    // ---------------------------------------------
+    // =================================================
+    // BASIC LOAN
+    // =================================================
 
     setText(
         "loanId",
@@ -311,7 +356,10 @@ function renderLoan() {
 
     setText(
         "loanType",
-        loan.loanType === "reloan"
+        String(
+            loan.loanType ||
+            "New Loan"
+        ).toLowerCase() === "reloan"
             ? "ReLoan"
             : "New Loan"
     );
@@ -325,18 +373,48 @@ function renderLoan() {
     );
 
 
+    setText(
+        "loanDuration",
+        loan.duration ||
+        loan.loanDuration ||
+        loan.tenure
+            ? `${loan.duration || loan.loanDuration || loan.tenure} Months`
+            : "-"
+    );
+
+
+    const interestRate =
+        getNumber(
+            loan.interestRate,
+            loan.rateOfInterest,
+            loan.interest
+        );
+
+
+    setText(
+        "interestRate",
+        interestRate
+            ? `${interestRate}%`
+            : "-"
+    );
+
+
+    // =================================================
+    // STATUS
+    // =================================================
+
     const statusElement =
         document.getElementById(
             "loanStatus"
         );
 
 
+    const status =
+        loan.status ||
+        "Active";
+
+
     if (statusElement) {
-
-        const status =
-            loan.status ||
-            "Active";
-
 
         const statusLower =
             String(
@@ -346,8 +424,8 @@ function renderLoan() {
 
         statusElement.innerHTML = `
             <span class="status ${
-                statusLower ===
-                "closed"
+                statusLower === "closed" ||
+                statusLower === "completed"
                     ? "closed"
                     : ""
             }">
@@ -358,46 +436,9 @@ function renderLoan() {
     }
 
 
-    setText(
-        "loanAmount",
-        formatCurrency(
-            loan.loanAmount ||
-            loan.principalAmount ||
-            0
-        )
-    );
-
-
-    setText(
-        "outstanding",
-        formatCurrency(
-            loan.outstandingAmount ??
-            loan.balanceAmount ??
-            0
-        )
-    );
-
-
-    setText(
-        "installment",
-        formatCurrency(
-            loan.installmentAmount ||
-            0
-        )
-    );
-
-
-    setText(
-        "firstDueDate",
-        formatDate(
-            loan.firstDueDate
-        )
-    );
-
-
-    // ---------------------------------------------
+    // =================================================
     // CUSTOMER
-    // ---------------------------------------------
+    // =================================================
 
     setText(
         "customerId",
@@ -424,13 +465,14 @@ function renderLoan() {
     setText(
         "previousLoan",
         loan.previousLoanId ||
+        loan.previousLoanNumber ||
         "-"
     );
 
 
-    // ---------------------------------------------
+    // =================================================
     // VEHICLE
-    // ---------------------------------------------
+    // =================================================
 
     setText(
         "vehicleType",
@@ -463,6 +505,7 @@ function renderLoan() {
     setText(
         "chassisNumber",
         loan.chassisNumber ||
+        loan.chassisNo ||
         "-"
     );
 
@@ -470,6 +513,7 @@ function renderLoan() {
     setText(
         "engineNumber",
         loan.engineNumber ||
+        loan.engineNo ||
         "-"
     );
 
@@ -477,6 +521,7 @@ function renderLoan() {
     setText(
         "showroomName",
         loan.showroomName ||
+        loan.showroom ||
         "-"
     );
 
@@ -484,7 +529,386 @@ function renderLoan() {
     setText(
         "bookingId",
         loan.showroomBookingId ||
+        loan.bookingId ||
         "-"
+    );
+
+
+    // =================================================
+    // FINANCIAL
+    // =================================================
+
+    const loanAmount =
+        getNumber(
+            loan.loanAmount,
+            loan.principalAmount,
+            loan.amount
+        );
+
+
+    const installment =
+        getNumber(
+            loan.installmentAmount,
+            loan.monthlyInstallment,
+            loan.emi
+        );
+
+
+    const penalty =
+        getNumber(
+            loan.penaltyAmount,
+            loan.penalty,
+            loan.totalPenalty
+        );
+
+
+    const outstanding =
+        getNumber(
+            loan.outstandingAmount,
+            loan.balanceAmount,
+            loan.remainingAmount
+        );
+
+
+    setText(
+        "loanAmount",
+        formatCurrency(
+            loanAmount
+        )
+    );
+
+
+    setText(
+        "installment",
+        formatCurrency(
+            installment
+        )
+    );
+
+
+    setText(
+        "penaltyAmount",
+        formatCurrency(
+            penalty
+        )
+    );
+
+
+    setText(
+        "outstanding",
+        formatCurrency(
+            outstanding
+        )
+    );
+
+
+    // =================================================
+    // PAYMENT SUMMARY
+    // =================================================
+
+    const totalPaid =
+        getNumber(
+            loan.totalPaid,
+            loan.paidAmount,
+            loan.totalCollection
+        );
+
+
+    const totalInstallments =
+        getNumber(
+            loan.totalInstallments,
+            loan.installments,
+            loan.duration,
+            loan.loanDuration,
+            loan.tenure
+        );
+
+
+    const paidInstallments =
+        getNumber(
+            loan.paidInstallments,
+            loan.installmentsPaid
+        );
+
+
+    const pendingInstallments =
+        getNumber(
+            loan.pendingInstallments,
+            loan.installmentsPending
+        );
+
+
+    setText(
+        "totalPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
+
+
+    setText(
+        "totalInstallments",
+        totalInstallments || 0
+    );
+
+
+    setText(
+        "paidInstallments",
+        paidInstallments || 0
+    );
+
+
+    setText(
+        "pendingInstallments",
+        pendingInstallments || 0
+    );
+
+
+    // =================================================
+    // DUE INFORMATION
+    // =================================================
+
+    setText(
+        "firstDueDate",
+        formatDate(
+            loan.firstDueDate
+        )
+    );
+
+
+    setText(
+        "nextDueDate",
+        formatDate(
+            loan.nextDueDate
+        )
+    );
+
+
+    setText(
+        "lastPaymentDate",
+        formatDate(
+            loan.lastPaymentDate
+        )
+    );
+
+
+    const lastPaymentAmount =
+        getNumber(
+            loan.lastPaymentAmount,
+            loan.lastPaidAmount
+        );
+
+
+    setText(
+        "lastPaymentAmount",
+        formatCurrency(
+            lastPaymentAmount
+        )
+    );
+
+
+    // =================================================
+    // CLOSING SUMMARY
+    // =================================================
+
+    renderClosingSummary();
+
+
+    // =================================================
+    // CLOSE BUTTON
+    // =================================================
+
+    updateCloseButton();
+
+}
+
+
+// =====================================================
+// CLOSING SUMMARY
+// =====================================================
+
+function renderClosingSummary() {
+
+    const card =
+        document.getElementById(
+            "closingSummaryCard"
+        );
+
+
+    if (!currentLoan) {
+        return;
+    }
+
+
+    const status =
+        String(
+            currentLoan.status ||
+            ""
+        ).toLowerCase();
+
+
+    if (
+        status !== "closed" &&
+        status !== "completed"
+    ) {
+
+        if (card) {
+
+            card.style.display =
+                "none";
+
+        }
+
+        return;
+
+    }
+
+
+    if (card) {
+
+        card.style.display =
+            "block";
+
+    }
+
+
+    const calculatedOverallDue =
+        getNumber(
+            currentLoan.calculatedOverallDue
+        );
+
+
+    const closingPenalty =
+        getNumber(
+            currentLoan.closingPenalty,
+            currentLoan.penaltyAmount
+        );
+
+
+    const closingWaiver =
+        getNumber(
+            currentLoan.closingWaiver,
+            currentLoan.waiverAmount
+        );
+
+
+    const finalSettlement =
+        getNumber(
+            currentLoan.finalSettlementAmount,
+            currentLoan.agreedClosingAmount,
+            currentLoan.settlementAmount
+        );
+
+
+    setText(
+        "calculatedOverallDue",
+        formatCurrency(
+            calculatedOverallDue
+        )
+    );
+
+
+    setText(
+        "closingPenalty",
+        formatCurrency(
+            closingPenalty
+        )
+    );
+
+
+    setText(
+        "closingWaiver",
+        formatCurrency(
+            closingWaiver
+        )
+    );
+
+
+    setText(
+        "finalSettlement",
+        formatCurrency(
+            finalSettlement
+        )
+    );
+
+
+    setText(
+        "closedDate",
+        formatDate(
+            currentLoan.closedDate ||
+            currentLoan.closingDate
+        )
+    );
+
+
+    setText(
+        "closingRemarks",
+        currentLoan.closingRemarks ||
+        "-"
+    );
+
+}
+
+
+// =====================================================
+// CLOSE BUTTON
+// =====================================================
+
+function updateCloseButton() {
+
+    if (!headerCloseLoanBtn) {
+        return;
+    }
+
+
+    const status =
+        String(
+            currentLoan?.status ||
+            "Active"
+        ).toLowerCase();
+
+
+    if (
+        status === "active"
+    ) {
+
+        headerCloseLoanBtn.style.display =
+            "block";
+
+        return;
+
+    }
+
+
+    headerCloseLoanBtn.style.display =
+        "none";
+
+}
+
+
+// =====================================================
+// CLOSE LOAN NAVIGATION
+// =====================================================
+
+if (headerCloseLoanBtn) {
+
+    headerCloseLoanBtn.addEventListener(
+        "click",
+        function() {
+
+            if (!loanDocumentId) {
+                return;
+            }
+
+
+            window.location.href =
+                `loan-close.html?id=${
+                    encodeURIComponent(
+                        loanDocumentId
+                    )
+                }`;
+
+        }
     );
 
 }
@@ -509,24 +933,19 @@ async function loadDocuments() {
         `;
 
 
-        /*
-         * IMPORTANT
-         *
-         * Documents are linked using:
-         *
-         * loanDocumentId
-         *
-         * This prevents documents from
-         * another loan appearing here.
-         */
-
-
         const documentsRef =
             collection(
                 db,
                 "documents"
             );
 
+
+        /*
+         * IMPORTANT
+         *
+         * Only this loan's documents
+         * are loaded.
+         */
 
         const documentsQuery =
             query(
@@ -564,9 +983,9 @@ async function loadDocuments() {
         );
 
 
-        // -----------------------------------------
+        // =================================================
         // SORT
-        // -----------------------------------------
+        // =================================================
 
         loanDocuments.sort(
             (a, b) => {
@@ -587,13 +1006,17 @@ async function loadDocuments() {
 
 
                 return (
-                    (order[
-                        a.documentType
-                    ] || 99)
+                    (
+                        order[
+                            a.documentType
+                        ] || 99
+                    )
                     -
-                    (order[
-                        b.documentType
-                    ] || 99)
+                    (
+                        order[
+                            b.documentType
+                        ] || 99
+                    )
                 );
 
             }
@@ -638,13 +1061,11 @@ function getDocumentStatusClass(
         String(
             status ||
             "Pending"
-        )
-        .toLowerCase();
+        ).toLowerCase();
 
 
     if (
-        value ===
-        "received"
+        value === "received"
     ) {
 
         return "received";
@@ -653,8 +1074,7 @@ function getDocumentStatusClass(
 
 
     if (
-        value ===
-        "issued"
+        value === "issued"
     ) {
 
         return "issued";
@@ -663,8 +1083,7 @@ function getDocumentStatusClass(
 
 
     if (
-        value ===
-        "returned"
+        value === "returned"
     ) {
 
         return "returned";
@@ -673,6 +1092,98 @@ function getDocumentStatusClass(
 
 
     return "pending";
+
+}
+
+
+// =====================================================
+// DOCUMENT ACTION BUTTON
+// =====================================================
+
+function getDocumentActionButton(
+    documentItem
+) {
+
+    const status =
+        String(
+            documentItem.status ||
+            "Pending"
+        ).toLowerCase();
+
+
+    if (
+        status === "pending"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="receiveDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Receive
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status === "received"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="issueDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Issue
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status === "issued"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="returnDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Return
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status === "returned"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="receiveDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Receive
+            </button>
+        `;
+
+    }
+
+
+    return "-";
 
 }
 
@@ -734,12 +1245,10 @@ function renderDocuments() {
                         <td>
 
                             <span class="doc-name">
-
                                 ${escapeHTML(
                                     documentItem.documentType ||
                                     "-"
                                 )}
-
                             </span>
 
                         </td>
@@ -747,15 +1256,15 @@ function renderDocuments() {
 
                         <td>
 
-                            <span class="
-                                badge
-                                ${statusClass}
-                            ">
-
+                            <span
+                                class="
+                                    badge
+                                    ${statusClass}
+                                "
+                            >
                                 ${escapeHTML(
                                     status
                                 )}
-
                             </span>
 
                         </td>
@@ -764,58 +1273,46 @@ function renderDocuments() {
                         <td>
 
                             <span class="holder">
-
                                 ${escapeHTML(
                                     holder
                                 )}
-
                             </span>
 
                         </td>
 
 
                         <td>
-
                             ${escapeHTML(
                                 staffName
                             )}
-
                         </td>
 
 
                         <td>
-
                             ${formatDate(
                                 documentItem.receivedDate
                             )}
-
                         </td>
 
 
                         <td>
-
                             ${formatDate(
                                 documentItem.issuedDate
                             )}
-
                         </td>
 
 
                         <td>
-
                             ${formatDate(
                                 documentItem.returnedDate
                             )}
-
                         </td>
 
 
                         <td>
-
                             ${getDocumentActionButton(
                                 documentItem
                             )}
-
                         </td>
 
                     </tr>
@@ -824,115 +1321,6 @@ function renderDocuments() {
 
             }
         ).join("");
-
-}
-
-
-// =====================================================
-// DOCUMENT ACTION BUTTON
-// =====================================================
-
-function getDocumentActionButton(
-    documentItem
-) {
-
-    const status =
-        String(
-            documentItem.status ||
-            "Pending"
-        ).toLowerCase();
-
-
-    /*
-     * Current stage:
-     *
-     * Pending  -> Receive
-     * Received -> Issue
-     * Issued   -> Return
-     * Returned -> Receive
-     *
-     * Staff selection will be added
-     * in the next stage.
-     */
-
-
-    if (
-        status ===
-        "pending"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="receiveDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Receive
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status ===
-        "received"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="issueDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Issue
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status ===
-        "issued"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="returnDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Return
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status ===
-        "returned"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="receiveDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Receive
-            </button>
-        `;
-
-    }
-
-
-    return "-";
 
 }
 
@@ -1021,6 +1409,26 @@ window.receiveDocument =
         }
 
 
+        const status =
+            String(
+                documentItem.status ||
+                "Pending"
+            ).toLowerCase();
+
+
+        if (
+            status === "issued"
+        ) {
+
+            showMessage(
+                "Document is currently with staff. Return it first."
+            );
+
+            return;
+
+        }
+
+
         const confirmed =
             confirm(
                 `Receive ${documentItem.documentType}?`
@@ -1060,6 +1468,9 @@ window.receiveDocument =
                 "Office",
 
             staffId:
+                "",
+
+            staffCode:
                 "",
 
             staffName:
@@ -1120,16 +1531,13 @@ window.receiveDocument =
 
 
 // =====================================================
-// ISSUE DOCUMENT
-// =====================================================
-
-// =====================================================
-// STAFF DATA
+// STAFF LIST
 // =====================================================
 
 let staffList = [];
 
-let selectedIssueDocumentId = null;
+let selectedIssueDocumentId =
+    null;
 
 
 // =====================================================
@@ -1186,8 +1594,10 @@ function getTodayDate() {
     const today =
         new Date();
 
+
     const year =
         today.getFullYear();
+
 
     const month =
         String(
@@ -1197,6 +1607,7 @@ function getTodayDate() {
             "0"
         );
 
+
     const day =
         String(
             today.getDate()
@@ -1204,6 +1615,7 @@ function getTodayDate() {
             2,
             "0"
         );
+
 
     return `${year}-${month}-${day}`;
 
@@ -1240,7 +1652,7 @@ async function loadActiveStaff() {
                 const status =
                     String(
                         data.status ||
-                        ""
+                        "active"
                     ).toLowerCase();
 
 
@@ -1249,8 +1661,8 @@ async function loadActiveStaff() {
 
 
                 if (
-                    status &&
-                    status !== "active"
+                    status !== "active" &&
+                    data.status
                 ) {
 
                     return;
@@ -1259,9 +1671,7 @@ async function loadActiveStaff() {
 
 
                 if (!active) {
-
                     return;
-
                 }
 
 
@@ -1350,7 +1760,7 @@ async function loadActiveStaff() {
 
 
 // =====================================================
-// OPEN ISSUE MODAL
+// ISSUE DOCUMENT
 // =====================================================
 
 window.issueDocument =
@@ -1377,17 +1787,15 @@ window.issueDocument =
         }
 
 
-        /*
-         * Only Received document can
-         * be issued to staff.
-         */
-
-        if (
+        const status =
             String(
                 documentItem.status ||
                 ""
-            ).toLowerCase() !==
-            "received"
+            ).toLowerCase();
+
+
+        if (
+            status !== "received"
         ) {
 
             showMessage(
@@ -1429,6 +1837,19 @@ window.issueDocument =
 
 
         await loadActiveStaff();
+
+
+        if (
+            !staffList.length
+        ) {
+
+            showMessage(
+                "No active staff available."
+            );
+
+            return;
+
+        }
 
 
         if (documentIssueModal) {
@@ -1521,7 +1942,7 @@ if (confirmIssueBtn) {
 
 
             const staffDocumentId =
-                issueStaffSelect.value;
+                issueStaffSelect?.value;
 
 
             if (!staffDocumentId) {
@@ -1555,12 +1976,13 @@ if (confirmIssueBtn) {
 
 
             const issueDate =
-                issueDateInput.value ||
+                issueDateInput?.value ||
                 getTodayDate();
 
 
             const remarks =
-                issueRemarksInput.value.trim();
+                issueRemarksInput?.value.trim() ||
+                "";
 
 
             const documentItem =
@@ -1724,30 +2146,6 @@ if (confirmIssueBtn) {
 
 
 // =====================================================
-// CLOSE MODAL ON OUTSIDE CLICK
-// =====================================================
-
-if (documentIssueModal) {
-
-    documentIssueModal.addEventListener(
-        "click",
-        function(event) {
-
-            if (
-                event.target ===
-                documentIssueModal
-            ) {
-
-                closeIssueModal();
-
-            }
-
-        }
-    );
-
-}
-
-// =====================================================
 // RETURN DOCUMENT
 // =====================================================
 
@@ -1769,9 +2167,32 @@ window.returnDocument =
         }
 
 
+        const status =
+            String(
+                documentItem.status ||
+                ""
+            ).toLowerCase();
+
+
+        if (
+            status !== "issued"
+        ) {
+
+            showMessage(
+                "Only issued documents can be returned."
+            );
+
+            return;
+
+        }
+
+
         const confirmed =
             confirm(
-                `Return ${documentItem.documentType} from ${documentItem.staffName || "staff"}?`
+                `Return ${documentItem.documentType} from ${
+                    documentItem.staffName ||
+                    "staff"
+                }?`
             );
 
 
@@ -1781,9 +2202,7 @@ window.returnDocument =
 
 
         const today =
-            new Date()
-                .toISOString()
-                .split("T")[0];
+            getTodayDate();
 
 
         const history =
@@ -1809,6 +2228,10 @@ window.returnDocument =
 
             staffId:
                 documentItem.staffId ||
+                "",
+
+            staffCode:
+                documentItem.staffCode ||
                 "",
 
             staffName:
@@ -1855,6 +2278,31 @@ window.returnDocument =
         );
 
     };
+
+
+// =====================================================
+// MODAL OUTSIDE CLICK
+// =====================================================
+
+if (documentIssueModal) {
+
+    documentIssueModal.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target ===
+                documentIssueModal
+            ) {
+
+                closeIssueModal();
+
+            }
+
+        }
+    );
+
+}
 
 
 // =====================================================
