@@ -1875,37 +1875,7 @@ async function savePayment() {
                         nextSequence
                     );
 
-
-                // =====================================
-                // INSTALLMENT CALCULATION
-                // =====================================
-
-                const monthlyInstallment =
-                    numberValue(
-                        latestLoan.installmentAmount ??
-                        latestLoan.monthlyInstallment ??
-                        latestLoan.emi
-                    );
-
-
-                const oldPaidInstallments =
-                    numberValue(
-                        latestLoan.paidInstallments ??
-                        latestLoan.installmentsPaid
-                    );
-
-
-                /*
-                 * Installment count is increased
-                 * only when payment covers one
-                 * full monthly installment.
-                 *
-                 * Partial payment does not
-                 * automatically count as full
-                 * installment.
-                 */
-
-              // =====================================
+// =====================================
 // INSTALLMENT CALCULATION
 // =====================================
 
@@ -1916,24 +1886,6 @@ const monthlyInstallment =
         latestLoan.emi
     );
 
-
-const previousTotalPaid =
-    numberValue(
-        latestLoan.totalPaid ??
-        latestLoan.paidAmount ??
-        latestLoan.totalCollection
-    );
-
-
-const newTotalPaid =
-    previousTotalPaid +
-    amount;
-
-
-// =====================================
-// PAID INSTALLMENTS
-// =====================================
-
 const totalInstallments =
     numberValue(
         latestLoan.totalInstallments ??
@@ -1943,47 +1895,29 @@ const totalInstallments =
         latestLoan.tenure
     );
 
-
 let newPaidInstallments = 0;
 
-
-if (
-    monthlyInstallment > 0
-) {
+if (monthlyInstallment > 0) {
 
     newPaidInstallments =
         Math.floor(
             newTotalPaid /
             monthlyInstallment
         );
-
 }
 
-
-if (
-    totalInstallments > 0
-) {
+if (totalInstallments > 0) {
 
     newPaidInstallments =
         Math.min(
             newPaidInstallments,
             totalInstallments
         );
-
 }
 
+let newPendingInstallments = 0;
 
-// =====================================
-// PENDING INSTALLMENTS
-// =====================================
-
-let newPendingInstallments =
-    0;
-
-
-if (
-    totalInstallments > 0
-) {
+if (totalInstallments > 0) {
 
     newPendingInstallments =
         Math.max(
@@ -1991,44 +1925,7 @@ if (
             newPaidInstallments,
             0
         );
-
 }
-
-                // =====================================
-                // PENDING INSTALLMENTS
-                // =====================================
-
-                const totalInstallments =
-                    numberValue(
-                        latestLoan.totalInstallments ??
-                        latestLoan.installments ??
-                        latestLoan.duration ??
-                        latestLoan.loanDuration ??
-                        latestLoan.tenure
-                    );
-
-
-                let newPendingInstallments =
-                    numberValue(
-                        latestLoan.pendingInstallments ??
-                        latestLoan.installmentsPending
-                    );
-
-
-                if (
-                    totalInstallments > 0
-                ) {
-
-                    newPendingInstallments =
-                        Math.max(
-                            totalInstallments -
-                            newPaidInstallments,
-                            0
-                        );
-
-                }
-
-
                 // =====================================
                 // PAYMENT DOCUMENT
                 // =====================================
