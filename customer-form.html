@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#0f172a">
+
+    <title>Add Customer | SR Auto Finance ERP</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        /* ==============================
+           HEADER
+        ============================== */
+
+        .header {
+            height: 70px;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .brand-text h1 {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .brand-text p {
+            color: #94a3b8;
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .back-btn {
+            border: 1px solid #475569;
+            background: transparent;
+            color: white;
+            padding: 9px 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .back-btn:hover {
+            background: #1e293b;
+        }
+
+
+        /* ==============================
+           MAIN
+        ============================== */
+
+        .main {
+            max-width: 1000px;
+            margin: auto;
+            padding: 25px;
+        }
+
+
+        /* ==============================
+           PAGE TITLE
+        ============================== */
+
+        .page-title {
+            margin-bottom: 20px;
+        }
+
+        .page-title h2 {
+            font-size: 25px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .page-title p {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+
+        /* ==============================
+           FORM CARD
+        ============================== */
+
+        .form-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 5px 18px rgba(15,23,42,0.04);
+            margin-bottom: 18px;
+        }
+
+        .section-header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            color: #0f172a;
+            font-weight: 800;
+        }
+
+        .section-header p {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+
+        /* ==============================
+           FORM GRID
+        ============================== */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 7px;
+        }
+
+        .required {
+            color: #dc2626;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #1e293b;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        input,
+        select {
+            height: 45px;
+            padding: 0 13px;
+        }
+
+        textarea {
+            min-height: 90px;
+            padding: 12px 13px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+        }
+
+        .help-text {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+
+        /* ==============================
+           ACTIONS
+        ============================== */
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .cancel-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 11px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .cancel-btn:hover {
+            background: #f8fafc;
+        }
+
+        .save-btn {
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            color: white;
+            padding: 11px 23px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 7px 18px rgba(37,99,235,0.22);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+
+        /* ==============================
+           MESSAGE
+        ============================== */
+
+        .message {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-bottom: 18px;
+        }
+
+        .message.error {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .message.success {
+            display: block;
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+
+        /* ==============================
+           MOBILE
+        ============================== */
+
+        @media (max-width: 700px) {
+
+            .header {
+                height: 64px;
+                padding: 0 14px;
+            }
+
+            .brand-text p {
+                display: none;
+            }
+
+            .main {
+                padding: 18px 14px;
+            }
+
+            .page-title h2 {
+                font-size: 21px;
+            }
+
+            .form-card {
+                padding: 18px 15px;
+                border-radius: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+            .form-actions {
+                flex-direction: column-reverse;
+            }
+
+            .cancel-btn,
+            .save-btn {
+                width: 100%;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     HEADER
+========================================= -->
+
+<header class="header">
+
+    <div class="brand-area">
+
+        <div class="brand-logo">
+            SR
+        </div>
+
+        <div class="brand-text">
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-btn"
+        onclick="location.href='customers.html'"
+    >
+        ← Customers
+    </button>
+
+</header>
+
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<main class="main">
+
+
+    <div class="page-title">
+
+        <h2>
+            Add Customer
+        </h2>
+
+        <p>
+            Create a new customer profile
+        </p>
+
+    </div>
+
+
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+
+
+    <form id="customerForm">
+
+
+        <!-- =====================================
+             PERSONAL INFORMATION
+        ====================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Personal Information
+                </h3>
+
+                <p>
+                    Enter the customer's basic details
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group">
+
+                    <label for="customerName">
+                        Customer Name
+                        <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="customerName"
+                        placeholder="Enter full name"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="mobile">
+                        Mobile Number
+                        <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="mobile"
+                        placeholder="Enter mobile number"
+                        maxlength="10"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="alternateMobile">
+                        Alternate Mobile
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="alternateMobile"
+                        placeholder="Optional"
+                        maxlength="10"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="dob">
+                        Date of Birth
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dob"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="gender">
+                        Gender
+                    </label>
+
+                    <select id="gender">
+
+                        <option value="">
+                            Select Gender
+                        </option>
+
+                        <option value="Male">
+                            Male
+                        </option>
+
+                        <option value="Female">
+                            Female
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="occupation">
+                        Occupation
+                    </label>
+
+                    <input
+                        type="text"
+                        id="occupation"
+                        placeholder="Enter occupation"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             ADDRESS
+        ====================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Address Details
+                </h3>
+
+                <p>
+                    Customer residential information
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group full">
+
+                    <label for="address">
+                        Address
+                        <span class="required">*</span>
+                    </label>
+
+                    <textarea
+                        id="address"
+                        placeholder="Enter full address"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="village">
+                        Village / Area
+                    </label>
+
+                    <input
+                        type="text"
+                        id="village"
+                        placeholder="Enter village or area"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="taluk">
+                        Taluk
+                    </label>
+
+                    <input
+                        type="text"
+                        id="taluk"
+                        placeholder="Enter taluk"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="district">
+                        District
+                    </label>
+
+                    <input
+                        type="text"
+                        id="district"
+                        placeholder="Enter district"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="pincode">
+                        Pincode
+                    </label>
+
+                    <input
+                        type="text"
+                        id="pincode"
+                        placeholder="6 digit pincode"
+                        maxlength="6"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             IDENTITY
+        ====================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Identity Details
+                </h3>
+
+                <p>
+                    Customer identification information
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group">
+
+                    <label for="aadhaar">
+                        Aadhaar Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="aadhaar"
+                        placeholder="12 digit Aadhaar number"
+                        maxlength="12"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="pan">
+                        PAN Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="pan"
+                        placeholder="Enter PAN number"
+                        maxlength="10"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             NOMINEE
+        ====================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Nominee Details
+                </h3>
+
+                <p>
+                    Nominee information for the customer
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group">
+
+                    <label for="nomineeName">
+                        Nominee Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nomineeName"
+                        placeholder="Enter nominee name"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="nomineeRelation">
+                        Relationship
+                    </label>
+
+                    <input
+                        type="text"
+                        id="nomineeRelation"
+                        placeholder="Example: Wife, Father"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="nomineeMobile">
+                        Nominee Mobile
+                    </label>
+
+                    <input
+                        type="tel"
+                        id="nomineeMobile"
+                        placeholder="Enter nominee mobile"
+                        maxlength="10"
+                    >
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             ACTIONS
+        ====================================== -->
+
+        <section class="form-card">
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="location.href='customers.html'"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                    id="saveBtn"
+                >
+                    Save Customer
+                </button>
+
+            </div>
+
+        </section>
+
+
+    </form>
+
+</main>
+
+
+
+<!-- =========================================
+     JAVASCRIPT
+========================================= -->
+
+<script
+    type="module"
+    src="js/customer-form.js"
+></script>
+
+
+</body>
+</html>
