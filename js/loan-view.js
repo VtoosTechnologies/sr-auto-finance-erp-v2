@@ -9,12 +9,14 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
-    collection,
     doc,
     getDoc,
+    collection,
     getDocs,
     query,
-    where
+    where,
+    updateDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -24,15 +26,20 @@ import {
 
 
 // =====================================================
-// ELEMENT
+// ELEMENTS
 // =====================================================
 
-const pageContent =
-    document.getElementById("pageContent");
+const message =
+    document.getElementById("message");
+
+const documentTableBody =
+    document.getElementById(
+        "documentTableBody"
+    );
 
 
 // =====================================================
-// URL PARAMETER
+// URL LOAN ID
 // =====================================================
 
 const urlParams =
@@ -45,17 +52,31 @@ const loanDocumentId =
 
 
 // =====================================================
+// CURRENT USER
+// =====================================================
+
+let currentUser = null;
+
+let currentLoan = null;
+
+let loanDocuments = [];
+
+
+// =====================================================
 // HELPERS
 // =====================================================
 
 function escapeHTML(value) {
 
-    return String(value ?? "")
+    return String(
+        value ?? ""
+    )
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+
 }
 
 
@@ -89,13 +110,16 @@ function formatDate(value) {
         return "-";
     }
 
+
     try {
 
         let date;
 
+
         if (
             value &&
-            typeof value.toDate === "function"
+            typeof value.toDate ===
+            "function"
         ) {
 
             date =
@@ -108,9 +132,17 @@ function formatDate(value) {
 
         }
 
-        if (isNaN(date.getTime())) {
+
+        if (
+            isNaN(
+                date.getTime()
+            )
+        ) {
+
             return "-";
+
         }
+
 
         return date.toLocaleDateString(
             "en-IN",
@@ -131,1113 +163,64 @@ function formatDate(value) {
 
 
 // =====================================================
-// GET LOAN
+// MESSAGE
 // =====================================================
 
-async function getLoan() {
-
-    const loanRef =
-        doc(
-            db,
-            "loans",
-            loanDocumentId
-        );
-
-    const loanSnap =
-        await getDoc(
-            loanRef
-        );
-
-    if (!loanSnap.exists()) {
-
-        throw new Error(
-            "Loan account not found."
-        );
-
-    }
-
-    return {
-
-        documentId:
-            loanSnap.id,
-
-        ...loanSnap.data()
-
-    };
-
-}
-
-
-// =====================================================
-// GET CUSTOMER
-// =====================================================
-
-async function getCustomer(loan) {
-
-    // -------------------------------------------------
-    // First try customerDocumentId
-    // -------------------------------------------------
-
-    if (loan.customerDocumentId) {
-
-        const customerRef =
-            doc(
-                db,
-                "customers",
-                loan.customerDocumentId
-            );
-
-        const customerSnap =
-            await getDoc(
-                customerRef
-            );
-
-        if (customerSnap.exists()) {
-
-            return {
-
-                id:
-                    customerSnap.id,
-
-                ...customerSnap.data()
-
-            };
-
-        }
-
-    }
-
-
-    // -------------------------------------------------
-    // Fallback using customerId
-    // -------------------------------------------------
-
-    const customerId =
-        loan.customerId;
-
-
-    if (!customerId) {
-        return null;
-    }
-
-
-    const customerQuery =
-        query(
-            collection(
-                db,
-                "customers"
-            ),
-            where(
-                "customerId",
-                "==",
-                customerId
-            )
-        );
-
-
-    const snapshot =
-        await getDocs(
-            customerQuery
-        );
-
-
-    if (!snapshot.empty) {
-
-        const customerDoc =
-            snapshot.docs[0];
-
-        return {
-
-            id:
-                customerDoc.id,
-
-            ...customerDoc.data()
-
-        };
-
-    }
-
-
-    return null;
-
-}
-
-
-// =====================================================
-// GET COLLECTION HISTORY
-// =====================================================
-
-async function getCollections(loan) {
-
-    const loanId =
-        loan.loanId ||
-        loan.loanNumber ||
-        loan.documentId;
-
-
-    try {
-
-        // ---------------------------------------------
-        // Try loanId based query
-        // ---------------------------------------------
-
-        const collectionQuery =
-            query(
-                collection(
-                    db,
-                    "collections"
-                ),
-                where(
-                    "loanId",
-                    "==",
-                    loanId
-                )
-            );
-
-
-        const snapshot =
-            await getDocs(
-                collectionQuery
-            );
-
-
-        return snapshot.docs
-            .map(
-                collectionDoc => ({
-
-                    id:
-                        collectionDoc.id,
-
-                    ...collectionDoc.data()
-
-                })
-            )
-            .sort(
-                (a, b) => {
-
-                    const dateA =
-                        getDateValue(
-                            a.paymentDate ||
-                            a.collectionDate ||
-                            a.createdAt
-                        );
-
-                    const dateB =
-                        getDateValue(
-                            b.paymentDate ||
-                            b.collectionDate ||
-                            b.createdAt
-                        );
-
-                    return dateB - dateA;
-
-                }
-            );
-
-
-    } catch (error) {
-
-        console.error(
-            "Collection history error:",
-            error
-        );
-
-        return [];
-
-    }
-
-}
-
-
-// =====================================================
-// DATE SORT VALUE
-// =====================================================
-
-function getDateValue(value) {
-
-    if (!value) {
-        return 0;
-    }
-
-    if (
-        value &&
-        typeof value.toDate === "function"
-    ) {
-
-        return value.toDate().getTime();
-
-    }
-
-    const date =
-        new Date(value);
-
-    return isNaN(date.getTime())
-        ? 0
-        : date.getTime();
-
-}
-
-
-// =====================================================
-// RENDER COLLECTION HISTORY
-// =====================================================
-
-function renderCollectionHistory(
-    collections
+function showMessage(
+    text,
+    type = "error"
 ) {
 
-    if (!collections.length) {
-
-        return `
-
-            <div class="empty-state">
-
-                <div class="empty-icon">
-                    💰
-                </div>
-
-                <p>
-                    No repayment history available.
-                </p>
-
-            </div>
-
-        `;
-
+    if (!message) {
+        return;
     }
 
 
-    return `
-
-        <div style="
-            overflow-x:auto;
-        ">
-
-            <table style="
-                width:100%;
-                border-collapse:collapse;
-                min-width:700px;
-            ">
-
-                <thead>
-
-                    <tr>
-
-                        <th style="
-                            text-align:left;
-                            padding:11px;
-                            background:#f8fafc;
-                            font-size:10px;
-                            color:#64748b;
-                        ">
-                            Receipt
-                        </th>
-
-                        <th style="
-                            text-align:left;
-                            padding:11px;
-                            background:#f8fafc;
-                            font-size:10px;
-                            color:#64748b;
-                        ">
-                            Date
-                        </th>
-
-                        <th style="
-                            text-align:right;
-                            padding:11px;
-                            background:#f8fafc;
-                            font-size:10px;
-                            color:#64748b;
-                        ">
-                            Amount
-                        </th>
-
-                        <th style="
-                            text-align:left;
-                            padding:11px;
-                            background:#f8fafc;
-                            font-size:10px;
-                            color:#64748b;
-                        ">
-                            Mode
-                        </th>
-
-                        <th style="
-                            text-align:left;
-                            padding:11px;
-                            background:#f8fafc;
-                            font-size:10px;
-                            color:#64748b;
-                        ">
-                            Remarks
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    ${
-                        collections.map(
-                            item => {
-
-                                const receipt =
-                                    item.receiptNo ||
-                                    item.receiptNumber ||
-                                    item.receiptId ||
-                                    item.id ||
-                                    "-";
-
-                                const date =
-                                    item.paymentDate ||
-                                    item.collectionDate ||
-                                    item.createdAt;
-
-                                const amount =
-                                    item.amount ||
-                                    item.paidAmount ||
-                                    item.paymentAmount ||
-                                    0;
-
-                                const mode =
-                                    item.paymentMode ||
-                                    item.mode ||
-                                    "-";
-
-                                const remarks =
-                                    item.remarks ||
-                                    item.remark ||
-                                    "-";
+    message.textContent =
+        text;
 
 
-                                return `
-
-                                    <tr>
-
-                                        <td style="
-                                            padding:12px 11px;
-                                            border-bottom:1px solid #f1f5f9;
-                                            font-size:11px;
-                                            color:#2563eb;
-                                            font-weight:700;
-                                        ">
-                                            ${escapeHTML(
-                                                receipt
-                                            )}
-                                        </td>
-
-                                        <td style="
-                                            padding:12px 11px;
-                                            border-bottom:1px solid #f1f5f9;
-                                            font-size:11px;
-                                        ">
-                                            ${formatDate(
-                                                date
-                                            )}
-                                        </td>
-
-                                        <td style="
-                                            padding:12px 11px;
-                                            border-bottom:1px solid #f1f5f9;
-                                            font-size:11px;
-                                            text-align:right;
-                                            font-weight:700;
-                                        ">
-                                            ${formatCurrency(
-                                                amount
-                                            )}
-                                        </td>
-
-                                        <td style="
-                                            padding:12px 11px;
-                                            border-bottom:1px solid #f1f5f9;
-                                            font-size:11px;
-                                        ">
-                                            ${escapeHTML(
-                                                mode
-                                            )}
-                                        </td>
-
-                                        <td style="
-                                            padding:12px 11px;
-                                            border-bottom:1px solid #f1f5f9;
-                                            font-size:11px;
-                                        ">
-                                            ${escapeHTML(
-                                                remarks
-                                            )}
-                                        </td>
-
-                                    </tr>
-
-                                `;
-
-                            }
-                        ).join("")
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
+    message.className =
+        `message ${type}`;
 
 }
 
 
 // =====================================================
-// RENDER PAGE
+// SET TEXT
 // =====================================================
 
-function renderLoan(
-    loan,
-    customer,
-    collections
+function setText(
+    id,
+    value
 ) {
 
-    const loanId =
-        loan.loanId ||
-        loan.loanNumber ||
-        loan.documentId ||
-        "-";
+    const element =
+        document.getElementById(id);
 
 
-    const customerName =
-        customer?.name ||
-        customer?.customerName ||
-        loan.customerName ||
-        "-";
+    if (!element) {
+        return;
+    }
 
 
-    const customerId =
-        customer?.customerId ||
-        loan.customerId ||
-        "-";
-
-
-    const mobile =
-        customer?.mobile ||
-        customer?.phone ||
-        loan.customerMobile ||
-        "-";
-
-
-    const amount =
-        Number(
-            loan.loanAmount ??
-            loan.principalAmount ??
-            loan.amount ??
-            0
-        );
-
-
-    const interest =
-        Number(
-            loan.interestAmount ??
-            0
-        );
-
-
-    const totalPayable =
-        Number(
-            loan.totalPayable ??
-            amount + interest
-        );
-
-
-    const paid =
-        collections.reduce(
-            (
-                total,
-                item
-            ) => {
-
-                return total +
-                    Number(
-                        item.amount ||
-                        item.paidAmount ||
-                        item.paymentAmount ||
-                        0
-                    );
-
-            },
-            Number(
-                loan.amountPaid || 0
-            )
-        );
-
-
-    const outstanding =
-        Math.max(
-            totalPayable - paid,
-            0
-        );
-
-
-    const status =
-        loan.status ||
-        "Active";
-
-
-    const frequency =
-        loan.repaymentFrequency ||
-        "-";
-
-
-    const interestType =
-        loan.interestType ||
-        "-";
-
-
-    const rate =
-        loan.interestRate ??
-        0;
-
-
-    const tenure =
-        loan.tenure ??
-        "-";
-
-
-    const installment =
-        Number(
-            loan.installmentAmount ??
-            0
-        );
-
-
-    pageContent.innerHTML = `
-
-        <!-- ==========================================
-             LOAN HEADER
-        =========================================== -->
-
-        <section class="loan-header">
-
-            <div class="loan-left">
-
-                <div class="loan-icon">
-                    💳
-                </div>
-
-                <div>
-
-                    <div class="loan-title">
-                        ${escapeHTML(
-                            loanId
-                        )}
-                    </div>
-
-                    <div class="loan-id">
-                        ${escapeHTML(
-                            customerName
-                        )}
-                    </div>
-
-                    <span class="loan-status">
-                        ${escapeHTML(
-                            status
-                        )}
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <div class="header-actions">
-
-                <button
-                    class="action-btn"
-                    onclick="viewCustomer(
-                        '${encodeURIComponent(
-                            customer?.id || ""
-                        )}'
-                    )"
-                >
-                    Customer
-                </button>
-
-
-                <button
-                    class="action-btn"
-                    onclick="location.href='collections.html?loanId=${encodeURIComponent(
-                        loanId
-                    )}'"
-                >
-                    Collect Payment
-                </button>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- ==========================================
-             SUMMARY
-        =========================================== -->
-
-        <section class="summary-grid">
-
-            <div class="summary-card">
-
-                <div class="summary-label">
-                    Loan Amount
-                </div>
-
-                <div class="summary-value highlight">
-                    ${formatCurrency(
-                        amount
-                    )}
-                </div>
-
-            </div>
-
-
-            <div class="summary-card">
-
-                <div class="summary-label">
-                    Total Payable
-                </div>
-
-                <div class="summary-value">
-                    ${formatCurrency(
-                        totalPayable
-                    )}
-                </div>
-
-            </div>
-
-
-            <div class="summary-card">
-
-                <div class="summary-label">
-                    Amount Paid
-                </div>
-
-                <div class="summary-value">
-                    ${formatCurrency(
-                        paid
-                    )}
-                </div>
-
-            </div>
-
-
-            <div class="summary-card">
-
-                <div class="summary-label">
-                    Outstanding
-                </div>
-
-                <div class="summary-value">
-                    ${formatCurrency(
-                        outstanding
-                    )}
-                </div>
-
-            </div>
-
-        </section>
-
-
-
-        <!-- ==========================================
-             DETAILS
-        =========================================== -->
-
-        <section class="details-grid">
-
-
-            <!-- CUSTOMER -->
-
-            <div class="card">
-
-                <div class="card-title">
-                    Customer Information
-                </div>
-
-                <div class="info-grid">
-
-                    <div>
-
-                        <div class="info-label">
-                            Customer ID
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                customerId
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Customer Name
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                customerName
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Mobile
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                mobile
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Customer Status
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                customer?.status ||
-                                "-"
-                            )}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- LOAN TERMS -->
-
-            <div class="card">
-
-                <div class="card-title">
-                    Loan Terms
-                </div>
-
-                <div class="info-grid">
-
-                    <div>
-
-                        <div class="info-label">
-                            Interest Rate
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                rate
-                            )}%
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Interest Type
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                interestType
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Tenure
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                tenure
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Frequency
-                        </div>
-
-                        <div class="info-value">
-                            ${escapeHTML(
-                                frequency
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Installment
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                installment
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Interest Amount
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                interest
-                            )}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- DATES -->
-
-            <div class="card">
-
-                <div class="card-title">
-                    Loan Dates
-                </div>
-
-                <div class="info-grid">
-
-                    <div>
-
-                        <div class="info-label">
-                            Loan Date
-                        </div>
-
-                        <div class="info-value">
-                            ${formatDate(
-                                loan.loanDate
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            First Due Date
-                        </div>
-
-                        <div class="info-value">
-                            ${formatDate(
-                                loan.firstDueDate
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Created On
-                        </div>
-
-                        <div class="info-value">
-                            ${formatDate(
-                                loan.createdAt
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Processing Fee
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                loan.processingFee
-                            )}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- REPAYMENT -->
-
-            <div class="card">
-
-                <div class="card-title">
-                    Repayment Summary
-                </div>
-
-                <div class="info-grid">
-
-                    <div>
-
-                        <div class="info-label">
-                            Total Payable
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                totalPayable
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Amount Paid
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                paid
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Outstanding
-                        </div>
-
-                        <div class="info-value">
-                            ${formatCurrency(
-                                outstanding
-                            )}
-                        </div>
-
-                    </div>
-
-
-                    <div>
-
-                        <div class="info-label">
-                            Payments
-                        </div>
-
-                        <div class="info-value">
-                            ${collections.length}
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- COLLECTION HISTORY -->
-
-            <div class="card full">
-
-                <div class="card-title">
-                    Collection History
-                </div>
-
-                ${renderCollectionHistory(
-                    collections
-                )}
-
-            </div>
-
-        </section>
-
-    `;
+    element.textContent =
+        value ?? "-";
 
 }
 
 
 // =====================================================
-// VIEW CUSTOMER
+// LOAD LOAN
 // =====================================================
 
-window.viewCustomer =
-    function(customerId) {
-
-        if (!customerId) {
-            return;
-        }
-
-        window.location.href =
-            `customer-view.html?id=${encodeURIComponent(
-                customerId
-            )}`;
-
-    };
-
-
-// =====================================================
-// LOAD PAGE
-// =====================================================
-
-async function loadLoanPage() {
+async function loadLoan() {
 
     if (!loanDocumentId) {
 
-        pageContent.innerHTML = `
-
-            <div class="error">
-                Loan ID is missing.
-            </div>
-
-        `;
+        showMessage(
+            "Loan information not found."
+        );
 
         return;
 
@@ -1246,49 +229,396 @@ async function loadLoanPage() {
 
     try {
 
-        const loan =
-            await getLoan();
+        const loanRef =
+            doc(
+                db,
+                "loans",
+                loanDocumentId
+            );
 
 
-        const [
-            customer,
-            collections
-        ] = await Promise.all([
-
-            getCustomer(loan),
-
-            getCollections(loan)
-
-        ]);
+        const loanSnap =
+            await getDoc(
+                loanRef
+            );
 
 
-        renderLoan(
-            loan,
-            customer,
-            collections
-        );
+        if (!loanSnap.exists()) {
+
+            showMessage(
+                "Loan not found."
+            );
+
+            return;
+
+        }
+
+
+        currentLoan = {
+
+            id:
+                loanSnap.id,
+
+            ...loanSnap.data()
+
+        };
+
+
+        renderLoan();
+
+
+        await loadDocuments();
 
 
     } catch (error) {
 
         console.error(
-            "Loan view error:",
+            "Loan loading error:",
             error
         );
 
 
-        pageContent.innerHTML = `
+        showMessage(
+            "Unable to load loan details."
+        );
 
-            <div class="error">
+    }
 
-                ⚠️
-                ${escapeHTML(
-                    error.message ||
-                    "Unable to load loan details."
-                )}
+}
 
-            </div>
 
+// =====================================================
+// RENDER LOAN
+// =====================================================
+
+function renderLoan() {
+
+    const loan =
+        currentLoan;
+
+
+    // ---------------------------------------------
+    // LOAN
+    // ---------------------------------------------
+
+    setText(
+        "loanId",
+        loan.loanId ||
+        loan.loanNumber ||
+        loan.id
+    );
+
+
+    setText(
+        "loanType",
+        loan.loanType === "reloan"
+            ? "ReLoan"
+            : "New Loan"
+    );
+
+
+    setText(
+        "loanDate",
+        formatDate(
+            loan.loanDate
+        )
+    );
+
+
+    const statusElement =
+        document.getElementById(
+            "loanStatus"
+        );
+
+
+    if (statusElement) {
+
+        const status =
+            loan.status ||
+            "Active";
+
+
+        const statusLower =
+            String(
+                status
+            ).toLowerCase();
+
+
+        statusElement.innerHTML = `
+            <span class="status ${
+                statusLower ===
+                "closed"
+                    ? "closed"
+                    : ""
+            }">
+                ${escapeHTML(status)}
+            </span>
+        `;
+
+    }
+
+
+    setText(
+        "loanAmount",
+        formatCurrency(
+            loan.loanAmount ||
+            loan.principalAmount ||
+            0
+        )
+    );
+
+
+    setText(
+        "outstanding",
+        formatCurrency(
+            loan.outstandingAmount ??
+            loan.balanceAmount ??
+            0
+        )
+    );
+
+
+    setText(
+        "installment",
+        formatCurrency(
+            loan.installmentAmount ||
+            0
+        )
+    );
+
+
+    setText(
+        "firstDueDate",
+        formatDate(
+            loan.firstDueDate
+        )
+    );
+
+
+    // ---------------------------------------------
+    // CUSTOMER
+    // ---------------------------------------------
+
+    setText(
+        "customerId",
+        loan.customerId ||
+        "-"
+    );
+
+
+    setText(
+        "customerName",
+        loan.customerName ||
+        "-"
+    );
+
+
+    setText(
+        "customerMobile",
+        loan.customerMobile ||
+        loan.mobile ||
+        "-"
+    );
+
+
+    setText(
+        "previousLoan",
+        loan.previousLoanId ||
+        "-"
+    );
+
+
+    // ---------------------------------------------
+    // VEHICLE
+    // ---------------------------------------------
+
+    setText(
+        "vehicleType",
+        loan.vehicleType ||
+        "-"
+    );
+
+
+    setText(
+        "vehicleBrand",
+        loan.vehicleBrand ||
+        "-"
+    );
+
+
+    setText(
+        "vehicleModel",
+        loan.vehicleModel ||
+        "-"
+    );
+
+
+    setText(
+        "vehicleNumber",
+        loan.vehicleNumber ||
+        "-"
+    );
+
+
+    setText(
+        "chassisNumber",
+        loan.chassisNumber ||
+        "-"
+    );
+
+
+    setText(
+        "engineNumber",
+        loan.engineNumber ||
+        "-"
+    );
+
+
+    setText(
+        "showroomName",
+        loan.showroomName ||
+        "-"
+    );
+
+
+    setText(
+        "bookingId",
+        loan.showroomBookingId ||
+        "-"
+    );
+
+}
+
+
+// =====================================================
+// LOAD DOCUMENTS
+// =====================================================
+
+async function loadDocuments() {
+
+    try {
+
+        documentTableBody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty">
+                        Loading documents...
+                    </div>
+                </td>
+            </tr>
+        `;
+
+
+        /*
+         * IMPORTANT
+         *
+         * Documents are linked using:
+         *
+         * loanDocumentId
+         *
+         * This prevents documents from
+         * another loan appearing here.
+         */
+
+
+        const documentsRef =
+            collection(
+                db,
+                "documents"
+            );
+
+
+        const documentsQuery =
+            query(
+                documentsRef,
+                where(
+                    "loanDocumentId",
+                    "==",
+                    loanDocumentId
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(
+                documentsQuery
+            );
+
+
+        loanDocuments = [];
+
+
+        snapshot.forEach(
+            documentSnap => {
+
+                loanDocuments.push({
+
+                    id:
+                        documentSnap.id,
+
+                    ...documentSnap.data()
+
+                });
+
+            }
+        );
+
+
+        // -----------------------------------------
+        // SORT
+        // -----------------------------------------
+
+        loanDocuments.sort(
+            (a, b) => {
+
+                const order = {
+
+                    "Aadhaar Card": 1,
+
+                    "PAN Card": 2,
+
+                    "RC Book": 3,
+
+                    "Insurance": 4,
+
+                    "Sale Invoice": 5
+
+                };
+
+
+                return (
+                    (order[
+                        a.documentType
+                    ] || 99)
+                    -
+                    (order[
+                        b.documentType
+                    ] || 99)
+                );
+
+            }
+        );
+
+
+        renderDocuments();
+
+
+    } catch (error) {
+
+        console.error(
+            "Document loading error:",
+            error
+        );
+
+
+        documentTableBody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty">
+                        Unable to load loan documents.
+                    </div>
+                </td>
+            </tr>
         `;
 
     }
@@ -1297,7 +627,648 @@ async function loadLoanPage() {
 
 
 // =====================================================
-// AUTH CHECK
+// DOCUMENT STATUS CLASS
+// =====================================================
+
+function getDocumentStatusClass(
+    status
+) {
+
+    const value =
+        String(
+            status ||
+            "Pending"
+        )
+        .toLowerCase();
+
+
+    if (
+        value ===
+        "received"
+    ) {
+
+        return "received";
+
+    }
+
+
+    if (
+        value ===
+        "issued"
+    ) {
+
+        return "issued";
+
+    }
+
+
+    if (
+        value ===
+        "returned"
+    ) {
+
+        return "returned";
+
+    }
+
+
+    return "pending";
+
+}
+
+
+// =====================================================
+// RENDER DOCUMENTS
+// =====================================================
+
+function renderDocuments() {
+
+    if (
+        !loanDocuments.length
+    ) {
+
+        documentTableBody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    <div class="empty">
+                        No documents found for this loan.
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+
+    documentTableBody.innerHTML =
+        loanDocuments.map(
+            documentItem => {
+
+                const status =
+                    documentItem.status ||
+                    "Pending";
+
+
+                const statusClass =
+                    getDocumentStatusClass(
+                        status
+                    );
+
+
+                const staffName =
+                    documentItem.staffName ||
+                    "-";
+
+
+                const holder =
+                    documentItem.currentHolder ||
+                    "-";
+
+
+                return `
+
+                    <tr>
+
+                        <td>
+
+                            <span class="doc-name">
+
+                                ${escapeHTML(
+                                    documentItem.documentType ||
+                                    "-"
+                                )}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="
+                                badge
+                                ${statusClass}
+                            ">
+
+                                ${escapeHTML(
+                                    status
+                                )}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="holder">
+
+                                ${escapeHTML(
+                                    holder
+                                )}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            ${escapeHTML(
+                                staffName
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatDate(
+                                documentItem.receivedDate
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatDate(
+                                documentItem.issuedDate
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatDate(
+                                documentItem.returnedDate
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${getDocumentActionButton(
+                                documentItem
+                            )}
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        ).join("");
+
+}
+
+
+// =====================================================
+// DOCUMENT ACTION BUTTON
+// =====================================================
+
+function getDocumentActionButton(
+    documentItem
+) {
+
+    const status =
+        String(
+            documentItem.status ||
+            "Pending"
+        ).toLowerCase();
+
+
+    /*
+     * Current stage:
+     *
+     * Pending  -> Receive
+     * Received -> Issue
+     * Issued   -> Return
+     * Returned -> Receive
+     *
+     * Staff selection will be added
+     * in the next stage.
+     */
+
+
+    if (
+        status ===
+        "pending"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="receiveDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Receive
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status ===
+        "received"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="issueDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Issue
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status ===
+        "issued"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="returnDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Return
+            </button>
+        `;
+
+    }
+
+
+    if (
+        status ===
+        "returned"
+    ) {
+
+        return `
+            <button
+                class="action-btn"
+                onclick="receiveDocument(
+                    '${documentItem.id}'
+                )"
+            >
+                Receive
+            </button>
+        `;
+
+    }
+
+
+    return "-";
+
+}
+
+
+// =====================================================
+// UPDATE DOCUMENT
+// =====================================================
+
+async function updateDocument(
+    documentId,
+    data,
+    successMessage
+) {
+
+    try {
+
+        const documentRef =
+            doc(
+                db,
+                "documents",
+                documentId
+            );
+
+
+        await updateDoc(
+            documentRef,
+            {
+
+                ...data,
+
+                updatedAt:
+                    serverTimestamp(),
+
+                updatedBy:
+                    currentUser.uid
+
+            }
+        );
+
+
+        showMessage(
+            successMessage,
+            "success"
+        );
+
+
+        await loadDocuments();
+
+
+    } catch (error) {
+
+        console.error(
+            "Document update error:",
+            error
+        );
+
+
+        showMessage(
+            "Unable to update document."
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// RECEIVE DOCUMENT
+// =====================================================
+
+window.receiveDocument =
+    async function(
+        documentId
+    ) {
+
+        const documentItem =
+            loanDocuments.find(
+                item =>
+                    item.id ===
+                    documentId
+            );
+
+
+        if (!documentItem) {
+            return;
+        }
+
+
+        const confirmed =
+            confirm(
+                `Receive ${documentItem.documentType}?`
+            );
+
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        const today =
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+
+        const history =
+            Array.isArray(
+                documentItem.history
+            )
+                ? [
+                    ...documentItem.history
+                ]
+                : [];
+
+
+        history.push({
+
+            action:
+                "Document Received",
+
+            status:
+                "Received",
+
+            currentHolder:
+                "Office",
+
+            staffId:
+                "",
+
+            staffName:
+                "",
+
+            date:
+                today,
+
+            remarks:
+                "Document received."
+
+        });
+
+
+        await updateDocument(
+
+            documentId,
+
+            {
+
+                status:
+                    "Received",
+
+                currentHolder:
+                    "Office",
+
+                receivedDate:
+                    today,
+
+                returnedDate:
+                    null,
+
+                staffId:
+                    "",
+
+                staffCode:
+                    "",
+
+                staffName:
+                    "",
+
+                lastAction:
+                    "Document Received",
+
+                lastActionDate:
+                    today,
+
+                history:
+                    history
+
+            },
+
+            `${documentItem.documentType} received successfully.`
+
+        );
+
+    };
+
+
+// =====================================================
+// ISSUE DOCUMENT
+// =====================================================
+
+window.issueDocument =
+    async function(
+        documentId
+    ) {
+
+        /*
+         * Temporary action.
+         *
+         * Staff selection will be connected
+         * after Staff document responsibility
+         * module is added.
+         */
+
+
+        const documentItem =
+            loanDocuments.find(
+                item =>
+                    item.id ===
+                    documentId
+            );
+
+
+        if (!documentItem) {
+            return;
+        }
+
+
+        showMessage(
+            "Staff selection will be added in the Staff document issue module."
+        );
+
+    };
+
+
+// =====================================================
+// RETURN DOCUMENT
+// =====================================================
+
+window.returnDocument =
+    async function(
+        documentId
+    ) {
+
+        const documentItem =
+            loanDocuments.find(
+                item =>
+                    item.id ===
+                    documentId
+            );
+
+
+        if (!documentItem) {
+            return;
+        }
+
+
+        const confirmed =
+            confirm(
+                `Return ${documentItem.documentType} from ${documentItem.staffName || "staff"}?`
+            );
+
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        const today =
+            new Date()
+                .toISOString()
+                .split("T")[0];
+
+
+        const history =
+            Array.isArray(
+                documentItem.history
+            )
+                ? [
+                    ...documentItem.history
+                ]
+                : [];
+
+
+        history.push({
+
+            action:
+                "Document Returned",
+
+            status:
+                "Returned",
+
+            currentHolder:
+                "Office",
+
+            staffId:
+                documentItem.staffId ||
+                "",
+
+            staffName:
+                documentItem.staffName ||
+                "",
+
+            date:
+                today,
+
+            remarks:
+                "Document returned to office."
+
+        });
+
+
+        await updateDocument(
+
+            documentId,
+
+            {
+
+                status:
+                    "Returned",
+
+                currentHolder:
+                    "Office",
+
+                returnedDate:
+                    today,
+
+                lastAction:
+                    "Document Returned",
+
+                lastActionDate:
+                    today,
+
+                history:
+                    history
+
+            },
+
+            `${documentItem.documentType} returned successfully.`
+
+        );
+
+    };
+
+
+// =====================================================
+// AUTH
 // =====================================================
 
 onAuthStateChanged(
@@ -1314,7 +1285,11 @@ onAuthStateChanged(
         }
 
 
-        await loadLoanPage();
+        currentUser =
+            user;
+
+
+        await loadLoan();
 
     }
 );
