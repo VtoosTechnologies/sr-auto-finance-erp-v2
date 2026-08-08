@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Powered By VTOOS Software Solutions"
+    >
+
+    <title>Settings | SR Auto Finance ERP</title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        .header {
+
+            height: 70px;
+
+            background: #0f172a;
+
+            color: white;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 100;
+
+            box-shadow:
+                0 4px 15px rgba(0,0,0,0.15);
+        }
+
+
+        .brand-area {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+        }
+
+
+        .brand-logo {
+
+            width: 42px;
+            height: 42px;
+
+            border-radius: 12px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 15px;
+
+            font-weight: 800;
+        }
+
+
+        .brand-text h1 {
+
+            font-size: 16px;
+
+            font-weight: 800;
+        }
+
+
+        .brand-text p {
+
+            font-size: 10px;
+
+            color: #94a3b8;
+
+            margin-top: 2px;
+        }
+
+
+        .back-btn {
+
+            border: 1px solid #475569;
+
+            background: transparent;
+
+            color: white;
+
+            padding: 9px 13px;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+        }
+
+
+        .back-btn:hover {
+
+            background: #1e293b;
+        }
+
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .main {
+
+            max-width: 1000px;
+
+            margin: auto;
+
+            padding: 25px;
+        }
+
+
+        .page-title {
+
+            margin-bottom: 20px;
+        }
+
+
+        .page-title h2 {
+
+            font-size: 22px;
+
+            color: #0f172a;
+
+            font-weight: 800;
+        }
+
+
+        .page-title p {
+
+            margin-top: 5px;
+
+            color: #64748b;
+
+            font-size: 12px;
+        }
+
+
+        /* =========================
+           CARD
+        ========================= */
+
+        .card {
+
+            background: white;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 16px;
+
+            padding: 22px;
+
+            margin-bottom: 18px;
+        }
+
+
+        .card-title {
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+            padding-bottom: 12px;
+
+            margin-bottom: 18px;
+
+            border-bottom:
+                1px solid #e2e8f0;
+        }
+
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .form-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr;
+
+            gap: 16px;
+        }
+
+
+        .form-group {
+
+            display: flex;
+
+            flex-direction: column;
+        }
+
+
+        .form-group.full {
+
+            grid-column: 1 / -1;
+        }
+
+
+        label {
+
+            color: #334155;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+
+        input,
+        textarea {
+
+            width: 100%;
+
+            border: 1px solid #cbd5e1;
+
+            border-radius: 10px;
+
+            padding: 11px 12px;
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            font-size: 13px;
+
+            color: #1e293b;
+
+            background: #f8fafc;
+
+            outline: none;
+        }
+
+
+        textarea {
+
+            min-height: 90px;
+
+            resize: vertical;
+        }
+
+
+        input:focus,
+        textarea:focus {
+
+            border-color: #2563eb;
+
+            background: white;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(37,99,235,0.10);
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        .actions {
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 10px;
+
+            margin-top: 20px;
+        }
+
+
+        .btn {
+
+            border: none;
+
+            padding: 10px 17px;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .btn-secondary {
+
+            background: #e2e8f0;
+
+            color: #334155;
+        }
+
+
+        .btn-primary {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
+            color: white;
+
+            box-shadow:
+                0 7px 18px
+                rgba(37,99,235,0.20);
+        }
+
+
+        .btn:disabled {
+
+            opacity: 0.6;
+
+            cursor: not-allowed;
+        }
+
+
+        /* =========================
+           MESSAGE
+        ========================= */
+
+        .message {
+
+            display: none;
+
+            padding: 11px 13px;
+
+            border-radius: 9px;
+
+            margin-bottom: 18px;
+
+            font-size: 12px;
+
+            text-align: center;
+        }
+
+
+        .message.success {
+
+            display: block;
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            border: 1px solid #bbf7d0;
+        }
+
+
+        .message.error {
+
+            display: block;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border: 1px solid #fecaca;
+        }
+
+
+        /* =========================
+           INFO
+        ========================= */
+
+        .info-box {
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+
+            border-radius: 11px;
+
+            padding: 13px;
+
+            color: #64748b;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+        }
+
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .app-footer {
+
+            text-align: center;
+
+            padding: 20px 15px 25px;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+        }
+
+
+        .app-footer div:last-child {
+
+            color: #64748b;
+
+            font-weight: 600;
+
+            font-size: 10px;
+        }
+
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 700px) {
+
+            .header {
+
+                height: 64px;
+
+                padding: 0 14px;
+            }
+
+
+            .brand-text p {
+
+                display: none;
+            }
+
+
+            .main {
+
+                padding: 16px 14px;
+            }
+
+
+            .form-grid {
+
+                grid-template-columns: 1fr;
+            }
+
+
+            .form-group.full {
+
+                grid-column: auto;
+            }
+
+
+            .actions {
+
+                flex-direction: column;
+            }
+
+
+            .actions .btn {
+
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- HEADER -->
+
+    <header class="header">
+
+        <div class="brand-area">
+
+            <div class="brand-logo">
+                SR
+            </div>
+
+            <div class="brand-text">
+
+                <h1>
+                    SR Auto Finance
+                </h1>
+
+                <p>
+                    Finance Management ERP
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="back-btn"
+            onclick="location.href='dashboard.html'"
+        >
+            ← Dashboard
+        </button>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+
+        <div class="page-title">
+
+            <h2>
+                Settings
+            </h2>
+
+            <p>
+                Manage your SR Auto Finance company information.
+            </p>
+
+        </div>
+
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+
+        <!-- COMPANY SETTINGS -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Company Information
+            </div>
+
+
+            <form id="companyForm">
+
+
+                <div class="form-grid">
+
+
+                    <div class="form-group">
+
+                        <label for="companyName">
+                            Company Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="companyName"
+                            placeholder="Enter company name"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="ownerName">
+                            Owner Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="ownerName"
+                            placeholder="Enter owner name"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="mobile">
+                            Mobile Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            id="mobile"
+                            placeholder="Enter mobile number"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="email">
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="Enter company email"
+                        >
+
+                    </div>
+
+
+                    <div class="form-group full">
+
+                        <label for="address">
+                            Address
+                        </label>
+
+                        <textarea
+                            id="address"
+                            placeholder="Enter company address"
+                        ></textarea>
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="info-box">
+
+                    These company details will be used in
+                    the ERP dashboard and can be reused
+                    for future receipts and reports.
+
+                </div>
+
+
+                <div class="actions">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="location.href='dashboard.html'"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary"
+                        id="saveBtn"
+                    >
+                        Save Company Details
+                    </button>
+
+                </div>
+
+
+            </form>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- FOOTER -->
+
+    <footer class="app-footer">
+
+        <div>
+            © 2026 SR Auto Finance ERP
+        </div>
+
+        <div>
+            Powered by VTOOS Software Solutions
+        </div>
+
+    </footer>
+
+
+    <script
+        type="module"
+        src="js/settings.js"
+    ></script>
+
+
+</body>
+
+</html>
