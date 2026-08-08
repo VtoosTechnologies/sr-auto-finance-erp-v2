@@ -58,18 +58,53 @@ const logoutBtn =
 
 
 // =====================================================
+// OPTIONAL NEW DASHBOARD ELEMENTS
+// =====================================================
+// Existing dashboard-la indha IDs irundha,
+// automatic-aa live data show aagum.
+// IDs illana existing dashboard break aagathu.
+// =====================================================
+
+const totalLoansElement =
+    document.getElementById("totalLoans");
+
+const totalCollectedElement =
+    document.getElementById("totalCollected");
+
+const todayDueElement =
+    document.getElementById("todayDue");
+
+const overdueDueElement =
+    document.getElementById("overdueDue");
+
+const totalDueAccountsElement =
+    document.getElementById("totalDueAccounts");
+
+const upcomingDueElement =
+    document.getElementById("upcomingDue");
+
+const activeCustomersElement =
+    document.getElementById("activeCustomers");
+
+
+// =====================================================
 // FORMAT CURRENCY
 // =====================================================
 
 function formatCurrency(amount) {
 
-    const value = Number(amount) || 0;
+    const value =
+        Number(amount) || 0;
 
-    return new Intl.NumberFormat("en-IN", {
-        style: "currency",
-        currency: "INR",
-        maximumFractionDigits: 0
-    }).format(value);
+    return new Intl.NumberFormat(
+        "en-IN",
+        {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 0
+        }
+    ).format(value);
+
 }
 
 
@@ -79,32 +114,178 @@ function formatCurrency(amount) {
 
 function formatNumber(value) {
 
-    return new Intl.NumberFormat("en-IN")
-        .format(Number(value) || 0);
+    return new Intl.NumberFormat(
+        "en-IN"
+    ).format(
+        Number(value) || 0
+    );
 
 }
 
 
 // =====================================================
-// TODAY DATE
+// GET TODAY DATE
 // =====================================================
 
 function getTodayDate() {
 
-    const today = new Date();
+    const today =
+        new Date();
 
     const year =
         today.getFullYear();
 
     const month =
-        String(today.getMonth() + 1)
-            .padStart(2, "0");
+        String(
+            today.getMonth() + 1
+        ).padStart(2, "0");
 
     const day =
-        String(today.getDate())
-            .padStart(2, "0");
+        String(
+            today.getDate()
+        ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
+
+}
+
+
+// =====================================================
+// GET DATE OBJECT
+// =====================================================
+
+function getDateObject(value) {
+
+    if (!value) {
+        return null;
+    }
+
+    try {
+
+        if (
+            value &&
+            typeof value.toDate === "function"
+        ) {
+
+            return value.toDate();
+
+        }
+
+        const date =
+            new Date(value);
+
+        if (
+            isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return null;
+
+        }
+
+        return date;
+
+    } catch (error) {
+
+        return null;
+
+    }
+
+}
+
+
+// =====================================================
+// DATE KEY
+// =====================================================
+
+function getDateKey(value) {
+
+    const date =
+        getDateObject(value);
+
+    if (!date) {
+        return "";
+    }
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+// =====================================================
+// IS TODAY
+// =====================================================
+
+function isToday(value) {
+
+    return (
+        getDateKey(value) ===
+        getTodayDate()
+    );
+
+}
+
+
+// =====================================================
+// IS THIS MONTH
+// =====================================================
+
+function isThisMonth(value) {
+
+    const date =
+        getDateObject(value);
+
+    if (!date) {
+        return false;
+    }
+
+    const today =
+        new Date();
+
+    return (
+
+        date.getFullYear() ===
+        today.getFullYear()
+
+        &&
+
+        date.getMonth() ===
+        today.getMonth()
+
+    );
+
+}
+
+
+// =====================================================
+// START OF TODAY
+// =====================================================
+
+function getTodayStart() {
+
+    const today =
+        new Date();
+
+    return new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+    );
+
 }
 
 
@@ -117,7 +298,11 @@ async function loadUserProfile(user) {
     try {
 
         const userRef =
-            doc(db, "users", user.uid);
+            doc(
+                db,
+                "users",
+                user.uid
+            );
 
         const userSnap =
             await getDoc(userRef);
@@ -135,6 +320,7 @@ async function loadUserProfile(user) {
                 "login.html";
 
             return null;
+
         }
 
 
@@ -150,11 +336,15 @@ async function loadUserProfile(user) {
             userData.active === true;
 
         const status =
-            String(userData.status || "")
-                .toLowerCase();
+            String(
+                userData.status || ""
+            ).toLowerCase();
 
 
-        if (!active || status !== "active") {
+        if (
+            !active ||
+            status !== "active"
+        ) {
 
             await signOut(auth);
 
@@ -162,6 +352,7 @@ async function loadUserProfile(user) {
                 "login.html";
 
             return null;
+
         }
 
 
@@ -180,16 +371,28 @@ async function loadUserProfile(user) {
             "Staff";
 
 
-        userNameElement.textContent =
-            name;
+        if (userNameElement) {
+
+            userNameElement.textContent =
+                name;
+
+        }
 
 
-        userRoleElement.textContent =
-            role;
+        if (userRoleElement) {
+
+            userRoleElement.textContent =
+                role;
+
+        }
 
 
-        welcomeTextElement.textContent =
-            `Welcome back, ${name}. Here's your business overview.`;
+        if (welcomeTextElement) {
+
+            welcomeTextElement.textContent =
+                `Welcome back, ${name}. Here's your business overview.`;
+
+        }
 
 
         return userData;
@@ -203,7 +406,9 @@ async function loadUserProfile(user) {
         );
 
         return null;
+
     }
+
 }
 
 
@@ -222,18 +427,29 @@ async function loadCompanySettings() {
                 "company"
             );
 
+
         const companySnap =
             await getDoc(companyRef);
 
 
         if (!companySnap.exists()) {
 
-            companyInfoElement.innerHTML = `
-                <div class="empty-icon">🏢</div>
-                <p>Company information not configured.</p>
-            `;
+            if (companyInfoElement) {
+
+                companyInfoElement.innerHTML = `
+                    <div class="empty-icon">
+                        🏢
+                    </div>
+
+                    <p>
+                        Company information not configured.
+                    </p>
+                `;
+
+            }
 
             return;
+
         }
 
 
@@ -262,50 +478,77 @@ async function loadCompanySettings() {
             "";
 
 
+        // ---------------------------------------------
         // Header company name
+        // ---------------------------------------------
 
-        companyNameElement.textContent =
-            companyName;
+        if (companyNameElement) {
+
+            companyNameElement.textContent =
+                companyName;
+
+        }
 
 
-        // Company panel
+        // ---------------------------------------------
+        // Company information panel
+        // ---------------------------------------------
 
-        companyInfoElement.innerHTML = `
+        if (companyInfoElement) {
 
-            <div style="
-                text-align:left;
-                color:#334155;
-                line-height:1.8;
-                font-size:12px;
-            ">
+            companyInfoElement.innerHTML = `
 
-                <strong style="
-                    font-size:14px;
-                    color:#0f172a;
+                <div style="
+                    text-align:left;
+                    color:#334155;
+                    line-height:1.8;
+                    font-size:12px;
                 ">
-                    ${companyName}
-                </strong>
 
-                ${
-                    ownerName
-                        ? `<div>Owner: ${ownerName}</div>`
-                        : ""
-                }
+                    <strong style="
+                        font-size:14px;
+                        color:#0f172a;
+                    ">
+                        ${companyName}
+                    </strong>
 
-                ${
-                    mobile
-                        ? `<div>Mobile: ${mobile}</div>`
-                        : ""
-                }
+                    ${
+                        ownerName
+                            ? `
+                                <div>
+                                    Owner:
+                                    ${ownerName}
+                                </div>
+                              `
+                            : ""
+                    }
 
-                ${
-                    address
-                        ? `<div>${address}</div>`
-                        : ""
-                }
+                    ${
+                        mobile
+                            ? `
+                                <div>
+                                    Mobile:
+                                    ${mobile}
+                                </div>
+                              `
+                            : ""
+                    }
 
-            </div>
-        `;
+                    ${
+                        address
+                            ? `
+                                <div>
+                                    ${address}
+                                </div>
+                              `
+                            : ""
+                    }
+
+                </div>
+
+            `;
+
+        }
 
 
     } catch (error) {
@@ -315,19 +558,33 @@ async function loadCompanySettings() {
             error
         );
 
-        companyInfoElement.innerHTML = `
-            <div class="empty-icon">⚠️</div>
-            <p>Unable to load company information.</p>
-        `;
+
+        if (companyInfoElement) {
+
+            companyInfoElement.innerHTML = `
+
+                <div class="empty-icon">
+                    ⚠️
+                </div>
+
+                <p>
+                    Unable to load company information.
+                </p>
+
+            `;
+
+        }
+
     }
+
 }
 
 
 // =====================================================
-// LOAD CUSTOMER COUNT
+// LOAD CUSTOMER DATA
 // =====================================================
 
-async function loadCustomerCount() {
+async function loadCustomerData() {
 
     try {
 
@@ -337,24 +594,259 @@ async function loadCustomerCount() {
                 "customers"
             );
 
+
         const snapshot =
-            await getDocs(customersRef);
+            await getDocs(
+                customersRef
+            );
 
 
-        totalCustomersElement.textContent =
-            formatNumber(snapshot.size);
+        const totalCustomers =
+            snapshot.size;
+
+
+        if (totalCustomersElement) {
+
+            totalCustomersElement.textContent =
+                formatNumber(
+                    totalCustomers
+                );
+
+        }
+
+
+        if (activeCustomersElement) {
+
+            let activeCustomers =
+                0;
+
+
+            snapshot.forEach(
+                customerDoc => {
+
+                    const customer =
+                        customerDoc.data();
+
+
+                    const status =
+                        String(
+                            customer.status ||
+                            "active"
+                        ).toLowerCase();
+
+
+                    if (
+                        status === "active"
+                    ) {
+
+                        activeCustomers++;
+
+                    }
+
+                }
+            );
+
+
+            activeCustomersElement.textContent =
+                formatNumber(
+                    activeCustomers
+                );
+
+        }
+
+
+        return totalCustomers;
 
 
     } catch (error) {
 
         console.error(
-            "Customer count error:",
+            "Customer data error:",
             error
         );
 
-        totalCustomersElement.textContent =
-            "0";
+
+        if (totalCustomersElement) {
+
+            totalCustomersElement.textContent =
+                "0";
+
+        }
+
+
+        return 0;
+
     }
+
+}
+
+
+// =====================================================
+// GET LOAN TOTAL PAYABLE
+// =====================================================
+
+function getLoanTotalPayable(loan) {
+
+    const storedTotal =
+        loan.totalPayable ??
+        loan.totalAmount;
+
+
+    if (
+        storedTotal !== undefined &&
+        storedTotal !== null
+    ) {
+
+        return Math.max(
+            Number(storedTotal) || 0,
+            0
+        );
+
+    }
+
+
+    const principal =
+        Number(
+            loan.loanAmount ??
+            loan.principalAmount ??
+            loan.amount ??
+            0
+        );
+
+
+    const interest =
+        Number(
+            loan.interestAmount ??
+            0
+        );
+
+
+    return Math.max(
+        principal + interest,
+        0
+    );
+
+}
+
+
+// =====================================================
+// GET LOAN PAID
+// =====================================================
+
+function getLoanPaid(loan) {
+
+    return Number(
+
+        loan.amountPaid ??
+
+        loan.paidAmount ??
+
+        0
+
+    );
+
+}
+
+
+// =====================================================
+// GET LOAN OUTSTANDING
+// =====================================================
+
+function getLoanOutstanding(loan) {
+
+    const storedBalance =
+
+        loan.outstandingAmount ??
+
+        loan.balanceAmount ??
+
+        loan.pendingAmount ??
+
+        loan.remainingAmount;
+
+
+    if (
+        storedBalance !== undefined &&
+        storedBalance !== null
+    ) {
+
+        return Math.max(
+            Number(
+                storedBalance
+            ) || 0,
+            0
+        );
+
+    }
+
+
+    const total =
+        getLoanTotalPayable(
+            loan
+        );
+
+
+    const paid =
+        getLoanPaid(
+            loan
+        );
+
+
+    return Math.max(
+        total - paid,
+        0
+    );
+
+}
+
+
+// =====================================================
+// GET INSTALLMENT
+// =====================================================
+
+function getInstallmentAmount(loan) {
+
+    const installment =
+        Number(
+
+            loan.installmentAmount ??
+
+            loan.emiAmount ??
+
+            loan.monthlyInstallment ??
+
+            loan.weeklyInstallment ??
+
+            loan.dailyInstallment ??
+
+            0
+
+        );
+
+
+    return installment;
+
+}
+
+
+// =====================================================
+// GET DUE DATE
+// =====================================================
+
+function getLoanDueDate(loan) {
+
+    return (
+
+        loan.nextDueDate ||
+
+        loan.dueDate ||
+
+        loan.nextPaymentDate ||
+
+        loan.firstDueDate
+
+    );
+
 }
 
 
@@ -372,70 +864,327 @@ async function loadLoanData() {
                 "loans"
             );
 
+
         const snapshot =
-            await getDocs(loansRef);
+            await getDocs(
+                loansRef
+            );
 
 
-        let activeLoans = 0;
-
-        let outstanding = 0;
-
-
-        snapshot.forEach((loanDoc) => {
-
-            const loan =
-                loanDoc.data();
+        let totalLoans =
+            snapshot.size;
 
 
-            const status =
-                String(
-                    loan.status || ""
-                ).toLowerCase();
+        let activeLoans =
+            0;
 
 
-            // -----------------------------------------
-            // Active loan
-            // -----------------------------------------
+        let outstanding =
+            0;
 
-            if (
-                status === "active" ||
-                status === "running" ||
-                status === "open"
-            ) {
 
-                activeLoans++;
+        let todayDue =
+            0;
+
+
+        let overdueDue =
+            0;
+
+
+        let upcomingDue =
+            0;
+
+
+        let totalDueAccounts =
+            0;
+
+
+        const today =
+            getTodayStart();
+
+
+        snapshot.forEach(
+            loanDoc => {
+
+                const loan =
+                    loanDoc.data();
+
+
+                const status =
+                    String(
+                        loan.status ||
+                        ""
+                    ).toLowerCase();
+
+
+                const balance =
+                    getLoanOutstanding(
+                        loan
+                    );
+
+
+                // -----------------------------------------
+                // Active loan
+                // -----------------------------------------
+
+                const isActive =
+
+                    status === "active" ||
+
+                    status === "running" ||
+
+                    status === "open";
+
+
+                if (
+                    isActive &&
+                    balance > 0
+                ) {
+
+                    activeLoans++;
+
+                }
+
+
+                // -----------------------------------------
+                // Outstanding
+                // -----------------------------------------
+
+                if (
+                    balance > 0
+                ) {
+
+                    outstanding +=
+                        balance;
+
+                }
+
+
+                // -----------------------------------------
+                // Ignore closed loans for dues
+                // -----------------------------------------
+
+                if (
+
+                    !isActive ||
+
+                    balance <= 0
+
+                ) {
+
+                    return;
+
+                }
+
+
+                // -----------------------------------------
+                // Due date
+                // -----------------------------------------
+
+                const dueDateValue =
+                    getLoanDueDate(
+                        loan
+                    );
+
+
+                const dueDate =
+                    getDateObject(
+                        dueDateValue
+                    );
+
+
+                if (!dueDate) {
+
+                    return;
+
+                }
+
+
+                const dueOnly =
+                    new Date(
+                        dueDate.getFullYear(),
+                        dueDate.getMonth(),
+                        dueDate.getDate()
+                    );
+
+
+                let dueAmount =
+                    getInstallmentAmount(
+                        loan
+                    );
+
+
+                /*
+                 * If installment amount is not
+                 * stored, use outstanding as fallback.
+                 */
+
+                if (
+                    dueAmount <= 0
+                ) {
+
+                    dueAmount =
+                        balance;
+
+                }
+
+
+                /*
+                 * Due cannot exceed outstanding.
+                 */
+
+                dueAmount =
+                    Math.min(
+                        dueAmount,
+                        balance
+                    );
+
+
+                // -----------------------------------------
+                // Today
+                // -----------------------------------------
+
+                if (
+                    dueOnly.getTime() ===
+                    today.getTime()
+                ) {
+
+                    todayDue +=
+                        dueAmount;
+
+                    totalDueAccounts++;
+
+                }
+
+
+                // -----------------------------------------
+                // Overdue
+                // -----------------------------------------
+
+                else if (
+                    dueOnly < today
+                ) {
+
+                    overdueDue +=
+                        dueAmount;
+
+                    totalDueAccounts++;
+
+                }
+
+
+                // -----------------------------------------
+                // Upcoming
+                // -----------------------------------------
+
+                else {
+
+                    upcomingDue +=
+                        dueAmount;
+
+                    totalDueAccounts++;
+
+                }
 
             }
+        );
 
 
-            // -----------------------------------------
-            // Outstanding amount
-            // -----------------------------------------
+        // ---------------------------------------------
+        // Existing dashboard cards
+        // ---------------------------------------------
 
-            const balance =
-                Number(
-                    loan.balanceAmount ??
-                    loan.outstandingAmount ??
-                    loan.pendingAmount ??
-                    0
+        if (activeLoansElement) {
+
+            activeLoansElement.textContent =
+                formatNumber(
+                    activeLoans
                 );
 
-
-            if (balance > 0) {
-
-                outstanding += balance;
-
-            }
-
-        });
+        }
 
 
-        activeLoansElement.textContent =
-            formatNumber(activeLoans);
+        if (outstandingElement) {
+
+            outstandingElement.textContent =
+                formatCurrency(
+                    outstanding
+                );
+
+        }
 
 
-        outstandingElement.textContent =
-            formatCurrency(outstanding);
+        // ---------------------------------------------
+        // Optional dashboard cards
+        // ---------------------------------------------
+
+        if (totalLoansElement) {
+
+            totalLoansElement.textContent =
+                formatNumber(
+                    totalLoans
+                );
+
+        }
+
+
+        if (todayDueElement) {
+
+            todayDueElement.textContent =
+                formatCurrency(
+                    todayDue
+                );
+
+        }
+
+
+        if (overdueDueElement) {
+
+            overdueDueElement.textContent =
+                formatCurrency(
+                    overdueDue
+                );
+
+        }
+
+
+        if (upcomingDueElement) {
+
+            upcomingDueElement.textContent =
+                formatCurrency(
+                    upcomingDue
+                );
+
+        }
+
+
+        if (totalDueAccountsElement) {
+
+            totalDueAccountsElement.textContent =
+                formatNumber(
+                    totalDueAccounts
+                );
+
+        }
+
+
+        return {
+
+            totalLoans,
+
+            activeLoans,
+
+            outstanding,
+
+            todayDue,
+
+            overdueDue,
+
+            upcomingDue,
+
+            totalDueAccounts
+
+        };
 
 
     } catch (error) {
@@ -445,20 +1194,105 @@ async function loadLoanData() {
             error
         );
 
-        activeLoansElement.textContent =
-            "0";
 
-        outstandingElement.textContent =
-            formatCurrency(0);
+        if (activeLoansElement) {
+
+            activeLoansElement.textContent =
+                "0";
+
+        }
+
+
+        if (outstandingElement) {
+
+            outstandingElement.textContent =
+                formatCurrency(0);
+
+        }
+
+
+        return null;
+
     }
+
 }
 
 
 // =====================================================
-// LOAD TODAY COLLECTION
+// GET COLLECTION AMOUNT
 // =====================================================
 
-async function loadTodayCollection() {
+function getCollectionAmount(data) {
+
+    return Number(
+
+        data.amount ??
+
+        data.paidAmount ??
+
+        data.collectionAmount ??
+
+        data.paymentAmount ??
+
+        0
+
+    );
+
+}
+
+
+// =====================================================
+// GET COLLECTION DATE
+// =====================================================
+
+function getCollectionDate(data) {
+
+    return (
+
+        data.paymentDate ||
+
+        data.collectionDate ||
+
+        data.date ||
+
+        data.createdAt
+
+    );
+
+}
+
+
+// =====================================================
+// CHECK VALID COLLECTION
+// =====================================================
+
+function isValidCollection(data) {
+
+    const status =
+        String(
+            data.status ||
+            "Success"
+        ).toLowerCase();
+
+
+    return (
+
+        status !== "cancelled" &&
+
+        status !== "canceled" &&
+
+        status !== "reversed"
+
+    );
+
+}
+
+
+// =====================================================
+// LOAD COLLECTION DATA
+// =====================================================
+
+async function loadCollectionData() {
 
     try {
 
@@ -468,75 +1302,127 @@ async function loadTodayCollection() {
                 "collections"
             );
 
+
         const snapshot =
-            await getDocs(collectionsRef);
+            await getDocs(
+                collectionsRef
+            );
 
 
-        const today =
-            getTodayDate();
-
-
-        let total =
+        let totalCollected =
             0;
 
 
-        snapshot.forEach((collectionDoc) => {
-
-            const data =
-                collectionDoc.data();
+        let todayCollected =
+            0;
 
 
-            // -----------------------------------------
-            // Possible date fields
-            // -----------------------------------------
-
-            let collectionDate =
-                data.date ||
-                data.collectionDate ||
-                data.paymentDate ||
-                "";
+        let monthCollected =
+            0;
 
 
-            // -----------------------------------------
-            // Timestamp support
-            // -----------------------------------------
+        snapshot.forEach(
+            collectionDoc => {
 
-            if (
-                collectionDate &&
-                typeof collectionDate.toDate ===
-                "function"
-            ) {
+                const data =
+                    collectionDoc.data();
 
-                collectionDate =
-                    collectionDate.toDate()
-                        .toISOString()
-                        .split("T")[0];
+
+                if (
+                    !isValidCollection(
+                        data
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const amount =
+                    getCollectionAmount(
+                        data
+                    );
+
+
+                const collectionDate =
+                    getCollectionDate(
+                        data
+                    );
+
+
+                totalCollected +=
+                    amount;
+
+
+                if (
+                    isToday(
+                        collectionDate
+                    )
+                ) {
+
+                    todayCollected +=
+                        amount;
+
+                }
+
+
+                if (
+                    isThisMonth(
+                        collectionDate
+                    )
+                ) {
+
+                    monthCollected +=
+                        amount;
+
+                }
+
             }
+        );
 
 
-            // -----------------------------------------
-            // Compare date
-            // -----------------------------------------
+        // ---------------------------------------------
+        // Existing dashboard card
+        // ---------------------------------------------
 
-            if (
-                String(collectionDate)
-                    .substring(0, 10) === today
-            ) {
+        if (
+            todayCollectionElement
+        ) {
 
-                total += Number(
-                    data.amount ||
-                    data.paidAmount ||
-                    data.collectionAmount ||
-                    0
+            todayCollectionElement.textContent =
+                formatCurrency(
+                    todayCollected
                 );
 
-            }
-
-        });
+        }
 
 
-        todayCollectionElement.textContent =
-            formatCurrency(total);
+        // ---------------------------------------------
+        // Optional dashboard cards
+        // ---------------------------------------------
+
+        if (
+            totalCollectedElement
+        ) {
+
+            totalCollectedElement.textContent =
+                formatCurrency(
+                    totalCollected
+                );
+
+        }
+
+
+        return {
+
+            totalCollected,
+
+            todayCollected,
+
+            monthCollected
+
+        };
 
 
     } catch (error) {
@@ -546,9 +1432,21 @@ async function loadTodayCollection() {
             error
         );
 
-        todayCollectionElement.textContent =
-            formatCurrency(0);
+
+        if (
+            todayCollectionElement
+        ) {
+
+            todayCollectionElement.textContent =
+                formatCurrency(0);
+
+        }
+
+
+        return null;
+
     }
+
 }
 
 
@@ -556,42 +1454,53 @@ async function loadTodayCollection() {
 // LOGOUT
 // =====================================================
 
-logoutBtn.addEventListener(
-    "click",
-    async function () {
+if (logoutBtn) {
 
-        try {
+    logoutBtn.addEventListener(
+        "click",
+        async function() {
 
-            logoutBtn.disabled = true;
+            try {
 
-            logoutBtn.textContent =
-                "Logging out...";
+                logoutBtn.disabled =
+                    true;
 
-
-            sessionStorage.clear();
-
-            await signOut(auth);
+                logoutBtn.textContent =
+                    "Logging out...";
 
 
-            window.location.href =
-                "login.html";
+                sessionStorage.clear();
 
 
-        } catch (error) {
+                await signOut(
+                    auth
+                );
 
-            console.error(
-                "Logout error:",
-                error
-            );
 
-            logoutBtn.disabled = false;
+                window.location.href =
+                    "login.html";
 
-            logoutBtn.textContent =
-                "Logout";
+
+            } catch (error) {
+
+                console.error(
+                    "Logout error:",
+                    error
+                );
+
+
+                logoutBtn.disabled =
+                    false;
+
+                logoutBtn.textContent =
+                    "Logout";
+
+            }
+
         }
+    );
 
-    }
-);
+}
 
 
 // =====================================================
@@ -600,7 +1509,7 @@ logoutBtn.addEventListener(
 
 onAuthStateChanged(
     auth,
-    async function (user) {
+    async function(user) {
 
         // ---------------------------------------------
         // Not logged in
@@ -612,31 +1521,40 @@ onAuthStateChanged(
                 "login.html";
 
             return;
+
         }
 
 
         // ---------------------------------------------
-        // Load dashboard
+        // Load user
         // ---------------------------------------------
 
         const userData =
-            await loadUserProfile(user);
+            await loadUserProfile(
+                user
+            );
 
 
         if (!userData) {
+
             return;
+
         }
 
+
+        // ---------------------------------------------
+        // Load dashboard data
+        // ---------------------------------------------
 
         await Promise.all([
 
             loadCompanySettings(),
 
-            loadCustomerCount(),
+            loadCustomerData(),
 
             loadLoanData(),
 
-            loadTodayCollection()
+            loadCollectionData()
 
         ]);
 
