@@ -1,483 +1,800 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
 
     <title>Dashboard | SR Auto Finance ERP</title>
 
-    <!-- Google Font -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    <link rel="preconnect"
-          href="https://fonts.googleapis.com">
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
 
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
+        /* ================================
+           HEADER
+        ================================= */
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet">
+        .header {
+            height: 70px;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
 
-    <!-- Material Icons -->
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0">
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 15px;
+        }
 
-    <!-- CSS -->
+        .brand-text h1 {
+            font-size: 17px;
+            font-weight: 800;
+        }
 
-    <link rel="stylesheet"
-          href="./css/common.css">
+        .brand-text p {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
 
-    <link rel="stylesheet"
-          href="./css/dashboard.css">
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .user-role {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .logout-btn {
+            border: 1px solid #475569;
+            background: transparent;
+            color: white;
+            padding: 9px 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            background: #1e293b;
+        }
+
+
+        /* ================================
+           MAIN
+        ================================= */
+
+        .main {
+            max-width: 1400px;
+            margin: auto;
+            padding: 25px;
+        }
+
+
+        /* ================================
+           WELCOME
+        ================================= */
+
+        .welcome-section {
+            margin-bottom: 24px;
+        }
+
+        .welcome-section h2 {
+            font-size: 25px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .welcome-section p {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+
+        /* ================================
+           STAT CARDS
+        ================================= */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+        }
+
+        .stat-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: #eff6ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .stat-value {
+            margin-top: 13px;
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .stat-note {
+            margin-top: 5px;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+
+        /* ================================
+           QUICK ACTIONS
+        ================================= */
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 13px;
+        }
+
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 25px;
+        }
+
+        .quick-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .quick-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+            border-color: #bfdbfe;
+        }
+
+        .quick-icon {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .quick-title {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .quick-desc {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+
+        /* ================================
+           BOTTOM GRID
+        ================================= */
+
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .panel-title {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .view-all {
+            border: none;
+            background: transparent;
+            color: #2563eb;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+
+        /* ================================
+           EMPTY STATE
+        ================================= */
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 15px;
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 12px;
+        }
+
+
+        /* ================================
+           FOOTER
+        ================================= */
+
+        .footer {
+            text-align: center;
+            padding: 25px 10px;
+            color: #94a3b8;
+            font-size: 10px;
+        }
+
+
+        /* ================================
+           MOBILE
+        ================================= */
+
+        @media (max-width: 900px) {
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .quick-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+
+        @media (max-width: 600px) {
+
+            .header {
+                padding: 0 14px;
+                height: 64px;
+            }
+
+            .brand-text h1 {
+                font-size: 14px;
+            }
+
+            .brand-text p {
+                display: none;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .main {
+                padding: 18px 14px;
+            }
+
+            .welcome-section h2 {
+                font-size: 21px;
+            }
+
+            .stats-grid {
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .quick-grid {
+                gap: 10px;
+            }
+
+            .quick-card {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
+
 
 <body>
 
-    <!-- =====================================================
-         Dashboard
-    ====================================================== -->
 
-    <main class="dashboard">
+<!-- =========================================
+     HEADER
+========================================= -->
 
-        <!-- Header -->
+<header class="header">
 
-        <header class="dashboard-header">
+    <div class="brand-area">
 
-            <button class="icon-btn">
+        <div class="brand-logo">
+            SR
+        </div>
 
-                <span class="material-symbols-rounded">
+        <div class="brand-text">
 
-                    menu
-
-                </span>
-
-            </button>
-
-            <div class="company-details">
-
-                <h2>
-
-                    SR Auto Finance
-
-                </h2>
-
-                <span>
-
-                    Finance ERP
-
-                </span>
-
-            </div>
-
-            <div class="header-actions">
-
-                <button class="icon-btn">
-
-                    <span class="material-symbols-rounded">
-
-                        notifications
-
-                    </span>
-
-                </button>
-
-                <button class="icon-btn">
-
-                    <span class="material-symbols-rounded">
-
-                        account_circle
-
-                    </span>
-
-                </button>
-
-            </div>
-
-        </header>
-
-        <!-- Welcome -->
-
-        <section class="welcome-card">
-
-            <h3>
-
-                Welcome Back 👋
-
-            </h3>
+            <h1 id="companyName">
+                SR Auto Finance
+            </h1>
 
             <p>
-
-                Have a productive day.
-
+                Finance Management ERP
             </p>
 
-        </section>
+        </div>
 
-        <!-- Summary Cards -->
+    </div>
 
-        <section class="summary-grid">
-            <!-- Total Customers -->
 
-            <div class="summary-card customers">
+    <div class="header-right">
 
-                <div class="card-icon">
+        <div class="user-info">
 
-                    <span class="material-symbols-rounded">
+            <div
+                class="user-name"
+                id="userName"
+            >
+                Admin
+            </div>
 
-                        groups
+            <div
+                class="user-role"
+                id="userRole"
+            >
+                Owner
+            </div>
 
-                    </span>
+        </div>
 
+
+        <button
+            class="logout-btn"
+            id="logoutBtn"
+        >
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<main class="main">
+
+
+    <!-- Welcome -->
+
+    <section class="welcome-section">
+
+        <h2>
+            Dashboard
+        </h2>
+
+        <p id="welcomeText">
+            Welcome back. Here's your business overview.
+        </p>
+
+    </section>
+
+
+
+    <!-- =====================================
+         STATISTICS
+    ====================================== -->
+
+    <section class="stats-grid">
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <div class="stat-title">
+                    Total Customers
                 </div>
 
-                <div class="card-content">
-
-                    <h4>Total Customers</h4>
-
-                    <h2 id="totalCustomers">
-
-                        0
-
-                    </h2>
-
+                <div class="stat-icon">
+                    👥
                 </div>
 
             </div>
 
-            <!-- Active Loans -->
+            <div
+                class="stat-value"
+                id="totalCustomers"
+            >
+                0
+            </div>
 
-            <div class="summary-card loans">
+            <div class="stat-note">
+                Registered customers
+            </div>
 
-                <div class="card-icon">
+        </div>
 
-                    <span class="material-symbols-rounded">
 
-                        account_balance_wallet
 
-                    </span>
+        <div class="stat-card">
 
+            <div class="stat-top">
+
+                <div class="stat-title">
+                    Active Loans
                 </div>
 
-                <div class="card-content">
-
-                    <h4>Active Loans</h4>
-
-                    <h2 id="activeLoans">
-
-                        0
-
-                    </h2>
-
+                <div class="stat-icon">
+                    💰
                 </div>
 
             </div>
 
-            <!-- Today's Collection -->
+            <div
+                class="stat-value"
+                id="activeLoans"
+            >
+                0
+            </div>
 
-            <div class="summary-card collection">
+            <div class="stat-note">
+                Currently active
+            </div>
 
-                <div class="card-icon">
+        </div>
 
-                    <span class="material-symbols-rounded">
 
-                        payments
 
-                    </span>
+        <div class="stat-card">
 
+            <div class="stat-top">
+
+                <div class="stat-title">
+                    Today's Collection
                 </div>
 
-                <div class="card-content">
-
-                    <h4>Today's Collection</h4>
-
-                    <h2 id="todayCollection">
-
-                        ₹0
-
-                    </h2>
-
+                <div class="stat-icon">
+                    📥
                 </div>
 
             </div>
 
-            <!-- Cash In Hand -->
+            <div
+                class="stat-value"
+                id="todayCollection"
+            >
+                ₹0
+            </div>
 
-            <div class="summary-card cash">
+            <div class="stat-note">
+                Today's received amount
+            </div>
 
-                <div class="card-icon">
+        </div>
 
-                    <span class="material-symbols-rounded">
 
-                        account_balance
 
-                    </span>
+        <div class="stat-card">
 
+            <div class="stat-top">
+
+                <div class="stat-title">
+                    Outstanding
                 </div>
 
-                <div class="card-content">
-
-                    <h4>Cash In Hand</h4>
-
-                    <h2 id="cashInHand">
-
-                        ₹0
-
-                    </h2>
-
+                <div class="stat-icon">
+                    📊
                 </div>
 
             </div>
 
-        </section>
+            <div
+                class="stat-value"
+                id="outstanding"
+            >
+                ₹0
+            </div>
 
-        <!-- Quick Menu -->
-
-        <section class="quick-menu">
-
-            <h3>
-
-                Quick Access
-
-            </h3>
-
-            <div class="menu-grid">
-                          <!-- Customers -->
-
-            <a href="customers.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    groups
-                </span>
-
-                <h4>Customers</h4>
-
-            </a>
-
-            <!-- Loans -->
-
-            <a href="loan.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    account_balance_wallet
-                </span>
-
-                <h4>Loans</h4>
-
-            </a>
-
-            <!-- Collections -->
-
-            <a href="collection.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    payments
-                </span>
-
-                <h4>Collections</h4>
-
-            </a>
-
-            <!-- Deposit -->
-
-            <a href="deposit.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    move_to_inbox
-                </span>
-
-                <h4>Deposits</h4>
-
-            </a>
-
-            <!-- Due List -->
-
-            <a href="#" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    warning
-                </span>
-
-                <h4>Due List</h4>
-
-            </a>
-
-            <!-- Reports -->
-
-            <a href="reports.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    bar_chart
-                </span>
-
-                <h4>Reports</h4>
-
-            </a>
-
-            <!-- Staff -->
-
-            <a href="#" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    badge
-                </span>
-
-                <h4>Staff</h4>
-
-            </a>
-
-            <!-- Settings -->
-
-            <a href="settings.html" class="menu-card">
-
-                <span class="material-symbols-rounded">
-                    settings
-                </span>
-
-                <h4>Settings</h4>
-
-            </a>
+            <div class="stat-note">
+                Pending loan amount
+            </div>
 
         </div>
 
     </section>
 
-    <!-- Today's Activity -->
 
-    <section class="activity-section">
 
-        <h3>
+    <!-- =====================================
+         QUICK ACTIONS
+    ====================================== -->
 
-            Today's Summary
+    <div class="section-title">
+        Quick Actions
+    </div>
 
-        </h3>
 
-        <div class="activity-card">
+    <section class="quick-grid">
 
-            <div class="activity-item">
 
-                <span>Pending Deposits</span>
+        <div
+            class="quick-card"
+            onclick="location.href='customers.html'"
+        >
 
-                <strong id="pendingDeposits">
+            <div class="quick-icon">
+                👤
+            </div>
 
-                    0
+            <div class="quick-title">
+                Customers
+            </div>
 
-                </strong>
+            <div class="quick-desc">
+                Manage customers
+            </div>
+
+        </div>
+
+
+
+        <div
+            class="quick-card"
+            onclick="location.href='loans.html'"
+        >
+
+            <div class="quick-icon">
+                💳
+            </div>
+
+            <div class="quick-title">
+                Loans
+            </div>
+
+            <div class="quick-desc">
+                Manage loan accounts
+            </div>
+
+        </div>
+
+
+
+        <div
+            class="quick-card"
+            onclick="location.href='collections.html'"
+        >
+
+            <div class="quick-icon">
+                💵
+            </div>
+
+            <div class="quick-title">
+                Collections
+            </div>
+
+            <div class="quick-desc">
+                Record collections
+            </div>
+
+        </div>
+
+
+
+        <div
+            class="quick-card"
+            onclick="location.href='reports.html'"
+        >
+
+            <div class="quick-icon">
+                📈
+            </div>
+
+            <div class="quick-title">
+                Reports
+            </div>
+
+            <div class="quick-desc">
+                View business reports
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================
+         BOTTOM PANELS
+    ====================================== -->
+
+    <section class="bottom-grid">
+
+
+        <!-- Recent Collections -->
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <div class="panel-title">
+                    Recent Collections
+                </div>
+
+                <button
+                    class="view-all"
+                    onclick="location.href='collections.html'"
+                >
+                    View All
+                </button>
 
             </div>
 
-            <div class="activity-item">
 
-                <span>RC Pending</span>
+            <div class="empty-state">
 
-                <strong id="rcPending">
+                <div class="empty-icon">
+                    📋
+                </div>
 
-                    0
-
-                </strong>
+                <p>
+                    No recent collections available.
+                </p>
 
             </div>
 
-            <div class="activity-item">
+        </div>
 
-                <span>Today's Due</span>
 
-                <strong id="todayDue">
 
-                    0
+        <!-- Company -->
 
-                </strong>
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <div class="panel-title">
+                    Company Information
+                </div>
+
+                <button
+                    class="view-all"
+                    onclick="location.href='settings.html'"
+                >
+                    Settings
+                </button>
+
+            </div>
+
+
+            <div
+                class="empty-state"
+                id="companyInfo"
+            >
+
+                <div class="empty-icon">
+                    🏢
+                </div>
+
+                <p>
+                    Loading company information...
+                </p>
 
             </div>
 
         </div>
 
     </section>
-        <!-- Bottom Navigation -->
-
-    <nav class="bottom-nav">
-
-        <a href="dashboard.html" class="nav-item active">
-
-            <span class="material-symbols-rounded">
-                home
-            </span>
-
-            <small>Home</small>
-
-        </a>
-
-        <a href="customers.html" class="nav-item">
-
-            <span class="material-symbols-rounded">
-                groups
-            </span>
-
-            <small>Customers</small>
-
-        </a>
-
-        <a href="collection.html" class="nav-item">
-
-            <span class="material-symbols-rounded">
-                payments
-            </span>
-
-            <small>Collection</small>
-
-        </a>
-
-        <a href="reports.html" class="nav-item">
-
-            <span class="material-symbols-rounded">
-                bar_chart
-            </span>
-
-            <small>Reports</small>
-
-        </a>
-
-        <a href="settings.html" class="nav-item">
-
-            <span class="material-symbols-rounded">
-                menu
-            </span>
-
-            <small>More</small>
-
-        </a>
-
-    </nav>
 
 </main>
 
-<!-- Loading -->
 
-<div id="loadingOverlay"
-     class="loading-overlay">
 
-    <div class="loader"></div>
+<footer class="footer">
 
-    <p>Loading...</p>
+    © 2026 SR Auto Finance ERP
 
-</div>
+</footer>
 
-<!-- JavaScript -->
 
-<script type="module"
-        src="../js/config.js"></script>
 
-<script type="module"
-        src="../js/common.js"></script>
+<!-- Dashboard JavaScript -->
 
-<script type="module"
-        src="../js/dashboard.js"></script>
+<script
+    type="module"
+    src="js/dashboard.js"
+></script>
+
 
 </body>
-
 </html>
