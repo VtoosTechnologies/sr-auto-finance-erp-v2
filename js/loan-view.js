@@ -562,12 +562,10 @@ function renderLoan() {
         );
 
 
-    const outstanding =
-        getNumber(
-            loan.outstandingAmount,
-            loan.balanceAmount,
-            loan.remainingAmount
-        );
+ const outstanding =
+    getNumber(
+        loan.outstanding
+    );
 
 
     setText(
