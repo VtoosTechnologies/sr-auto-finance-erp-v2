@@ -20,7 +20,9 @@
         content="SR Auto Finance ERP - Loan Details"
     >
 
-    <title>Loan Details | SR Auto Finance ERP</title>
+    <title>
+        Loan Details | SR Auto Finance ERP
+    </title>
 
 
     <style>
@@ -39,14 +41,21 @@
         }
 
 
+        /* =================================================
+           HEADER
+        ================================================= */
+
         .header {
-            height: 70px;
+            min-height: 70px;
             background: #0f172a;
             color: white;
+
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+
+            padding: 12px 24px;
+
             position: sticky;
             top: 0;
             z-index: 100;
@@ -63,15 +72,20 @@
         .brand-logo {
             width: 42px;
             height: 42px;
+
             border-radius: 12px;
-            background: linear-gradient(
-                135deg,
-                #2563eb,
-                #0ea5e9
-            );
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             font-weight: 800;
             font-size: 15px;
         }
@@ -89,16 +103,45 @@
         }
 
 
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+
+        .back-btn,
+        .close-loan-btn {
+            padding: 9px 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
         .back-btn {
             border: 1px solid #475569;
             background: transparent;
             color: white;
-            padding: 9px 13px;
-            border-radius: 9px;
-            cursor: pointer;
-            font-size: 12px;
         }
 
+
+        .close-loan-btn {
+            border: 0;
+            background: #16a34a;
+            color: white;
+        }
+
+
+        .close-loan-btn:hover {
+            background: #15803d;
+        }
+
+
+        /* =================================================
+           MAIN
+        ================================================= */
 
         .main {
             max-width: 1200px;
@@ -109,6 +152,14 @@
 
         .page-title {
             margin-bottom: 20px;
+        }
+
+
+        .page-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
         }
 
 
@@ -125,11 +176,19 @@
         }
 
 
+        /* =================================================
+           MESSAGE
+        ================================================= */
+
         .message {
             display: none;
+
             padding: 12px;
+
             border-radius: 9px;
+
             margin-bottom: 15px;
+
             font-size: 12px;
         }
 
@@ -148,17 +207,28 @@
         }
 
 
+        /* =================================================
+           GRID
+        ================================================= */
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
             gap: 16px;
         }
 
 
         .card {
             background: white;
-            border: 1px solid #e2e8f0;
+
+            border:
+                1px solid #e2e8f0;
+
             border-radius: 16px;
+
             padding: 20px;
         }
 
@@ -171,14 +241,23 @@
         .card-title {
             font-size: 15px;
             font-weight: 800;
+
             margin-bottom: 17px;
+
             color: #0f172a;
         }
 
 
+        /* =================================================
+           INFO
+        ================================================= */
+
         .info-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
             gap: 15px;
         }
 
@@ -200,16 +279,23 @@
         .loan-id {
             color: #2563eb;
             font-size: 16px;
-            font-weight: 800;
         }
 
 
+        /* =================================================
+           STATUS
+        ================================================= */
+
         .status {
             display: inline-block;
+
             padding: 5px 10px;
+
             border-radius: 20px;
+
             background: #dcfce7;
             color: #15803d;
+
             font-size: 10px;
             font-weight: 700;
         }
@@ -221,6 +307,70 @@
         }
 
 
+        /* =================================================
+           AMOUNT CARDS
+        ================================================= */
+
+        .amount-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 12px;
+        }
+
+
+        .amount-card {
+            background: #f8fafc;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 11px;
+
+            padding: 14px;
+        }
+
+
+        .amount-card.highlight {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+
+        .amount-card.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+        }
+
+
+        .amount-card.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+
+        .amount-value {
+            margin-top: 6px;
+
+            font-size: 17px;
+            font-weight: 800;
+
+            color: #0f172a;
+        }
+
+
+        /* =================================================
+           DOCUMENT TABLE
+        ================================================= */
+
+        .document-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+
         .document-table {
             width: 100%;
             border-collapse: collapse;
@@ -229,17 +379,28 @@
 
         .document-table th {
             background: #f8fafc;
+
             color: #64748b;
+
             font-size: 10px;
+
             text-align: left;
+
             padding: 12px;
+
+            white-space: nowrap;
         }
 
 
         .document-table td {
             padding: 13px 12px;
-            border-bottom: 1px solid #f1f5f9;
+
+            border-bottom:
+                1px solid #f1f5f9;
+
             font-size: 11px;
+
+            white-space: nowrap;
         }
 
 
@@ -249,10 +410,19 @@
         }
 
 
+        .holder {
+            font-weight: 700;
+            color: #334155;
+        }
+
+
         .badge {
             display: inline-block;
+
             padding: 5px 9px;
+
             border-radius: 20px;
+
             font-size: 9px;
             font-weight: 700;
         }
@@ -282,20 +452,22 @@
         }
 
 
-        .holder {
-            font-weight: 700;
-            color: #334155;
-        }
-
-
         .action-btn {
-            border: 1px solid #cbd5e1;
+            border:
+                1px solid #cbd5e1;
+
             background: white;
+
             color: #334155;
+
             padding: 7px 10px;
+
             border-radius: 7px;
+
             cursor: pointer;
+
             font-size: 10px;
+
             font-weight: 700;
         }
 
@@ -306,34 +478,57 @@
         }
 
 
+        /* =================================================
+           EMPTY
+        ================================================= */
+
         .empty {
             text-align: center;
+
             padding: 35px;
+
             color: #94a3b8;
+
             font-size: 12px;
         }
 
 
+        /* =================================================
+           FOOTER
+        ================================================= */
+
         .app-footer {
             text-align: center;
-            padding: 25px 15px;
+
+            padding:
+                25px 15px;
+
             color: #94a3b8;
+
             font-size: 11px;
+
+            line-height: 1.6;
         }
 
 
         .app-footer div:last-child {
             color: #64748b;
-            font-size: 10px;
+
             font-weight: 600;
-            margin-top: 3px;
+
+            font-size: 10px;
         }
 
 
-        @media (max-width: 700px) {
+        /* =================================================
+           MOBILE
+        ================================================= */
+
+        @media (max-width: 800px) {
 
             .header {
-                padding: 0 14px;
+                padding:
+                    12px 14px;
             }
 
 
@@ -343,32 +538,79 @@
 
 
             .main {
-                padding: 16px 12px;
+                padding:
+                    16px 12px;
+            }
+
+
+            .page-title-row {
+                flex-direction:
+                    column;
             }
 
 
             .grid {
-                grid-template-columns: 1fr;
+                grid-template-columns:
+                    1fr;
             }
 
 
             .card.full {
-                grid-column: auto;
+                grid-column:
+                    auto;
+            }
+
+
+            .amount-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
 
             .info-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
 
-            .document-table-wrapper {
-                overflow-x: auto;
+            .header-actions {
+                gap: 5px;
             }
 
 
-            .document-table {
-                min-width: 750px;
+            .back-btn,
+            .close-loan-btn {
+                padding:
+                    8px 9px;
+
+                font-size: 10px;
+            }
+
+        }
+
+
+        @media (max-width: 480px) {
+
+            .amount-grid {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .info-grid {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+
+            .brand-logo {
+                width: 38px;
+                height: 38px;
+            }
+
+
+            .brand-text h1 {
+                font-size: 14px;
             }
 
         }
@@ -381,9 +623,15 @@
 <body>
 
 
+<!-- =====================================================
+     HEADER
+====================================================== -->
+
 <header class="header">
 
+
     <div class="brand-area">
+
 
         <div class="brand-logo">
             SR
@@ -402,34 +650,71 @@
 
         </div>
 
+
     </div>
 
 
-    <button
-        class="back-btn"
-        onclick="location.href='loans.html'"
-    >
-        ← Loans
-    </button>
+
+    <div class="header-actions">
+
+
+        <button
+            type="button"
+            class="back-btn"
+            onclick="location.href='loans.html'"
+        >
+            ← Loans
+        </button>
+
+
+        <button
+            type="button"
+            class="close-loan-btn"
+            id="headerCloseLoanBtn"
+            style="display:none;"
+        >
+            Close Loan
+        </button>
+
+
+    </div>
+
 
 </header>
 
 
+
+<!-- =====================================================
+     MAIN
+====================================================== -->
 
 <main class="main">
 
 
     <div class="page-title">
 
-        <h2>
-            Loan Details
-        </h2>
 
-        <p>
-            Loan, vehicle and document information
-        </p>
+        <div class="page-title-row">
+
+
+            <div>
+
+                <h2>
+                    Loan Details
+                </h2>
+
+                <p>
+                    Complete loan, customer, vehicle and document information
+                </p>
+
+            </div>
+
+
+        </div>
+
 
     </div>
+
 
 
     <div
@@ -438,14 +723,16 @@
     ></div>
 
 
+
     <div class="grid">
 
 
-        <!-- =========================================
+        <!-- =================================================
              LOAN INFORMATION
-        ========================================== -->
+        ================================================== -->
 
         <section class="card">
+
 
             <div class="card-title">
                 Loan Information
@@ -453,6 +740,7 @@
 
 
             <div class="info-grid">
+
 
                 <div>
 
@@ -508,8 +796,22 @@
                         Status
                     </div>
 
+                    <div id="loanStatus">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Duration
+                    </div>
+
                     <div
-                        id="loanStatus"
+                        class="info-value"
+                        id="loanDuration"
                     >
                         -
                     </div>
@@ -520,77 +822,32 @@
                 <div>
 
                     <div class="info-label">
-                        Loan Amount
+                        Interest Rate
                     </div>
 
                     <div
                         class="info-value"
-                        id="loanAmount"
-                    >
-                        ₹0
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="info-label">
-                        Outstanding
-                    </div>
-
-                    <div
-                        class="info-value"
-                        id="outstanding"
-                    >
-                        ₹0
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="info-label">
-                        Installment
-                    </div>
-
-                    <div
-                        class="info-value"
-                        id="installment"
-                    >
-                        ₹0
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div class="info-label">
-                        First Due Date
-                    </div>
-
-                    <div
-                        class="info-value"
-                        id="firstDueDate"
+                        id="interestRate"
                     >
                         -
                     </div>
 
                 </div>
+
 
             </div>
+
 
         </section>
 
 
 
-        <!-- =========================================
+        <!-- =================================================
              CUSTOMER
-        ========================================== -->
+        ================================================== -->
 
         <section class="card">
+
 
             <div class="card-title">
                 Customer Details
@@ -598,6 +855,7 @@
 
 
             <div class="info-grid">
+
 
                 <div>
 
@@ -662,17 +920,20 @@
 
                 </div>
 
+
             </div>
+
 
         </section>
 
 
 
-        <!-- =========================================
+        <!-- =================================================
              VEHICLE
-        ========================================== -->
+        ================================================== -->
 
         <section class="card full">
+
 
             <div class="card-title">
                 Vehicle Details
@@ -680,6 +941,7 @@
 
 
             <div class="info-grid">
+
 
                 <div>
 
@@ -808,17 +1070,278 @@
 
                 </div>
 
+
             </div>
+
 
         </section>
 
 
 
-        <!-- =========================================
-             DOCUMENTS
-        ========================================== -->
+        <!-- =================================================
+             FINANCIAL SUMMARY
+        ================================================== -->
 
         <section class="card full">
+
+
+            <div class="card-title">
+                Financial Summary
+            </div>
+
+
+            <div class="amount-grid">
+
+
+                <div class="amount-card">
+
+                    <div class="info-label">
+                        Loan Amount
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="loanAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card">
+
+                    <div class="info-label">
+                        Installment
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="installment"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card warning">
+
+                    <div class="info-label">
+                        Penalty
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="penaltyAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card highlight">
+
+                    <div class="info-label">
+                        Outstanding
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="outstanding"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             PAYMENT SUMMARY
+        ================================================== -->
+
+        <section class="card">
+
+
+            <div class="card-title">
+                Payment Summary
+            </div>
+
+
+            <div class="info-grid">
+
+
+                <div>
+
+                    <div class="info-label">
+                        Total Paid
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="totalPaid"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Total Installments
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="totalInstallments"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Paid Installments
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="paidInstallments"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Pending Installments
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="pendingInstallments"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             DUE DETAILS
+        ================================================== -->
+
+        <section class="card">
+
+
+            <div class="card-title">
+                Due Information
+            </div>
+
+
+            <div class="info-grid">
+
+
+                <div>
+
+                    <div class="info-label">
+                        First Due Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="firstDueDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Next Due Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="nextDueDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Last Payment Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="lastPaymentDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Last Payment Amount
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="lastPaymentAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             DOCUMENTS
+        ================================================== -->
+
+        <section class="card full">
+
 
             <div class="card-title">
                 Loan Documents
@@ -827,7 +1350,9 @@
 
             <div class="document-table-wrapper">
 
+
                 <table class="document-table">
+
 
                     <thead>
 
@@ -888,270 +1413,139 @@
 
                     </tbody>
 
+
                 </table>
 
+
             </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             CLOSING SUMMARY
+        ================================================== -->
+
+        <section
+            class="card full"
+            id="closingSummaryCard"
+            style="display:none;"
+        >
+
+
+            <div class="card-title">
+                Loan Closing Summary
+            </div>
+
+
+            <div class="amount-grid">
+
+
+                <div class="amount-card">
+
+                    <div class="info-label">
+                        Calculated Overall Due
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="calculatedOverallDue"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card warning">
+
+                    <div class="info-label">
+                        Closing Penalty
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="closingPenalty"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card">
+
+                    <div class="info-label">
+                        Waiver / Adjustment
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="closingWaiver"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount-card success">
+
+                    <div class="info-label">
+                        Final Settlement
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="finalSettlement"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div
+                style="
+                    margin-top:16px;
+                    font-size:11px;
+                    color:#64748b;
+                "
+            >
+
+                Closing Date:
+                <strong id="closedDate">
+                    -
+                </strong>
+
+                &nbsp; | &nbsp;
+
+                Closing Remarks:
+                <strong id="closingRemarks">
+                    -
+                </strong>
+
+            </div>
+
 
         </section>
 
 
     </div>
 
-<!-- =====================================================
-     DOCUMENT ISSUE MODAL
-====================================================== -->
 
-<div
-    id="documentIssueModal"
-    style="
-        display:none;
-        position:fixed;
-        inset:0;
-        background:rgba(15,23,42,0.55);
-        align-items:center;
-        justify-content:center;
-        padding:20px;
-        z-index:500;
-    "
->
-
-    <div
-        style="
-            width:100%;
-            max-width:480px;
-            background:#ffffff;
-            border-radius:16px;
-            padding:22px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.25);
-        "
-    >
-
-        <div
-            style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-                margin-bottom:18px;
-            "
-        >
-
-            <h3
-                style="
-                    font-size:17px;
-                    color:#0f172a;
-                "
-            >
-                Issue Document to Staff
-            </h3>
-
-
-            <button
-                type="button"
-                id="closeIssueModalBtn"
-                style="
-                    width:32px;
-                    height:32px;
-                    border:0;
-                    border-radius:8px;
-                    background:#f1f5f9;
-                    cursor:pointer;
-                    font-size:18px;
-                "
-            >
-                ×
-            </button>
-
-        </div>
-
-
-        <div
-            style="
-                background:#f8fafc;
-                padding:12px;
-                border-radius:10px;
-                margin-bottom:15px;
-            "
-        >
-
-            <div
-                style="
-                    font-size:10px;
-                    color:#64748b;
-                "
-            >
-                Document
-            </div>
-
-            <div
-                id="issueDocumentName"
-                style="
-                    font-size:13px;
-                    font-weight:800;
-                    color:#0f172a;
-                    margin-top:4px;
-                "
-            >
-                -
-            </div>
-
-        </div>
-
-
-        <div style="margin-bottom:14px;">
-
-            <label
-                style="
-                    display:block;
-                    font-size:11px;
-                    font-weight:700;
-                    margin-bottom:6px;
-                    color:#334155;
-                "
-            >
-                Staff
-            </label>
-
-
-            <select
-                id="issueStaffSelect"
-                style="
-                    width:100%;
-                    height:42px;
-                    border:1px solid #cbd5e1;
-                    border-radius:9px;
-                    padding:0 10px;
-                    font-size:12px;
-                    background:#f8fafc;
-                    outline:none;
-                "
-            >
-
-                <option value="">
-                    Select Staff
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div style="margin-bottom:14px;">
-
-            <label
-                style="
-                    display:block;
-                    font-size:11px;
-                    font-weight:700;
-                    margin-bottom:6px;
-                    color:#334155;
-                "
-            >
-                Issue Date
-            </label>
-
-
-            <input
-                type="date"
-                id="issueDateInput"
-                style="
-                    width:100%;
-                    height:42px;
-                    border:1px solid #cbd5e1;
-                    border-radius:9px;
-                    padding:0 10px;
-                    font-size:12px;
-                    background:#f8fafc;
-                    outline:none;
-                "
-            >
-
-        </div>
-
-
-        <div style="margin-bottom:18px;">
-
-            <label
-                style="
-                    display:block;
-                    font-size:11px;
-                    font-weight:700;
-                    margin-bottom:6px;
-                    color:#334155;
-                "
-            >
-                Remarks
-            </label>
-
-
-            <textarea
-                id="issueRemarksInput"
-                placeholder="Optional remarks"
-                style="
-                    width:100%;
-                    min-height:70px;
-                    border:1px solid #cbd5e1;
-                    border-radius:9px;
-                    padding:10px;
-                    font-size:12px;
-                    resize:vertical;
-                    outline:none;
-                "
-            ></textarea>
-
-        </div>
-
-
-        <div
-            style="
-                display:flex;
-                justify-content:flex-end;
-                gap:8px;
-            "
-        >
-
-            <button
-                type="button"
-                id="cancelIssueBtn"
-                style="
-                    border:1px solid #cbd5e1;
-                    background:#ffffff;
-                    color:#334155;
-                    padding:10px 16px;
-                    border-radius:9px;
-                    cursor:pointer;
-                    font-size:11px;
-                    font-weight:700;
-                "
-            >
-                Cancel
-            </button>
-
-
-            <button
-                type="button"
-                id="confirmIssueBtn"
-                style="
-                    border:0;
-                    background:#2563eb;
-                    color:#ffffff;
-                    padding:10px 18px;
-                    border-radius:9px;
-                    cursor:pointer;
-                    font-size:11px;
-                    font-weight:700;
-                "
-            >
-                Issue Document
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
 </main>
 
 
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
 
 <footer class="app-footer">
 
