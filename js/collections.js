@@ -1088,15 +1088,24 @@ function resetLoanDisplay() {
 // =====================================================
 // OUTSTANDING
 // =====================================================
-
-function getOutstanding(
-    loan
-) {
+function getOutstanding(loan) {
 
     if (!loan) {
         return 0;
     }
 
+    // Use the actual outstanding stored in the loan.
+    // Penalty must NOT be added again.
+    if (
+        loan.outstanding !== undefined &&
+        loan.outstanding !== null &&
+        loan.outstanding !== ""
+    ) {
+        return Math.max(
+            numberValue(loan.outstanding),
+            0
+        );
+    }
 
     const totalPayable =
         numberValue(
@@ -1105,7 +1114,6 @@ function getOutstanding(
             loan.totalLoanPayable
         );
 
-
     const totalPaid =
         numberValue(
             loan.totalPaid ??
@@ -1113,40 +1121,19 @@ function getOutstanding(
             loan.totalCollection
         );
 
-
-    const totalPenalty =
-        numberValue(
-            loan.penaltyAmount ??
-            loan.totalPenalty ??
-            loan.penalty
-        );
-
-
     /*
-     * If total payable is available,
-     * calculate actual outstanding.
-     *
-     * Penalty is added separately because
-     * it is an amount payable by the customer.
+     * For old records where outstanding is not available,
+     * calculate without adding penalty again.
      */
-
-    if (
-        totalPayable > 0
-    ) {
+    if (totalPayable > 0) {
 
         return Math.max(
             totalPayable -
-            totalPaid +
-            totalPenalty,
+            totalPaid,
             0
         );
 
     }
-
-
-    /*
-     * Fallback for older loans.
-     */
 
     const loanAmount =
         numberValue(
@@ -1155,25 +1142,18 @@ function getOutstanding(
             loan.amount
         );
 
-
-    if (
-        loanAmount > 0
-    ) {
+    if (loanAmount > 0) {
 
         return Math.max(
             loanAmount -
-            totalPaid +
-            totalPenalty,
+            totalPaid,
             0
         );
 
     }
 
-
     return 0;
-
 }
-
 
 // =====================================================
 // RENDER LOAN
@@ -1896,12 +1876,11 @@ function updatePaymentPreview() {
 
 
     const newOutstanding =
-        Math.max(
-            outstanding -
-            amount +
-            penalty,
-            0
-        );
+    Math.max(
+        outstanding -
+        amount,
+        0
+    );
 
 
     setText(
@@ -2658,9 +2637,8 @@ async function savePayment() {
                     penaltyCollected:
                         penalty,
 
-                    totalReceived:
-                        amount +
-                        penalty,
+                  totalReceived:
+    amount,
 
                     balanceAfterPayment:
                         balanceAfterPayment,
@@ -3446,8 +3424,7 @@ function showPaymentDetails(
 
 
     const totalReceived =
-        paidAmount +
-        penalty;
+    paidAmount;
 
 
     const modal =
@@ -4061,8 +4038,7 @@ function downloadPaymentReceipt(
 
 
     const totalReceived =
-        paidAmount +
-        penalty;
+    paidAmount;
 
 
     const html = `
