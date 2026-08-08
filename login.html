@@ -372,33 +372,9 @@
         const message =
             document.getElementById("message");
 
+   </script>
 
-        loginForm.addEventListener("submit", function (event) {
-
-            event.preventDefault();
-
-            message.className = "message";
-            message.textContent = "";
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = "Signing in...";
-
-
-            /*
-             * Firebase Authentication logic
-             * will be connected here next.
-             */
-
-            setTimeout(function () {
-
-                loginBtn.disabled = false;
-                loginBtn.textContent = "Sign In";
-
-            }, 1000);
-
-        });
-
-   <script type="module" src="js/login.js"></script>
+<script type="module" src="js/login.js"></script>
 
 </body>
 </html>
