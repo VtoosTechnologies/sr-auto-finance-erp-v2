@@ -11,7 +11,8 @@ import {
 import {
     doc,
     getDoc,
-    setDoc
+    setDoc,
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -25,7 +26,7 @@ import {
 // =====================================================
 
 const settingsForm =
-    document.getElementById("settingsForm");
+    document.getElementById("companyForm");
 
 const companyNameInput =
     document.getElementById("companyName");
@@ -87,9 +88,7 @@ async function loadSettings() {
 
 
         if (!settingsSnap.exists()) {
-
             return;
-
         }
 
 
@@ -98,42 +97,32 @@ async function loadSettings() {
 
 
         if (companyNameInput) {
-
             companyNameInput.value =
                 data.companyName || "";
-
         }
 
 
         if (ownerNameInput) {
-
             ownerNameInput.value =
                 data.ownerName || "";
-
         }
 
 
         if (mobileInput) {
-
             mobileInput.value =
                 data.mobile || "";
-
         }
 
 
         if (emailInput) {
-
             emailInput.value =
                 data.email || "";
-
         }
 
 
         if (addressInput) {
-
             addressInput.value =
                 data.address || "";
-
         }
 
 
@@ -182,6 +171,10 @@ if (settingsForm) {
                 addressInput?.value.trim() || "";
 
 
+            // -----------------------------------------
+            // VALIDATION
+            // -----------------------------------------
+
             if (!companyName) {
 
                 showMessage(
@@ -215,9 +208,14 @@ if (settingsForm) {
             }
 
 
+            // -----------------------------------------
+            // BUTTON
+            // -----------------------------------------
+
             if (saveBtn) {
 
                 saveBtn.disabled = true;
+
                 saveBtn.textContent =
                     "Saving...";
 
@@ -226,6 +224,10 @@ if (settingsForm) {
 
             try {
 
+                // -------------------------------------
+                // FIRESTORE DOCUMENT
+                // -------------------------------------
+
                 const settingsRef =
                     doc(
                         db,
@@ -233,6 +235,10 @@ if (settingsForm) {
                         "company"
                     );
 
+
+                // -------------------------------------
+                // SAVE
+                // -------------------------------------
 
                 await setDoc(
                     settingsRef,
@@ -254,7 +260,7 @@ if (settingsForm) {
                             address,
 
                         updatedAt:
-                            new Date()
+                            serverTimestamp()
 
                     },
                     {
@@ -262,6 +268,10 @@ if (settingsForm) {
                     }
                 );
 
+
+                // -------------------------------------
+                // SUCCESS
+                // -------------------------------------
 
                 showMessage(
                     "Company information saved successfully.",
@@ -281,7 +291,6 @@ if (settingsForm) {
                     "Unable to save settings. Please try again."
                 );
 
-
             } finally {
 
                 if (saveBtn) {
@@ -289,7 +298,7 @@ if (settingsForm) {
                     saveBtn.disabled = false;
 
                     saveBtn.textContent =
-                        "Save Settings";
+                        "Save Company Details";
 
                 }
 
