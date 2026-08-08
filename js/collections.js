@@ -2482,13 +2482,12 @@ async function savePayment() {
                  * then reduced by the principal payment.
                  */
 
-                const balanceAfterPayment =
-                    Math.max(
-                        previousOutstanding +
-                        penalty -
-                        amount,
-                        0
-                    );
+               const balanceAfterPayment =
+    Math.max(
+        previousOutstanding -
+        amount,
+        0
+    );
 
 
                 // =================================================
@@ -2847,17 +2846,14 @@ async function savePayment() {
             currentLoan.pendingInstallments;
 
 
-        currentLoan.outstanding =
-            Math.max(
-                numberValue(
-                    currentLoan.outstanding
-                ) -
-                amount +
-                numberValue(
-                    savedPayment?.penaltyCollected
-                ),
-                0
-            );
+      currentLoan.outstanding =
+    Math.max(
+        numberValue(
+            currentLoan.outstanding
+        ) -
+        amount,
+        0
+    );
 
 
         currentLoan.lastPaymentDate =
