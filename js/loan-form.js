@@ -1,171 +1,136 @@
-// =====================================================
-// SR AUTO FINANCE ERP
-// Loan Form Controller
-// File: js/loan-form.js
-// =====================================================
+// ===================================================== // SR AUTO
+FINANCE ERP // Loan Form Controller // File: js/loan-form.js //
+=====================================================
 
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { onAuthStateChanged } from
+“https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js”;
 
-import {
-    collection,
-    doc,
-    getDocs,
-    getDoc,
-    runTransaction,
-    serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { collection, doc, getDocs, getDoc, runTransaction,
+serverTimestamp } from
+“https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js”;
 
-import {
-    auth,
-    db
-} from "./firebase-config.js";
+import { auth, db } from “./firebase-config.js”;
 
+// ===================================================== // ELEMENTS //
+=====================================================
 
-// =====================================================
-// ELEMENTS
-// =====================================================
+const loanForm = document.getElementById(“loanForm”);
 
-const loanForm =
-    document.getElementById("loanForm");
+const loanType = document.getElementById(“loanType”);
 
-const loanType =
-    document.getElementById("loanType");
+const customerSelect = document.getElementById(“customerSelect”);
 
-const customerSelect =
-    document.getElementById("customerSelect");
-
-const customerInfo =
-    document.getElementById("customerInfo");
+const customerInfo = document.getElementById(“customerInfo”);
 
 const selectedCustomerId =
-    document.getElementById("selectedCustomerId");
+document.getElementById(“selectedCustomerId”);
 
 const selectedCustomerMobile =
-    document.getElementById("selectedCustomerMobile");
+document.getElementById(“selectedCustomerMobile”);
 
 const selectedCustomerStatus =
-    document.getElementById("selectedCustomerStatus");
-
+document.getElementById(“selectedCustomerStatus”);
 
 // ReLoan
 
-const reloanSection =
-    document.getElementById("reloanSection");
+const reloanSection = document.getElementById(“reloanSection”);
 
 const previousLoanSelect =
-    document.getElementById("previousLoanSelect");
+document.getElementById(“previousLoanSelect”);
 
-const previousLoanInfo =
-    document.getElementById("previousLoanInfo");
+const previousLoanInfo = document.getElementById(“previousLoanInfo”);
 
-const previousLoanId =
-    document.getElementById("previousLoanId");
+const previousLoanId = document.getElementById(“previousLoanId”);
 
 const previousLoanAmount =
-    document.getElementById("previousLoanAmount");
+document.getElementById(“previousLoanAmount”);
 
 const previousLoanStatus =
-    document.getElementById("previousLoanStatus");
+document.getElementById(“previousLoanStatus”);
 
 const previousLoanClosedDate =
-    document.getElementById("previousLoanClosedDate");
+document.getElementById(“previousLoanClosedDate”);
 
 const previousLoanClosingAmount =
-    document.getElementById("previousLoanClosingAmount");
+document.getElementById(“previousLoanClosingAmount”);
 
 const previousLoanCustomer =
-    document.getElementById("previousLoanCustomer");
-
+document.getElementById(“previousLoanCustomer”);
 
 // Vehicle
 
-const vehicleType =
-    document.getElementById("vehicleType");
+const vehicleType = document.getElementById(“vehicleType”);
 
-const vehicleBrand =
-    document.getElementById("vehicleBrand");
+const vehicleBrand = document.getElementById(“vehicleBrand”);
 
-const vehicleModel =
-    document.getElementById("vehicleModel");
+const vehicleModel = document.getElementById(“vehicleModel”);
 
-const vehicleVariant =
-    document.getElementById("vehicleVariant");
+const vehicleVariant = document.getElementById(“vehicleVariant”);
 
-const vehicleNumber =
-    document.getElementById("vehicleNumber");
+const vehicleNumber = document.getElementById(“vehicleNumber”);
 
-const chassisNumber =
-    document.getElementById("chassisNumber");
+const chassisNumber = document.getElementById(“chassisNumber”);
 
-const engineNumber =
-    document.getElementById("engineNumber");
+const engineNumber = document.getElementById(“engineNumber”);
 
-const manufacturingYear =
-    document.getElementById("manufacturingYear");
+const manufacturingYear = document.getElementById(“manufacturingYear”);
 
-const registrationDate =
-    document.getElementById("registrationDate");
+const registrationDate = document.getElementById(“registrationDate”);
 
-const vehicleColour =
-    document.getElementById("vehicleColour");
+const vehicleColour = document.getElementById(“vehicleColour”);
 
-const showroomName =
-    document.getElementById("showroomName");
+const showroomName = document.getElementById(“showroomName”);
 
-const showroomBookingId =
-    document.getElementById("showroomBookingId");
+const showroomBookingId = document.getElementById(“showroomBookingId”);
 
-const bookingRequired =
-    document.getElementById("bookingRequired");
+const bookingRequired = document.getElementById(“bookingRequired”);
 
-const vehicleCost =
-    document.getElementById("vehicleCost");
+const vehicleCost = document.getElementById(“vehicleCost”);
 
-const downPayment =
-    document.getElementById("downPayment");
-
+const downPayment = document.getElementById(“downPayment”);
 
 // Loan
 
-const loanAmount =
-    document.getElementById("loanAmount");
+const loanAmount = document.getElementById(“loanAmount”);
 
-const interestRate =
-    document.getElementById("interestRate");
+const interestRate = document.getElementById(“interestRate”);
 
-const interestType =
-    document.getElementById("interestType");
+const interestType = document.getElementById(“interestType”);
 
-const tenure =
-    document.getElementById("tenure");
+const tenure = document.getElementById(“tenure”);
 
 const repaymentFrequency =
-    document.getElementById("repaymentFrequency");
+document.getElementById(“repaymentFrequency”);
 
-const loanDate =
-    document.getElementById("loanDate");
+const loanDate = document.getElementById(“loanDate”);
 
-const firstDueDate =
-    document.getElementById("firstDueDate");
+const firstDueDate = document.getElementById(“firstDueDate”);
 
-const processingFee =
-    document.getElementById("processingFee");
+const processingFee = document.getElementById(“processingFee”);
 
+// ===================================================== // DOCUMENTS //
+=====================================================
+
+const docAadhaar = document.getElementById(“docAadhaar”);
+
+const docPan = document.getElementById(“docPan”);
+
+const docRc = document.getElementById(“docRc”);
+
+const docInsurance = document.getElementById(“docInsurance”);
+
+const docInvoice = document.getElementById(“docInvoice”);
+
+const docOther = document.getElementById(“docOther”);
 
 // Actions
 
-const saveLoanBtn =
-    document.getElementById("saveLoanBtn");
+const saveLoanBtn = document.getElementById(“saveLoanBtn”);
 
-const message =
-    document.getElementById("message");
+const message = document.getElementById(“message”);
 
-
-// =====================================================
-// DATA
-// =====================================================
+// ===================================================== // DATA //
+=====================================================
 
 let currentUser = null;
 
@@ -173,9 +138,7 @@ let customers = [];
 
 let previousLoans = [];
 
-
-// =====================================================
-// DEFAULT DATE
+// ===================================================== // DEFAULT DATE
 // =====================================================
 
 function setDefaultDates() {
@@ -199,10 +162,8 @@ function setDefaultDates() {
 
 }
 
-
-// =====================================================
-// FORMAT CURRENCY
-// =====================================================
+// ===================================================== // FORMAT
+CURRENCY // =====================================================
 
 function formatCurrency(value) {
 
@@ -219,15 +180,10 @@ function formatCurrency(value) {
 
 }
 
-
-// =====================================================
-// SHOW MESSAGE
+// ===================================================== // SHOW MESSAGE
 // =====================================================
 
-function showMessage(
-    text,
-    type = "error"
-) {
+function showMessage( text, type = “error” ) {
 
     if (!message) {
         return;
@@ -241,10 +197,8 @@ function showMessage(
 
 }
 
-
-// =====================================================
-// CLEAR MESSAGE
-// =====================================================
+// ===================================================== // CLEAR
+MESSAGE // =====================================================
 
 function clearMessage() {
 
@@ -260,10 +214,8 @@ function clearMessage() {
 
 }
 
-
-// =====================================================
-// NORMALIZE TEXT
-// =====================================================
+// ===================================================== // NORMALIZE
+TEXT // =====================================================
 
 function normalizeText(value) {
 
@@ -275,10 +227,8 @@ function normalizeText(value) {
 
 }
 
-
-// =====================================================
-// LOAD CUSTOMERS
-// =====================================================
+// ===================================================== // LOAD
+CUSTOMERS // =====================================================
 
 async function loadCustomers() {
 
@@ -454,10 +404,8 @@ async function loadCustomers() {
 
 }
 
-
-// =====================================================
-// CUSTOMER SELECTION
-// =====================================================
+// ===================================================== // CUSTOMER
+SELECTION // =====================================================
 
 async function handleCustomerSelection() {
 
@@ -541,24 +489,15 @@ async function handleCustomerSelection() {
 
 }
 
+// ===================================================== // CUSTOMER
+EVENT // =====================================================
 
-// =====================================================
-// CUSTOMER EVENT
-// =====================================================
+customerSelect.addEventListener( “change”, handleCustomerSelection );
 
-customerSelect.addEventListener(
-    "change",
-    handleCustomerSelection
-);
+// ===================================================== // LOAN TYPE
+CHANGE // =====================================================
 
-
-// =====================================================
-// LOAN TYPE CHANGE
-// =====================================================
-
-loanType.addEventListener(
-    "change",
-    async function () {
+loanType.addEventListener( “change”, async function () {
 
         clearMessage();
 
@@ -626,12 +565,11 @@ loanType.addEventListener(
         }
 
     }
+
 );
 
-
-// =====================================================
-// RESET PREVIOUS LOAN
-// =====================================================
+// ===================================================== // RESET
+PREVIOUS LOAN // =====================================================
 
 function resetPreviousLoanSection() {
 
@@ -672,14 +610,11 @@ function resetPreviousLoanSection() {
 
 }
 
+// ===================================================== // LOAD
+PREVIOUS CLOSED LOANS //
+=====================================================
 
-// =====================================================
-// LOAD PREVIOUS CLOSED LOANS
-// =====================================================
-
-async function loadPreviousLoans(
-    customerDocumentId
-) {
+async function loadPreviousLoans( customerDocumentId ) {
 
     try {
 
@@ -820,10 +755,6 @@ async function loadPreviousLoans(
 
             `;
 
-            showMessage(
-                "ReLoan requires a previous completed/closed loan for this customer."
-            );
-
         }
 
     } catch (error) {
@@ -842,14 +773,10 @@ async function loadPreviousLoans(
 
 }
 
+// ===================================================== // PREVIOUS
+LOAN SELECTION // =====================================================
 
-// =====================================================
-// PREVIOUS LOAN SELECTION
-// =====================================================
-
-previousLoanSelect.addEventListener(
-    "change",
-    function () {
+previousLoanSelect.addEventListener( “change”, function () {
 
         const selectedId =
             this.value;
@@ -952,11 +879,10 @@ previousLoanSelect.addEventListener(
         );
 
     }
+
 );
 
-
-// =====================================================
-// CALCULATION
+// ===================================================== // CALCULATION
 // =====================================================
 
 function calculateLoan() {
@@ -1160,19 +1086,12 @@ function calculateLoan() {
 
 }
 
+// ===================================================== // LIVE
+CALCULATION EVENTS //
+=====================================================
 
-// =====================================================
-// LIVE CALCULATION EVENTS
-// =====================================================
-
-[
-    loanAmount,
-    interestRate,
-    interestType,
-    tenure,
-    processingFee
-].forEach(
-    element => {
+[ loanAmount, interestRate, interestType, tenure,
+processingFee].forEach( element => {
 
         element.addEventListener(
             "input",
@@ -1186,12 +1105,11 @@ function calculateLoan() {
         );
 
     }
+
 );
 
-
-// =====================================================
-// GET LOAN PREFIX
-// =====================================================
+// ===================================================== // GET LOAN
+PREFIX // =====================================================
 
 async function getLoanPrefix() {
 
@@ -1249,14 +1167,10 @@ async function getLoanPrefix() {
 
 }
 
+// ===================================================== // GENERATE
+LOAN ID // =====================================================
 
-// =====================================================
-// GENERATE LOAN ID
-// =====================================================
-
-async function generateLoanId(
-    transaction
-) {
+async function generateLoanId( transaction ) {
 
     const counterRef =
         doc(
@@ -1332,10 +1246,8 @@ async function generateLoanId(
 
 }
 
-
-// =====================================================
-// CHECK DUPLICATES
-// =====================================================
+// ===================================================== // CHECK
+DUPLICATES // =====================================================
 
 async function checkVehicleDuplicates() {
 
@@ -1496,10 +1408,8 @@ async function checkVehicleDuplicates() {
 
 }
 
-
-// =====================================================
-// VALIDATE FORM
-// =====================================================
+// ===================================================== // VALIDATE
+FORM // =====================================================
 
 function validateLoanForm() {
 
@@ -1679,10 +1589,38 @@ function validateLoanForm() {
 
 }
 
+// ===================================================== // COLLECT
+DOCUMENT DETAILS //
+=====================================================
 
-// =====================================================
-// SAVE LOAN
-// =====================================================
+function getDocumentDetails() {
+
+    return {
+
+        aadhaar:
+            docAadhaar?.value || "pending",
+
+        pan:
+            docPan?.value || "pending",
+
+        rcBook:
+            docRc?.value || "pending",
+
+        insurance:
+            docInsurance?.value || "pending",
+
+        saleInvoice:
+            docInvoice?.value || "pending",
+
+        other:
+            docOther?.value.trim() || ""
+
+    };
+
+}
+
+// ===================================================== // SAVE LOAN //
+=====================================================
 
 async function saveLoan() {
 
@@ -1886,6 +1824,13 @@ async function saveLoan() {
                                     : null,
 
                             // ---------------------------------
+                            // DOCUMENTS
+                            // ---------------------------------
+
+                            documents:
+                                getDocumentDetails(),
+
+                            // ---------------------------------
                             // VEHICLE
                             // ---------------------------------
 
@@ -2047,6 +1992,33 @@ async function saveLoan() {
         loanForm.reset();
 
 
+        // Reset document fields to safe defaults
+
+        if (docAadhaar) {
+            docAadhaar.value = "pending";
+        }
+
+        if (docPan) {
+            docPan.value = "pending";
+        }
+
+        if (docRc) {
+            docRc.value = "pending";
+        }
+
+        if (docInsurance) {
+            docInsurance.value = "pending";
+        }
+
+        if (docInvoice) {
+            docInvoice.value = "pending";
+        }
+
+        if (docOther) {
+            docOther.value = "";
+        }
+
+
         customerInfo.classList.remove(
             "show"
         );
@@ -2110,14 +2082,10 @@ async function saveLoan() {
 
 }
 
-
-// =====================================================
-// FORM SUBMIT
+// ===================================================== // FORM SUBMIT
 // =====================================================
 
-loanForm.addEventListener(
-    "submit",
-    async function(event) {
+loanForm.addEventListener( “submit”, async function(event) {
 
         event.preventDefault();
 
@@ -2136,16 +2104,13 @@ loanForm.addEventListener(
         await saveLoan();
 
     }
+
 );
 
+// ===================================================== // AUTH //
+=====================================================
 
-// =====================================================
-// AUTH
-// =====================================================
-
-onAuthStateChanged(
-    auth,
-    async function(user) {
+onAuthStateChanged( auth, async function(user) {
 
         if (!user) {
 
@@ -2168,4 +2133,5 @@ onAuthStateChanged(
         await loadCustomers();
 
     }
+
 );
