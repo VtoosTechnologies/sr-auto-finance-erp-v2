@@ -1905,27 +1905,94 @@ async function savePayment() {
                  * installment.
                  */
 
-                let newPaidInstallments =
-                    oldPaidInstallments;
+              // =====================================
+// INSTALLMENT CALCULATION
+// =====================================
+
+const monthlyInstallment =
+    numberValue(
+        latestLoan.installmentAmount ??
+        latestLoan.monthlyInstallment ??
+        latestLoan.emi
+    );
 
 
-                if (
-                    monthlyInstallment > 0 &&
-                    amount >= monthlyInstallment
-                ) {
-
-                    const fullInstallments =
-                        Math.floor(
-                            amount /
-                            monthlyInstallment
-                        );
+const previousTotalPaid =
+    numberValue(
+        latestLoan.totalPaid ??
+        latestLoan.paidAmount ??
+        latestLoan.totalCollection
+    );
 
 
-                    newPaidInstallments +=
-                        fullInstallments;
+const newTotalPaid =
+    previousTotalPaid +
+    amount;
 
-                }
 
+// =====================================
+// PAID INSTALLMENTS
+// =====================================
+
+const totalInstallments =
+    numberValue(
+        latestLoan.totalInstallments ??
+        latestLoan.installments ??
+        latestLoan.duration ??
+        latestLoan.loanDuration ??
+        latestLoan.tenure
+    );
+
+
+let newPaidInstallments = 0;
+
+
+if (
+    monthlyInstallment > 0
+) {
+
+    newPaidInstallments =
+        Math.floor(
+            newTotalPaid /
+            monthlyInstallment
+        );
+
+}
+
+
+if (
+    totalInstallments > 0
+) {
+
+    newPaidInstallments =
+        Math.min(
+            newPaidInstallments,
+            totalInstallments
+        );
+
+}
+
+
+// =====================================
+// PENDING INSTALLMENTS
+// =====================================
+
+let newPendingInstallments =
+    0;
+
+
+if (
+    totalInstallments > 0
+) {
+
+    newPendingInstallments =
+        Math.max(
+            totalInstallments -
+            newPaidInstallments,
+            0
+        );
+
+}
 
                 // =====================================
                 // PENDING INSTALLMENTS
