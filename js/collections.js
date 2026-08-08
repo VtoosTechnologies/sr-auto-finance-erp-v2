@@ -1863,7 +1863,8 @@ function updatePaymentPreview() {
 
     const penalty =
         automaticPenalty.amount;
-
+const totalReceived =
+    amount + penalty;
 
     if (penaltyCollected) {
 
@@ -1875,10 +1876,11 @@ function updatePaymentPreview() {
     }
 
 
-    const newOutstanding =
+const newOutstanding =
     Math.max(
         outstanding -
-        amount,
+        amount +
+        penalty,
         0
     );
 
@@ -2637,8 +2639,8 @@ async function savePayment() {
                     penaltyCollected:
                         penalty,
 
-                  totalReceived:
-    amount,
+          totalReceived:
+    amount + penalty,
 
                     balanceAfterPayment:
                         balanceAfterPayment,
@@ -2824,15 +2826,17 @@ async function savePayment() {
             currentLoan.pendingInstallments;
 
 
-      currentLoan.outstanding =
+  currentLoan.outstanding =
     Math.max(
         numberValue(
             currentLoan.outstanding
         ) -
-        amount,
+        amount +
+        numberValue(
+            savedPayment?.penaltyCollected
+        ),
         0
     );
-
 
         currentLoan.lastPaymentDate =
             date;
