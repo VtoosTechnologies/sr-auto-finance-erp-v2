@@ -1,321 +1,247 @@
-/* ==========================================================
-   SR AUTO FINANCE ERP
-   Customer Module
-   Developed By : VTOOS Software Solutions
-========================================================== */
-
-import { db } from "./firebase.js";
+// =====================================================
+// SR AUTO FINANCE ERP
+// Customers Controller
+// File: js/customers.js
+// =====================================================
 
 import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+import {
     collection,
-    doc,
-    getDocs,
-    getDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
-    query,
-    orderBy,
-    where,
-    serverTimestamp
-
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+    getDocs
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
+    auth,
+    db
+} from "./firebase-config.js";
 
-    showLoader,
-    hideLoader,
-    showMessage
 
-} from "./common.js";
+// =====================================================
+// ELEMENTS
+// =====================================================
 
-/* ==========================================================
-   COLLECTION
-========================================================== */
+const tableBody =
+    document.getElementById("customerTableBody");
 
-const customerCollection = collection(
-
-    db,
-
-    "customers"
-
-);
-
-/* ==========================================================
-   DOM
-========================================================== */
-
-const searchBox =
-
-    document.getElementById("searchCustomer");
-
-const customerTable =
-
-    document.getElementById("customerTable");
+const searchInput =
+    document.getElementById("searchInput");
 
 const totalCustomers =
-
     document.getElementById("totalCustomers");
 
 const activeCustomers =
-
     document.getElementById("activeCustomers");
 
-const dueCustomers =
+const inactiveCustomers =
+    document.getElementById("inactiveCustomers");
 
-    document.getElementById("dueCustomers");
 
-const loanCustomers =
-
-    document.getElementById("loanCustomers");
-
-const addCustomerBtn =
-
-    document.getElementById("addCustomerBtn");
-
-/* ==========================================================
-   GLOBAL
-========================================================== */
+// =====================================================
+// DATA
+// =====================================================
 
 let customers = [];
 
-let filteredCustomers = [];
 
-/* ==========================================================
-   INITIALIZE
-========================================================== */
+// =====================================================
+// ESCAPE HTML
+// =====================================================
 
-document.addEventListener(
+function escapeHTML(value) {
 
-    "DOMContentLoaded",
-
-    () => {
-
-        initialize();
-
-    }
-
-);
-
-async function initialize(){
-
-    setupEvents();
-
-    await loadCustomers();
-
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
-/* ==========================================================
-   EVENTS
-========================================================== */
 
-function setupEvents(){
+// =====================================================
+// LOAD CUSTOMERS
+// =====================================================
 
-    if(searchBox){
+async function loadCustomers() {
 
-        searchBox.addEventListener(
+    try {
 
-            "input",
+        showLoading();
 
-            searchCustomers
-
-        );
-
-    }
-
-    if(addCustomerBtn){
-
-        addCustomerBtn.addEventListener(
-
-            "click",
-
-            openCustomerModal
-
-        );
-
-    }
-
-}
-
-/* ==========================================================
-   LOAD CUSTOMERS
-========================================================== */
-
-async function loadCustomers(){
-
-    showLoader();
-
-    try{
-
-        const q = query(
-
-            customerCollection,
-
-            orderBy(
-
-                "customerName"
-
-            )
-
-        );
+        const customersRef =
+            collection(db, "customers");
 
         const snapshot =
+            await getDocs(customersRef);
 
-            await getDocs(q);
 
         customers = [];
 
-        snapshot.forEach(doc=>{
+
+        snapshot.forEach((docSnapshot) => {
+
+            const data =
+                docSnapshot.data();
+
 
             customers.push({
 
-                id:doc.id,
+                id: docSnapshot.id,
 
-                ...doc.data()
+                ...data
 
             });
 
         });
 
-        filteredCustomers=[
 
-            ...customers
+        // Newest first
+        customers.sort((a, b) => {
 
-        ];
+            const dateA =
+                getDateValue(a.createdAt);
+
+            const dateB =
+                getDateValue(b.createdAt);
+
+            return dateB - dateA;
+
+        });
+
 
         updateSummary();
 
-        renderTable();
+        renderCustomers(customers);
 
-    }
 
-    catch(error){
+    } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Customer loading error:",
+            error
+        );
 
-        showMessage(
-
-            "Unable to load customers.",
-
-            "error"
-
+        showError(
+            "Unable to load customers. Please try again."
         );
 
     }
-
-    hideLoader();
 
 }
-/* ==========================================================
-   SEARCH
-========================================================== */
 
-function searchCustomers(){
 
-    const keyword =
+// =====================================================
+// DATE VALUE
+// =====================================================
 
-        searchBox.value
-            .toLowerCase()
-            .trim();
+function getDateValue(value) {
 
-    filteredCustomers = customers.filter(customer=>{
+    if (!value) {
+        return 0;
+    }
 
-        return (
 
-            (customer.customerName || "")
-                .toLowerCase()
-                .includes(keyword)
+    if (
+        value &&
+        typeof value.toDate === "function"
+    ) {
 
-            ||
+        return value.toDate().getTime();
 
-            (customer.mobile || "")
-                .includes(keyword)
+    }
 
-            ||
 
-            (customer.customerId || "")
-                .toLowerCase()
-                .includes(keyword)
+    const date =
+        new Date(value);
 
-            ||
 
-            (customer.aadhaar || "")
-                .includes(keyword)
+    if (!isNaN(date.getTime())) {
 
-            ||
+        return date.getTime();
 
-            (customer.vehicleNumber || "")
-                .toLowerCase()
-                .includes(keyword)
+    }
 
-        );
+
+    return 0;
+
+}
+
+
+// =====================================================
+// UPDATE SUMMARY
+// =====================================================
+
+function updateSummary() {
+
+    let active = 0;
+    let inactive = 0;
+
+
+    customers.forEach((customer) => {
+
+        const status =
+            String(
+                customer.status ?? "Active"
+            ).toLowerCase();
+
+
+        if (
+            status === "active"
+        ) {
+
+            active++;
+
+        } else {
+
+            inactive++;
+
+        }
 
     });
 
-    renderTable();
-
-}
-
-/* ==========================================================
-   SUMMARY
-========================================================== */
-
-function updateSummary(){
 
     totalCustomers.textContent =
-
         customers.length;
 
+
     activeCustomers.textContent =
+        active;
 
-        customers.filter(
 
-            customer=>customer.status==="Active"
-
-        ).length;
-
-    dueCustomers.textContent =
-
-        customers.filter(
-
-            customer=>customer.dueToday===true
-
-        ).length;
-
-    loanCustomers.textContent =
-
-        customers.filter(
-
-            customer=>
-
-            Number(customer.loanCount)>0
-
-        ).length;
+    inactiveCustomers.textContent =
+        inactive;
 
 }
 
-/* ==========================================================
-   TABLE
-========================================================== */
 
-function renderTable(){
+// =====================================================
+// RENDER CUSTOMERS
+// =====================================================
 
-    if(!customerTable) return;
+function renderCustomers(list) {
 
-    customerTable.innerHTML="";
+    if (!list.length) {
 
-    if(filteredCustomers.length===0){
-
-        customerTable.innerHTML=`
+        tableBody.innerHTML = `
 
             <tr>
 
-                <td
-                    colspan="6"
-                    style="text-align:center;padding:40px;">
+                <td colspan="6">
 
-                    No Customers Found
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            👤
+                        </div>
+
+                        <p>
+                            No customers found.
+                        </p>
+
+                    </div>
 
                 </td>
 
@@ -327,289 +253,284 @@ function renderTable(){
 
     }
 
-    filteredCustomers.forEach(customer=>{
 
-        customerTable.innerHTML += `
+    tableBody.innerHTML =
+        list.map((customer) => {
 
-<tr>
+            const customerId =
+                customer.customerId ||
+                customer.customerCode ||
+                customer.id ||
+                "-";
 
-<td>
 
-${customer.customerId || "-"}
+            const name =
+                customer.name ||
+                customer.customerName ||
+                "-";
 
-</td>
 
-<td>
+            const mobile =
+                customer.mobile ||
+                customer.phone ||
+                customer.mobileNumber ||
+                "-";
 
-${customer.customerName || "-"}
 
-</td>
+            const location =
+                customer.location ||
+                customer.city ||
+                customer.address?.city ||
+                "-";
 
-<td>
 
-${customer.mobile || "-"}
+            const status =
+                String(
+                    customer.status ?? "Active"
+                );
 
-</td>
 
-<td>
+            const isActive =
+                status.toLowerCase() === "active";
 
-${customer.loanCount || 0}
 
-</td>
+            return `
 
-<td>
+                <tr>
 
-<span class="badge badge-success">
+                    <td>
 
-${customer.status || "Active"}
+                        <span class="customer-id">
+                            ${escapeHTML(customerId)}
+                        </span>
 
-</span>
+                    </td>
 
-</td>
 
-<td>
+                    <td>
 
-<button
-class="icon-btn"
-onclick="viewCustomer('${customer.id}')">
+                        <span class="customer-name">
+                            ${escapeHTML(name)}
+                        </span>
 
-<span class="material-symbols-rounded">
+                    </td>
 
-visibility
 
-</span>
+                    <td>
+                        ${escapeHTML(mobile)}
+                    </td>
 
-</button>
 
-<button
-class="icon-btn"
-onclick="editCustomer('${customer.id}')">
+                    <td>
+                        ${escapeHTML(location)}
+                    </td>
 
-<span class="material-symbols-rounded">
 
-edit
+                    <td>
 
-</span>
+                        <span class="status ${
+                            isActive
+                                ? "active"
+                                : "inactive"
+                        }">
 
-</button>
+                            ${escapeHTML(status)}
 
-<button
-class="icon-btn"
-onclick="newLoan('${customer.id}')">
+                        </span>
 
-<span class="material-symbols-rounded">
+                    </td>
 
-account_balance_wallet
 
-</span>
+                    <td>
 
-</button>
+                        <button
+                            class="action-btn"
+                            data-id="${escapeHTML(customer.id)}"
+                            onclick="viewCustomer(this.dataset.id)"
+                        >
+                            View
+                        </button>
 
-</td>
+                    </td>
 
-</tr>
+                </tr>
 
-`;
+            `;
 
-    });
-
-}
-/* ==========================================================
-   AUTO CUSTOMER ID
-========================================================== */
-
-async function generateCustomerId(){
-
-    return "CUS" +
-
-        String(customers.length + 1)
-
-        .padStart(6,"0");
-
-}
-
-/* ==========================================================
-   DUPLICATE MOBILE
-========================================================== */
-
-function isDuplicateMobile(mobile){
-
-    return customers.some(customer =>
-
-        customer.mobile === mobile
-
-    );
+        }).join("");
 
 }
 
-/* ==========================================================
-   DUPLICATE AADHAAR
-========================================================== */
 
-function isDuplicateAadhaar(aadhaar){
+// =====================================================
+// SEARCH
+// =====================================================
 
-    if(!aadhaar) return false;
+searchInput.addEventListener(
+    "input",
+    function () {
 
-    return customers.some(customer =>
+        const search =
+            this.value
+                .trim()
+                .toLowerCase();
 
-        customer.aadhaar === aadhaar
 
-    );
+        if (!search) {
 
-}
+            renderCustomers(customers);
 
-/* ==========================================================
-   MODAL
-========================================================== */
-
-function openCustomerModal(){
-
-    const modal =
-
-        document.getElementById("customerModal");
-
-    if(modal){
-
-        modal.classList.remove("hidden");
-
-    }
-
-}
-
-function closeCustomerModal(){
-
-    const modal =
-
-        document.getElementById("customerModal");
-
-    if(modal){
-
-        modal.classList.add("hidden");
-
-    }
-
-}
-
-const closeModalButton =
-
-document.getElementById("closeCustomerModal");
-
-if(closeModalButton){
-
-    closeModalButton.addEventListener(
-
-        "click",
-
-        closeCustomerModal
-
-    );
-
-}
-
-/* ==========================================================
-   VIEW CUSTOMER
-========================================================== */
-
-window.viewCustomer = async function(id){
-
-    try{
-
-        const customerRef =
-
-            doc(db,"customers",id);
-
-        const customerSnap =
-
-            await getDoc(customerRef);
-
-        if(customerSnap.exists()){
-
-            console.log(
-
-                customerSnap.data()
-
-            );
-
-            showMessage(
-
-                "Customer details loaded.",
-
-                "success"
-
-            );
+            return;
 
         }
 
+
+        const filtered =
+            customers.filter((customer) => {
+
+                const customerId =
+                    String(
+                        customer.customerId ||
+                        customer.customerCode ||
+                        customer.id ||
+                        ""
+                    ).toLowerCase();
+
+
+                const name =
+                    String(
+                        customer.name ||
+                        customer.customerName ||
+                        ""
+                    ).toLowerCase();
+
+
+                const mobile =
+                    String(
+                        customer.mobile ||
+                        customer.phone ||
+                        customer.mobileNumber ||
+                        ""
+                    ).toLowerCase();
+
+
+                return (
+                    customerId.includes(search) ||
+                    name.includes(search) ||
+                    mobile.includes(search)
+                );
+
+            });
+
+
+        renderCustomers(filtered);
+
+    }
+);
+
+
+// =====================================================
+// VIEW CUSTOMER
+// =====================================================
+
+window.viewCustomer = function(customerId) {
+
+    if (!customerId) {
+        return;
     }
 
-    catch(error){
-
-        console.error(error);
-
-        showMessage(
-
-            "Unable to load customer.",
-
-            "error"
-
-        );
-
-    }
-
-};
-
-/* ==========================================================
-   EDIT CUSTOMER
-========================================================== */
-
-window.editCustomer = function(id){
-
-    console.log(
-
-        "Edit Customer :",id
-
-    );
-
-    showMessage(
-
-        "Edit feature will be enabled.",
-
-        "success"
-
-    );
-
-};
-
-/* ==========================================================
-   NEW LOAN
-========================================================== */
-
-window.newLoan = function(id){
-
-    sessionStorage.setItem(
-
-        "selectedCustomer",
-
-        id
-
-    );
 
     window.location.href =
-
-        "loan.html";
+        `customer-view.html?id=${encodeURIComponent(customerId)}`;
 
 };
 
-/* ==========================================================
-   REFRESH
-========================================================== */
 
-export async function refreshCustomers(){
+// =====================================================
+// LOADING
+// =====================================================
 
-    await loadCustomers();
+function showLoading() {
+
+    tableBody.innerHTML = `
+
+        <tr>
+
+            <td colspan="6">
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        ⏳
+                    </div>
+
+                    <p>
+                        Loading customers...
+                    </p>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    `;
 
 }
 
-/* ==========================================================
-   END
-========================================================== */
+
+// =====================================================
+// ERROR
+// =====================================================
+
+function showError(message) {
+
+    tableBody.innerHTML = `
+
+        <tr>
+
+            <td colspan="6">
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        ⚠️
+                    </div>
+
+                    <p>
+                        ${escapeHTML(message)}
+                    </p>
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    `;
+
+}
+
+
+// =====================================================
+// AUTH CHECK
+// =====================================================
+
+onAuthStateChanged(
+    auth,
+    async function(user) {
+
+        if (!user) {
+
+            window.location.href =
+                "login.html";
+
+            return;
+
+        }
+
+
+        await loadCustomers();
+
+    }
+);
