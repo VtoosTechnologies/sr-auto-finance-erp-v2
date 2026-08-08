@@ -13,7 +13,10 @@ import {
     collection,
     doc,
     getDoc,
-    getDocs
+    getDocs,
+    query,
+    orderBy,
+    limit
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -58,43 +61,10 @@ const logoutBtn =
 
 
 // =====================================================
-// OPTIONAL NEW DASHBOARD ELEMENTS
-// =====================================================
-// Existing dashboard-la indha IDs irundha,
-// automatic-aa live data show aagum.
-// IDs illana existing dashboard break aagathu.
-// =====================================================
-
-const totalLoansElement =
-    document.getElementById("totalLoans");
-
-const totalCollectedElement =
-    document.getElementById("totalCollected");
-
-const todayDueElement =
-    document.getElementById("todayDue");
-
-const overdueDueElement =
-    document.getElementById("overdueDue");
-
-const totalDueAccountsElement =
-    document.getElementById("totalDueAccounts");
-
-const upcomingDueElement =
-    document.getElementById("upcomingDue");
-
-const activeCustomersElement =
-    document.getElementById("activeCustomers");
-
-
-// =====================================================
 // FORMAT CURRENCY
 // =====================================================
 
-function formatCurrency(amount) {
-
-    const value =
-        Number(amount) || 0;
+function formatCurrency(value) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -103,19 +73,6 @@ function formatCurrency(amount) {
             currency: "INR",
             maximumFractionDigits: 0
         }
-    ).format(value);
-
-}
-
-
-// =====================================================
-// FORMAT NUMBER
-// =====================================================
-
-function formatNumber(value) {
-
-    return new Intl.NumberFormat(
-        "en-IN"
     ).format(
         Number(value) || 0
     );
@@ -124,41 +81,18 @@ function formatNumber(value) {
 
 
 // =====================================================
-// GET TODAY DATE
+// FORMAT DATE
 // =====================================================
 
-function getTodayDate() {
-
-    const today =
-        new Date();
-
-    const year =
-        today.getFullYear();
-
-    const month =
-        String(
-            today.getMonth() + 1
-        ).padStart(2, "0");
-
-    const day =
-        String(
-            today.getDate()
-        ).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
-
-}
-
-
-// =====================================================
-// GET DATE OBJECT
-// =====================================================
-
-function getDateObject(value) {
+function formatDate(value) {
 
     if (!value) {
-        return null;
+        return "-";
     }
+
+
+    let date;
+
 
     try {
 
@@ -167,59 +101,134 @@ function getDateObject(value) {
             typeof value.toDate === "function"
         ) {
 
-            return value.toDate();
+            date = value.toDate();
+
+        } else {
+
+            date = new Date(value);
 
         }
 
-        const date =
-            new Date(value);
+    } catch {
 
-        if (
-            isNaN(
-                date.getTime()
-            )
-        ) {
-
-            return null;
-
-        }
-
-        return date;
-
-    } catch (error) {
-
-        return null;
+        return "-";
 
     }
+
+
+    if (
+        !date ||
+        isNaN(date.getTime())
+    ) {
+
+        return "-";
+
+    }
+
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
 
 }
 
 
 // =====================================================
-// DATE KEY
+// FORMAT DATE + TIME
 // =====================================================
 
-function getDateKey(value) {
+function formatDateTime(value) {
 
-    const date =
-        getDateObject(value);
-
-    if (!date) {
-        return "";
+    if (!value) {
+        return "-";
     }
 
+
+    let date;
+
+
+    try {
+
+        if (
+            value &&
+            typeof value.toDate === "function"
+        ) {
+
+            date = value.toDate();
+
+        } else {
+
+            date = new Date(value);
+
+        }
+
+    } catch {
+
+        return "-";
+
+    }
+
+
+    if (
+        !date ||
+        isNaN(date.getTime())
+    ) {
+
+        return "-";
+
+    }
+
+
+    return date.toLocaleString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        }
+    );
+
+}
+
+
+// =====================================================
+// GET TODAY KEY
+// =====================================================
+
+function getTodayKey() {
+
+    const today =
+        new Date();
+
+
     const year =
-        date.getFullYear();
+        today.getFullYear();
+
 
     const month =
         String(
-            date.getMonth() + 1
-        ).padStart(2, "0");
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
 
     const day =
         String(
-            date.getDate()
-        ).padStart(2, "0");
+            today.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
 
     return `${year}-${month}-${day}`;
 
@@ -227,44 +236,142 @@ function getDateKey(value) {
 
 
 // =====================================================
-// IS TODAY
+// GET DATE KEY
 // =====================================================
 
-function isToday(value) {
+function getDateKey(value) {
 
-    return (
-        getDateKey(value) ===
-        getTodayDate()
-    );
-
-}
-
-
-// =====================================================
-// IS THIS MONTH
-// =====================================================
-
-function isThisMonth(value) {
-
-    const date =
-        getDateObject(value);
-
-    if (!date) {
-        return false;
+    if (!value) {
+        return "";
     }
 
-    const today =
-        new Date();
 
-    return (
+    let date;
 
-        date.getFullYear() ===
-        today.getFullYear()
 
-        &&
+    try {
 
-        date.getMonth() ===
-        today.getMonth()
+        if (
+            value &&
+            typeof value.toDate === "function"
+        ) {
+
+            date = value.toDate();
+
+        } else {
+
+            date = new Date(value);
+
+        }
+
+    } catch {
+
+        return "";
+
+    }
+
+
+    if (
+        !date ||
+        isNaN(date.getTime())
+    ) {
+
+        return "";
+
+    }
+
+
+    const year =
+        date.getFullYear();
+
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+// =====================================================
+// GET LOAN TOTAL
+// =====================================================
+
+function getLoanTotal(loan) {
+
+    if (
+        loan.totalPayable !== undefined &&
+        loan.totalPayable !== null
+    ) {
+
+        return Number(
+            loan.totalPayable
+        ) || 0;
+
+    }
+
+
+    if (
+        loan.totalAmount !== undefined &&
+        loan.totalAmount !== null
+    ) {
+
+        return Number(
+            loan.totalAmount
+        ) || 0;
+
+    }
+
+
+    const principal =
+        Number(
+            loan.loanAmount ??
+            loan.principalAmount ??
+            loan.amount ??
+            0
+        );
+
+
+    const interest =
+        Number(
+            loan.interestAmount ??
+            0
+        );
+
+
+    return principal + interest;
+
+}
+
+
+// =====================================================
+// GET LOAN PAID
+// =====================================================
+
+function getLoanPaid(loan) {
+
+    return Number(
+
+        loan.amountPaid ??
+
+        loan.paidAmount ??
+
+        0
 
     );
 
@@ -272,18 +379,63 @@ function isThisMonth(value) {
 
 
 // =====================================================
-// START OF TODAY
+// GET OUTSTANDING
 // =====================================================
 
-function getTodayStart() {
+function getOutstanding(loan) {
 
-    const today =
-        new Date();
+    if (
+        loan.outstandingAmount !== undefined &&
+        loan.outstandingAmount !== null
+    ) {
 
-    return new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
+        return Math.max(
+            Number(
+                loan.outstandingAmount
+            ) || 0,
+            0
+        );
+
+    }
+
+
+    if (
+        loan.balanceAmount !== undefined &&
+        loan.balanceAmount !== null
+    ) {
+
+        return Math.max(
+            Number(
+                loan.balanceAmount
+            ) || 0,
+            0
+        );
+
+    }
+
+
+    if (
+        loan.pendingAmount !== undefined &&
+        loan.pendingAmount !== null
+    ) {
+
+        return Math.max(
+            Number(
+                loan.pendingAmount
+            ) || 0,
+            0
+        );
+
+    }
+
+
+    return Math.max(
+
+        getLoanTotal(loan) -
+        getLoanPaid(loan),
+
+        0
+
     );
 
 }
@@ -304,11 +456,16 @@ async function loadUserProfile(user) {
                 user.uid
             );
 
+
         const userSnap =
-            await getDoc(userRef);
+            await getDoc(
+                userRef
+            );
 
 
-        if (!userSnap.exists()) {
+        if (
+            !userSnap.exists()
+        ) {
 
             console.error(
                 "User profile not found."
@@ -319,7 +476,7 @@ async function loadUserProfile(user) {
             window.location.href =
                 "login.html";
 
-            return null;
+            return false;
 
         }
 
@@ -328,16 +485,14 @@ async function loadUserProfile(user) {
             userSnap.data();
 
 
-        // ---------------------------------------------
-        // Account validation
-        // ---------------------------------------------
-
         const active =
             userData.active === true;
 
+
         const status =
             String(
-                userData.status || ""
+                userData.status ||
+                ""
             ).toLowerCase();
 
 
@@ -351,14 +506,10 @@ async function loadUserProfile(user) {
             window.location.href =
                 "login.html";
 
-            return null;
+            return false;
 
         }
 
-
-        // ---------------------------------------------
-        // Display user
-        // ---------------------------------------------
 
         const name =
             userData.name ||
@@ -371,7 +522,9 @@ async function loadUserProfile(user) {
             "Staff";
 
 
-        if (userNameElement) {
+        if (
+            userNameElement
+        ) {
 
             userNameElement.textContent =
                 name;
@@ -379,7 +532,9 @@ async function loadUserProfile(user) {
         }
 
 
-        if (userRoleElement) {
+        if (
+            userRoleElement
+        ) {
 
             userRoleElement.textContent =
                 role;
@@ -387,7 +542,9 @@ async function loadUserProfile(user) {
         }
 
 
-        if (welcomeTextElement) {
+        if (
+            welcomeTextElement
+        ) {
 
             welcomeTextElement.textContent =
                 `Welcome back, ${name}. Here's your business overview.`;
@@ -395,8 +552,7 @@ async function loadUserProfile(user) {
         }
 
 
-        return userData;
-
+        return true;
 
     } catch (error) {
 
@@ -405,7 +561,7 @@ async function loadUserProfile(user) {
             error
         );
 
-        return null;
+        return false;
 
     }
 
@@ -429,24 +585,14 @@ async function loadCompanySettings() {
 
 
         const companySnap =
-            await getDoc(companyRef);
+            await getDoc(
+                companyRef
+            );
 
 
-        if (!companySnap.exists()) {
-
-            if (companyInfoElement) {
-
-                companyInfoElement.innerHTML = `
-                    <div class="empty-icon">
-                        🏢
-                    </div>
-
-                    <p>
-                        Company information not configured.
-                    </p>
-                `;
-
-            }
+        if (
+            !companySnap.exists()
+        ) {
 
             return;
 
@@ -470,6 +616,7 @@ async function loadCompanySettings() {
 
         const mobile =
             company.mobile ||
+            company.phone ||
             "";
 
 
@@ -478,11 +625,9 @@ async function loadCompanySettings() {
             "";
 
 
-        // ---------------------------------------------
-        // Header company name
-        // ---------------------------------------------
-
-        if (companyNameElement) {
+        if (
+            companyNameElement
+        ) {
 
             companyNameElement.textContent =
                 companyName;
@@ -490,27 +635,30 @@ async function loadCompanySettings() {
         }
 
 
-        // ---------------------------------------------
-        // Company information panel
-        // ---------------------------------------------
-
-        if (companyInfoElement) {
+        if (
+            companyInfoElement
+        ) {
 
             companyInfoElement.innerHTML = `
 
-                <div style="
-                    text-align:left;
-                    color:#334155;
-                    line-height:1.8;
-                    font-size:12px;
-                ">
+                <div
+                    style="
+                        text-align:left;
+                        line-height:1.8;
+                        font-size:12px;
+                        color:#334155;
+                    "
+                >
 
-                    <strong style="
-                        font-size:14px;
-                        color:#0f172a;
-                    ">
+                    <div
+                        style="
+                            font-size:14px;
+                            font-weight:800;
+                            color:#0f172a;
+                        "
+                    >
                         ${companyName}
-                    </strong>
+                    </div>
 
                     ${
                         ownerName
@@ -550,7 +698,6 @@ async function loadCompanySettings() {
 
         }
 
-
     } catch (error) {
 
         console.error(
@@ -558,349 +705,83 @@ async function loadCompanySettings() {
             error
         );
 
-
-        if (companyInfoElement) {
-
-            companyInfoElement.innerHTML = `
-
-                <div class="empty-icon">
-                    ⚠️
-                </div>
-
-                <p>
-                    Unable to load company information.
-                </p>
-
-            `;
-
-        }
-
     }
 
 }
 
 
 // =====================================================
-// LOAD CUSTOMER DATA
+// LOAD CUSTOMERS
 // =====================================================
 
-async function loadCustomerData() {
+async function loadCustomers() {
 
     try {
 
-        const customersRef =
-            collection(
-                db,
-                "customers"
-            );
-
-
         const snapshot =
             await getDocs(
-                customersRef
+                collection(
+                    db,
+                    "customers"
+                )
             );
 
 
-        const totalCustomers =
-            snapshot.size;
-
-
-        if (totalCustomersElement) {
+        if (
+            totalCustomersElement
+        ) {
 
             totalCustomersElement.textContent =
-                formatNumber(
-                    totalCustomers
-                );
+                snapshot.size;
 
         }
-
-
-        if (activeCustomersElement) {
-
-            let activeCustomers =
-                0;
-
-
-            snapshot.forEach(
-                customerDoc => {
-
-                    const customer =
-                        customerDoc.data();
-
-
-                    const status =
-                        String(
-                            customer.status ||
-                            "active"
-                        ).toLowerCase();
-
-
-                    if (
-                        status === "active"
-                    ) {
-
-                        activeCustomers++;
-
-                    }
-
-                }
-            );
-
-
-            activeCustomersElement.textContent =
-                formatNumber(
-                    activeCustomers
-                );
-
-        }
-
-
-        return totalCustomers;
 
 
     } catch (error) {
 
         console.error(
-            "Customer data error:",
+            "Customer loading error:",
             error
         );
 
 
-        if (totalCustomersElement) {
+        if (
+            totalCustomersElement
+        ) {
 
             totalCustomersElement.textContent =
                 "0";
 
         }
 
-
-        return 0;
-
     }
 
 }
 
 
 // =====================================================
-// GET LOAN TOTAL PAYABLE
+// LOAD LOANS
 // =====================================================
 
-function getLoanTotalPayable(loan) {
-
-    const storedTotal =
-        loan.totalPayable ??
-        loan.totalAmount;
-
-
-    if (
-        storedTotal !== undefined &&
-        storedTotal !== null
-    ) {
-
-        return Math.max(
-            Number(storedTotal) || 0,
-            0
-        );
-
-    }
-
-
-    const principal =
-        Number(
-            loan.loanAmount ??
-            loan.principalAmount ??
-            loan.amount ??
-            0
-        );
-
-
-    const interest =
-        Number(
-            loan.interestAmount ??
-            0
-        );
-
-
-    return Math.max(
-        principal + interest,
-        0
-    );
-
-}
-
-
-// =====================================================
-// GET LOAN PAID
-// =====================================================
-
-function getLoanPaid(loan) {
-
-    return Number(
-
-        loan.amountPaid ??
-
-        loan.paidAmount ??
-
-        0
-
-    );
-
-}
-
-
-// =====================================================
-// GET LOAN OUTSTANDING
-// =====================================================
-
-function getLoanOutstanding(loan) {
-
-    const storedBalance =
-
-        loan.outstandingAmount ??
-
-        loan.balanceAmount ??
-
-        loan.pendingAmount ??
-
-        loan.remainingAmount;
-
-
-    if (
-        storedBalance !== undefined &&
-        storedBalance !== null
-    ) {
-
-        return Math.max(
-            Number(
-                storedBalance
-            ) || 0,
-            0
-        );
-
-    }
-
-
-    const total =
-        getLoanTotalPayable(
-            loan
-        );
-
-
-    const paid =
-        getLoanPaid(
-            loan
-        );
-
-
-    return Math.max(
-        total - paid,
-        0
-    );
-
-}
-
-
-// =====================================================
-// GET INSTALLMENT
-// =====================================================
-
-function getInstallmentAmount(loan) {
-
-    const installment =
-        Number(
-
-            loan.installmentAmount ??
-
-            loan.emiAmount ??
-
-            loan.monthlyInstallment ??
-
-            loan.weeklyInstallment ??
-
-            loan.dailyInstallment ??
-
-            0
-
-        );
-
-
-    return installment;
-
-}
-
-
-// =====================================================
-// GET DUE DATE
-// =====================================================
-
-function getLoanDueDate(loan) {
-
-    return (
-
-        loan.nextDueDate ||
-
-        loan.dueDate ||
-
-        loan.nextPaymentDate ||
-
-        loan.firstDueDate
-
-    );
-
-}
-
-
-// =====================================================
-// LOAD LOAN DATA
-// =====================================================
-
-async function loadLoanData() {
+async function loadLoans() {
 
     try {
 
-        const loansRef =
-            collection(
-                db,
-                "loans"
-            );
-
-
         const snapshot =
             await getDocs(
-                loansRef
+                collection(
+                    db,
+                    "loans"
+                )
             );
-
-
-        let totalLoans =
-            snapshot.size;
 
 
         let activeLoans =
             0;
 
 
-        let outstanding =
+        let totalOutstanding =
             0;
-
-
-        let todayDue =
-            0;
-
-
-        let overdueDue =
-            0;
-
-
-        let upcomingDue =
-            0;
-
-
-        let totalDueAccounts =
-            0;
-
-
-        const today =
-            getTodayStart();
 
 
         snapshot.forEach(
@@ -913,32 +794,30 @@ async function loadLoanData() {
                 const status =
                     String(
                         loan.status ||
-                        ""
+                        "Active"
                     ).toLowerCase();
 
 
-                const balance =
-                    getLoanOutstanding(
+                const outstanding =
+                    getOutstanding(
                         loan
                     );
 
 
-                // -----------------------------------------
-                // Active loan
-                // -----------------------------------------
+                const isClosed =
 
-                const isActive =
+                    status === "closed" ||
 
-                    status === "active" ||
+                    status === "cancelled" ||
 
-                    status === "running" ||
+                    status === "canceled" ||
 
-                    status === "open";
+                    status === "completed";
 
 
                 if (
-                    isActive &&
-                    balance > 0
+                    !isClosed &&
+                    outstanding > 0
                 ) {
 
                     activeLoans++;
@@ -946,143 +825,12 @@ async function loadLoanData() {
                 }
 
 
-                // -----------------------------------------
-                // Outstanding
-                // -----------------------------------------
-
                 if (
-                    balance > 0
+                    outstanding > 0
                 ) {
 
-                    outstanding +=
-                        balance;
-
-                }
-
-
-                // -----------------------------------------
-                // Ignore closed loans for dues
-                // -----------------------------------------
-
-                if (
-
-                    !isActive ||
-
-                    balance <= 0
-
-                ) {
-
-                    return;
-
-                }
-
-
-                // -----------------------------------------
-                // Due date
-                // -----------------------------------------
-
-                const dueDateValue =
-                    getLoanDueDate(
-                        loan
-                    );
-
-
-                const dueDate =
-                    getDateObject(
-                        dueDateValue
-                    );
-
-
-                if (!dueDate) {
-
-                    return;
-
-                }
-
-
-                const dueOnly =
-                    new Date(
-                        dueDate.getFullYear(),
-                        dueDate.getMonth(),
-                        dueDate.getDate()
-                    );
-
-
-                let dueAmount =
-                    getInstallmentAmount(
-                        loan
-                    );
-
-
-                /*
-                 * If installment amount is not
-                 * stored, use outstanding as fallback.
-                 */
-
-                if (
-                    dueAmount <= 0
-                ) {
-
-                    dueAmount =
-                        balance;
-
-                }
-
-
-                /*
-                 * Due cannot exceed outstanding.
-                 */
-
-                dueAmount =
-                    Math.min(
-                        dueAmount,
-                        balance
-                    );
-
-
-                // -----------------------------------------
-                // Today
-                // -----------------------------------------
-
-                if (
-                    dueOnly.getTime() ===
-                    today.getTime()
-                ) {
-
-                    todayDue +=
-                        dueAmount;
-
-                    totalDueAccounts++;
-
-                }
-
-
-                // -----------------------------------------
-                // Overdue
-                // -----------------------------------------
-
-                else if (
-                    dueOnly < today
-                ) {
-
-                    overdueDue +=
-                        dueAmount;
-
-                    totalDueAccounts++;
-
-                }
-
-
-                // -----------------------------------------
-                // Upcoming
-                // -----------------------------------------
-
-                else {
-
-                    upcomingDue +=
-                        dueAmount;
-
-                    totalDueAccounts++;
+                    totalOutstanding +=
+                        outstanding;
 
                 }
 
@@ -1090,112 +838,39 @@ async function loadLoanData() {
         );
 
 
-        // ---------------------------------------------
-        // Existing dashboard cards
-        // ---------------------------------------------
-
-        if (activeLoansElement) {
+        if (
+            activeLoansElement
+        ) {
 
             activeLoansElement.textContent =
-                formatNumber(
-                    activeLoans
-                );
+                activeLoans;
 
         }
 
 
-        if (outstandingElement) {
+        if (
+            outstandingElement
+        ) {
 
             outstandingElement.textContent =
                 formatCurrency(
-                    outstanding
+                    totalOutstanding
                 );
 
         }
-
-
-        // ---------------------------------------------
-        // Optional dashboard cards
-        // ---------------------------------------------
-
-        if (totalLoansElement) {
-
-            totalLoansElement.textContent =
-                formatNumber(
-                    totalLoans
-                );
-
-        }
-
-
-        if (todayDueElement) {
-
-            todayDueElement.textContent =
-                formatCurrency(
-                    todayDue
-                );
-
-        }
-
-
-        if (overdueDueElement) {
-
-            overdueDueElement.textContent =
-                formatCurrency(
-                    overdueDue
-                );
-
-        }
-
-
-        if (upcomingDueElement) {
-
-            upcomingDueElement.textContent =
-                formatCurrency(
-                    upcomingDue
-                );
-
-        }
-
-
-        if (totalDueAccountsElement) {
-
-            totalDueAccountsElement.textContent =
-                formatNumber(
-                    totalDueAccounts
-                );
-
-        }
-
-
-        return {
-
-            totalLoans,
-
-            activeLoans,
-
-            outstanding,
-
-            todayDue,
-
-            overdueDue,
-
-            upcomingDue,
-
-            totalDueAccounts
-
-        };
 
 
     } catch (error) {
 
         console.error(
-            "Loan data error:",
+            "Loan loading error:",
             error
         );
 
 
-        if (activeLoansElement) {
+        if (
+            activeLoansElement
+        ) {
 
             activeLoansElement.textContent =
                 "0";
@@ -1203,15 +878,14 @@ async function loadLoanData() {
         }
 
 
-        if (outstandingElement) {
+        if (
+            outstandingElement
+        ) {
 
             outstandingElement.textContent =
                 formatCurrency(0);
 
         }
-
-
-        return null;
 
     }
 
@@ -1219,105 +893,27 @@ async function loadLoanData() {
 
 
 // =====================================================
-// GET COLLECTION AMOUNT
+// LOAD TODAY'S COLLECTION
 // =====================================================
 
-function getCollectionAmount(data) {
-
-    return Number(
-
-        data.amount ??
-
-        data.paidAmount ??
-
-        data.collectionAmount ??
-
-        data.paymentAmount ??
-
-        0
-
-    );
-
-}
-
-
-// =====================================================
-// GET COLLECTION DATE
-// =====================================================
-
-function getCollectionDate(data) {
-
-    return (
-
-        data.paymentDate ||
-
-        data.collectionDate ||
-
-        data.date ||
-
-        data.createdAt
-
-    );
-
-}
-
-
-// =====================================================
-// CHECK VALID COLLECTION
-// =====================================================
-
-function isValidCollection(data) {
-
-    const status =
-        String(
-            data.status ||
-            "Success"
-        ).toLowerCase();
-
-
-    return (
-
-        status !== "cancelled" &&
-
-        status !== "canceled" &&
-
-        status !== "reversed"
-
-    );
-
-}
-
-
-// =====================================================
-// LOAD COLLECTION DATA
-// =====================================================
-
-async function loadCollectionData() {
+async function loadTodayCollection() {
 
     try {
 
-        const collectionsRef =
-            collection(
-                db,
-                "collections"
-            );
-
-
         const snapshot =
             await getDocs(
-                collectionsRef
+                collection(
+                    db,
+                    "collections"
+                )
             );
 
 
-        let totalCollected =
-            0;
+        const todayKey =
+            getTodayKey();
 
 
-        let todayCollected =
-            0;
-
-
-        let monthCollected =
+        let todayAmount =
             0;
 
 
@@ -1328,10 +924,48 @@ async function loadCollectionData() {
                     collectionDoc.data();
 
 
+                const status =
+                    String(
+                        data.status ||
+                        "Success"
+                    ).toLowerCase();
+
+
                 if (
-                    !isValidCollection(
-                        data
-                    )
+
+                    status === "cancelled" ||
+
+                    status === "canceled" ||
+
+                    status === "reversed"
+
+                ) {
+
+                    return;
+
+                }
+
+
+                const paymentDate =
+
+                    data.paymentDate ||
+
+                    data.collectionDate ||
+
+                    data.date ||
+
+                    data.createdAt;
+
+
+                const paymentKey =
+                    getDateKey(
+                        paymentDate
+                    );
+
+
+                if (
+                    paymentKey !==
+                    todayKey
                 ) {
 
                     return;
@@ -1340,51 +974,25 @@ async function loadCollectionData() {
 
 
                 const amount =
-                    getCollectionAmount(
-                        data
+                    Number(
+
+                        data.amount ??
+
+                        data.paidAmount ??
+
+                        data.paymentAmount ??
+
+                        0
+
                     );
 
 
-                const collectionDate =
-                    getCollectionDate(
-                        data
-                    );
-
-
-                totalCollected +=
+                todayAmount +=
                     amount;
-
-
-                if (
-                    isToday(
-                        collectionDate
-                    )
-                ) {
-
-                    todayCollected +=
-                        amount;
-
-                }
-
-
-                if (
-                    isThisMonth(
-                        collectionDate
-                    )
-                ) {
-
-                    monthCollected +=
-                        amount;
-
-                }
 
             }
         );
 
-
-        // ---------------------------------------------
-        // Existing dashboard card
-        // ---------------------------------------------
 
         if (
             todayCollectionElement
@@ -1392,43 +1000,15 @@ async function loadCollectionData() {
 
             todayCollectionElement.textContent =
                 formatCurrency(
-                    todayCollected
+                    todayAmount
                 );
 
         }
-
-
-        // ---------------------------------------------
-        // Optional dashboard cards
-        // ---------------------------------------------
-
-        if (
-            totalCollectedElement
-        ) {
-
-            totalCollectedElement.textContent =
-                formatCurrency(
-                    totalCollected
-                );
-
-        }
-
-
-        return {
-
-            totalCollected,
-
-            todayCollected,
-
-            monthCollected
-
-        };
-
 
     } catch (error) {
 
         console.error(
-            "Collection data error:",
+            "Today's collection error:",
             error
         );
 
@@ -1442,8 +1022,392 @@ async function loadCollectionData() {
 
         }
 
+    }
 
-        return null;
+}
+
+
+// =====================================================
+// LOAD RECENT COLLECTIONS
+// =====================================================
+
+async function loadRecentCollections() {
+
+    try {
+
+        const panel =
+            document.querySelector(
+                ".bottom-grid .panel:first-child"
+            );
+
+
+        if (!panel) {
+            return;
+        }
+
+
+        const existingEmpty =
+            panel.querySelector(
+                ".empty-state"
+            );
+
+
+        const collectionsRef =
+            collection(
+                db,
+                "collections"
+            );
+
+
+        let snapshot;
+
+
+        try {
+
+            const recentQuery =
+                query(
+                    collectionsRef,
+                    orderBy(
+                        "createdAt",
+                        "desc"
+                    ),
+                    limit(5)
+                );
+
+
+            snapshot =
+                await getDocs(
+                    recentQuery
+                );
+
+        } catch (indexError) {
+
+            /*
+             * If Firestore index is not available,
+             * fallback to normal collection read.
+             */
+
+            console.warn(
+                "Recent collection query fallback:",
+                indexError
+            );
+
+
+            snapshot =
+                await getDocs(
+                    collectionsRef
+                );
+
+        }
+
+
+        const records = [];
+
+
+        snapshot.forEach(
+            collectionDoc => {
+
+                const data =
+                    collectionDoc.data();
+
+
+                const status =
+                    String(
+                        data.status ||
+                        "Success"
+                    ).toLowerCase();
+
+
+                if (
+
+                    status === "cancelled" ||
+
+                    status === "canceled" ||
+
+                    status === "reversed"
+
+                ) {
+
+                    return;
+
+                }
+
+
+                records.push({
+
+                    id:
+                        collectionDoc.id,
+
+                    ...data
+
+                });
+
+            }
+        );
+
+
+        /*
+         * If fallback query returned all records,
+         * sort manually and keep latest five.
+         */
+
+        records.sort(
+            (a, b) => {
+
+                const dateA =
+                    a.createdAt &&
+                    typeof a.createdAt.toDate ===
+                    "function"
+
+                        ? a.createdAt.toDate()
+                        : new Date(
+                            a.paymentDate ||
+                            a.collectionDate ||
+                            0
+                        );
+
+
+                const dateB =
+                    b.createdAt &&
+                    typeof b.createdAt.toDate ===
+                    "function"
+
+                        ? b.createdAt.toDate()
+                        : new Date(
+                            b.paymentDate ||
+                            b.collectionDate ||
+                            0
+                        );
+
+
+                return (
+                    dateB.getTime() -
+                    dateA.getTime()
+                );
+
+            }
+        );
+
+
+        const latest =
+            records.slice(
+                0,
+                5
+            );
+
+
+        if (!latest.length) {
+
+            return;
+
+        }
+
+
+        if (
+            existingEmpty
+        ) {
+
+            existingEmpty.remove();
+
+        }
+
+
+        const list =
+            document.createElement(
+                "div"
+            );
+
+
+        list.style.display =
+            "flex";
+
+        list.style.flexDirection =
+            "column";
+
+        list.style.gap =
+            "10px";
+
+
+        latest.forEach(
+            payment => {
+
+                const receiptNo =
+                    payment.receiptNo ||
+                    payment.receiptNumber ||
+                    payment.id;
+
+
+                const customerName =
+                    payment.customerName ||
+                    "Customer";
+
+
+                const amount =
+                    Number(
+
+                        payment.amount ??
+
+                        payment.paidAmount ??
+
+                        0
+
+                    );
+
+
+                const paymentMode =
+                    payment.paymentMode ||
+                    payment.mode ||
+                    "";
+
+
+                const paymentDate =
+                    payment.paymentDate ||
+                    payment.collectionDate ||
+                    payment.createdAt;
+
+
+                const row =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                row.style.display =
+                    "flex";
+
+                row.style.alignItems =
+                    "center";
+
+                row.style.justifyContent =
+                    "space-between";
+
+                row.style.gap =
+                    "12px";
+
+                row.style.padding =
+                    "11px";
+
+                row.style.border =
+                    "1px solid #e2e8f0";
+
+                row.style.borderRadius =
+                    "10px";
+
+                row.style.background =
+                    "#f8fafc";
+
+                row.style.cursor =
+                    "pointer";
+
+
+                row.innerHTML = `
+
+                    <div
+                        style="
+                            min-width:0;
+                            flex:1;
+                        "
+                    >
+
+                        <div
+                            style="
+                                font-size:12px;
+                                font-weight:700;
+                                color:#0f172a;
+                                white-space:nowrap;
+                                overflow:hidden;
+                                text-overflow:ellipsis;
+                            "
+                        >
+                            ${customerName}
+                        </div>
+
+                        <div
+                            style="
+                                font-size:10px;
+                                color:#64748b;
+                                margin-top:3px;
+                            "
+                        >
+                            ${receiptNo}
+                            ${
+                                paymentMode
+                                    ? ` • ${paymentMode}`
+                                    : ""
+                            }
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        style="
+                            text-align:right;
+                            flex-shrink:0;
+                        "
+                    >
+
+                        <div
+                            style="
+                                font-size:13px;
+                                font-weight:800;
+                                color:#15803d;
+                            "
+                        >
+                            ${formatCurrency(
+                                amount
+                            )}
+                        </div>
+
+                        <div
+                            style="
+                                font-size:9px;
+                                color:#94a3b8;
+                                margin-top:3px;
+                            "
+                        >
+                            ${formatDate(
+                                paymentDate
+                            )}
+                        </div>
+
+                    </div>
+
+                `;
+
+
+                row.addEventListener(
+                    "click",
+                    function() {
+
+                        window.location.href =
+                            `collection-view.html?id=${encodeURIComponent(
+                                payment.id
+                            )}`;
+
+                    }
+                );
+
+
+                list.appendChild(
+                    row
+                );
+
+            }
+        );
+
+
+        panel.appendChild(
+            list
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Recent collections error:",
+            error
+        );
 
     }
 
@@ -1511,10 +1475,6 @@ onAuthStateChanged(
     auth,
     async function(user) {
 
-        // ---------------------------------------------
-        // Not logged in
-        // ---------------------------------------------
-
         if (!user) {
 
             window.location.href =
@@ -1525,36 +1485,34 @@ onAuthStateChanged(
         }
 
 
-        // ---------------------------------------------
-        // Load user
-        // ---------------------------------------------
-
-        const userData =
+        const validUser =
             await loadUserProfile(
                 user
             );
 
 
-        if (!userData) {
-
+        if (!validUser) {
             return;
-
         }
 
 
-        // ---------------------------------------------
-        // Load dashboard data
-        // ---------------------------------------------
+        /*
+         * Load dashboard data
+         * independently so one failure
+         * does not break the complete dashboard.
+         */
 
         await Promise.all([
 
             loadCompanySettings(),
 
-            loadCustomerData(),
+            loadCustomers(),
 
-            loadLoanData(),
+            loadLoans(),
 
-            loadCollectionData()
+            loadTodayCollection(),
+
+            loadRecentCollections()
 
         ]);
 
