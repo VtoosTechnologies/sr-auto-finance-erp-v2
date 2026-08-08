@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <title>
+        Reports | SR Auto Finance ERP
+    </title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #1e293b;
+
+        }
+
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        .header {
+
+            height: 70px;
+
+            background: #0f172a;
+
+            color: white;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 100;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.15);
+
+        }
+
+
+        .brand-area {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .brand-logo {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 12px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-text h1 {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-text p {
+
+            font-size: 10px;
+
+            color: #94a3b8;
+
+            margin-top: 2px;
+
+        }
+
+
+        .back-btn {
+
+            border:
+                1px solid
+                #475569;
+
+            background: transparent;
+
+            color: white;
+
+            padding:
+                9px 13px;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+        }
+
+
+        .back-btn:hover {
+
+            background: #1e293b;
+
+        }
+
+
+        /* =========================================
+           MAIN
+        ========================================= */
+
+        .main {
+
+            max-width: 1350px;
+
+            margin: auto;
+
+            padding: 25px;
+
+        }
+
+
+        /* =========================================
+           PAGE HEADER
+        ========================================= */
+
+        .page-header {
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .page-header h2 {
+
+            font-size: 25px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .page-header p {
+
+            margin-top: 5px;
+
+            font-size: 12px;
+
+            color: #64748b;
+
+        }
+
+
+        /* =========================================
+           REPORT CARDS
+        ========================================= */
+
+        .report-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, 1fr);
+
+            gap: 16px;
+
+        }
+
+
+        .report-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 16px;
+
+            padding: 20px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 18px;
+
+            transition:
+                transform .2s ease,
+                box-shadow .2s ease;
+
+        }
+
+
+        .report-card:hover {
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 10px 25px
+                rgba(15,23,42,0.08);
+
+        }
+
+
+        .report-left {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            min-width: 0;
+
+        }
+
+
+        .report-icon {
+
+            width: 48px;
+
+            height: 48px;
+
+            border-radius: 13px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 21px;
+
+            flex-shrink: 0;
+
+            background: #eff6ff;
+
+        }
+
+
+        .report-info h3 {
+
+            font-size: 14px;
+
+            color: #0f172a;
+
+            font-weight: 800;
+
+        }
+
+
+        .report-info p {
+
+            font-size: 11px;
+
+            color: #64748b;
+
+            margin-top: 4px;
+
+            line-height: 1.5;
+
+        }
+
+
+        .report-btn {
+
+            border: none;
+
+            background: #2563eb;
+
+            color: white;
+
+            padding:
+                9px 13px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            flex-shrink: 0;
+
+        }
+
+
+        .report-btn:hover {
+
+            background: #1d4ed8;
+
+        }
+
+
+        /* =========================================
+           SUMMARY
+        ========================================= */
+
+        .summary-section {
+
+            margin-top: 25px;
+
+        }
+
+
+        .section-title {
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+            margin-bottom: 13px;
+
+        }
+
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+
+        }
+
+
+        .summary-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 17px;
+
+        }
+
+
+        .summary-label {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+        }
+
+
+        .summary-value {
+
+            margin-top: 7px;
+
+            font-size: 21px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .summary-value.green {
+
+            color: #15803d;
+
+        }
+
+
+        .summary-value.blue {
+
+            color: #2563eb;
+
+        }
+
+
+        .summary-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        /* =========================================
+           MOBILE
+        ========================================= */
+
+        @media (max-width: 850px) {
+
+            .summary-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+
+        @media (max-width: 650px) {
+
+            .header {
+
+                height: 64px;
+
+                padding:
+                    0 14px;
+
+            }
+
+
+            .brand-text p {
+
+                display: none;
+
+            }
+
+
+            .main {
+
+                padding:
+                    18px 13px;
+
+            }
+
+
+            .page-header h2 {
+
+                font-size: 21px;
+
+            }
+
+
+            .report-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .report-card {
+
+                padding: 16px;
+
+            }
+
+
+            .report-icon {
+
+                width: 43px;
+
+                height: 43px;
+
+            }
+
+
+            .summary-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+                gap: 9px;
+
+            }
+
+
+            .summary-card {
+
+                padding:
+                    13px 11px;
+
+            }
+
+
+            .summary-value {
+
+                font-size: 18px;
+
+            }
+
+        }
+
+
+        @media (max-width: 380px) {
+
+            .summary-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     HEADER
+========================================= -->
+
+<header class="header">
+
+
+    <div class="brand-area">
+
+        <div class="brand-logo">
+            SR
+        </div>
+
+
+        <div class="brand-text">
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-btn"
+        onclick="location.href='dashboard.html'"
+    >
+        ← Dashboard
+    </button>
+
+</header>
+
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<main class="main">
+
+
+    <section class="page-header">
+
+        <h2>
+            Reports
+        </h2>
+
+        <p>
+            View and analyze your finance business reports
+        </p>
+
+    </section>
+
+
+
+    <!-- =========================================
+         REPORT OPTIONS
+    ========================================== -->
+
+    <section class="report-grid">
+
+
+        <!-- COLLECTION REPORT -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    💰
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Collection Report
+                    </h3>
+
+                    <p>
+                        Daily, monthly and date-wise
+                        payment collection details.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('collection')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+
+        <!-- LOAN REPORT -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    📋
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Loan Report
+                    </h3>
+
+                    <p>
+                        View loan accounts, status,
+                        amount and repayment details.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('loan')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+
+        <!-- CUSTOMER REPORT -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    👥
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Customer Report
+                    </h3>
+
+                    <p>
+                        Customer list, active accounts
+                        and customer-wise loan details.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('customer')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+
+        <!-- OUTSTANDING REPORT -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    💳
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Outstanding Report
+                    </h3>
+
+                    <p>
+                        Track pending balances and
+                        loan-wise outstanding amounts.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('outstanding')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+
+        <!-- DUE REPORT -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    📅
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Due / Overdue Report
+                    </h3>
+
+                    <p>
+                        Today's due, upcoming due and
+                        overdue payment accounts.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('due')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+
+        <!-- PROFIT REPORT - FUTURE -->
+
+        <div class="report-card">
+
+            <div class="report-left">
+
+                <div class="report-icon">
+                    📈
+                </div>
+
+
+                <div class="report-info">
+
+                    <h3>
+                        Business Summary
+                    </h3>
+
+                    <p>
+                        Overall business performance
+                        and finance summary.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                class="report-btn"
+                onclick="openReport('summary')"
+            >
+                Open
+            </button>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================================
+         LIVE SUMMARY
+    ========================================== -->
+
+    <section class="summary-section">
+
+
+        <div class="section-title">
+            Current Business Summary
+        </div>
+
+
+        <div class="summary-grid">
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Total Customers
+                </div>
+
+                <div
+                    class="summary-value"
+                    id="totalCustomers"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Active Loans
+                </div>
+
+                <div
+                    class="summary-value blue"
+                    id="activeLoans"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Total Collected
+                </div>
+
+                <div
+                    class="summary-value green"
+                    id="totalCollected"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Outstanding
+                </div>
+
+                <div
+                    class="summary-value red"
+                    id="outstanding"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+
+<script
+    type="module"
+    src="js/reports.js"
+></script>
+
+
+</body>
+
+</html>
