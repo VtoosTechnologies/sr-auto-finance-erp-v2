@@ -1,0 +1,949 @@
+/* ==========================================================
+   SR AUTO FINANCE ERP
+   Customers Styles
+   Developed By : VTOOS Software Solutions
+==========================================================*/
+
+/* ==========================================================
+   PAGE
+==========================================================*/
+
+.customers-page{
+
+    min-height:100vh;
+
+    background:var(--bg);
+
+    padding:20px;
+
+    padding-bottom:100px;
+
+}
+
+/* ==========================================================
+   HEADER
+==========================================================*/
+
+.page-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.header-left h1{
+
+    font-size:28px;
+
+    font-weight:700;
+
+    color:var(--text);
+
+}
+
+.header-left span{
+
+    color:var(--text-light);
+
+    font-size:14px;
+
+}
+
+.header-right{
+
+    display:flex;
+
+    gap:12px;
+
+}
+
+.icon-btn{
+
+    width:46px;
+
+    height:46px;
+
+    border-radius:14px;
+
+    background:#fff;
+
+    border:1px solid var(--border);
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    cursor:pointer;
+
+    transition:.30s;
+
+    box-shadow:var(--shadow-sm);
+
+}
+
+.icon-btn:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:var(--shadow-md);
+
+}
+
+.icon-btn span{
+
+    color:var(--primary);
+
+}
+
+/* ==========================================================
+   SEARCH
+==========================================================*/
+
+.search-section{
+
+    display:grid;
+
+    grid-template-columns:1fr auto;
+
+    gap:15px;
+
+    margin-bottom:20px;
+
+}
+
+.search-box{
+
+    display:flex;
+
+    align-items:center;
+
+    background:#fff;
+
+    border:1px solid var(--border);
+
+    border-radius:14px;
+
+    padding:0 15px;
+
+    height:56px;
+
+}
+
+.search-box input{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    font-size:15px;
+
+    margin-left:10px;
+
+}
+
+.search-box span{
+
+    color:var(--primary);
+
+}
+
+.search-section .btn{
+
+    min-width:180px;
+
+}
+
+/* ==========================================================
+   FILTER
+==========================================================*/
+
+.filter-section{
+
+    display:flex;
+
+    gap:12px;
+
+    flex-wrap:wrap;
+
+    margin-bottom:25px;
+
+}
+
+.filter-btn{
+
+    padding:10px 18px;
+
+    border-radius:30px;
+
+    border:1px solid var(--border);
+
+    background:#fff;
+
+    cursor:pointer;
+
+    transition:.30s;
+
+    font-weight:600;
+
+}
+
+.filter-btn.active{
+
+    background:var(--primary);
+
+    color:#fff;
+
+    border-color:var(--primary);
+
+}
+
+.filter-btn:hover{
+
+    transform:translateY(-2px);
+
+}
+
+/* ==========================================================
+   SUMMARY GRID
+==========================================================*/
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:18px;
+
+    margin-bottom:25px;
+
+}
+
+.summary-card{
+
+    background:#fff;
+
+    border-radius:18px;
+
+    padding:22px;
+
+    border:1px solid var(--border);
+
+    box-shadow:var(--shadow-sm);
+
+    transition:.30s;
+
+}
+
+.summary-card:hover{
+
+    transform:translateY(-4px);
+
+    box-shadow:var(--shadow-md);
+
+}
+
+.summary-card span{
+
+    font-size:34px;
+
+    color:var(--primary);
+
+}
+
+.summary-card h2{
+
+    margin:12px 0 6px;
+
+    font-size:30px;
+
+    font-weight:700;
+
+}
+
+.summary-card p{
+
+    color:var(--text-light);
+
+    font-size:14px;
+
+}
+/* ==========================================================
+   CUSTOMER GRID
+==========================================================*/
+
+.customer-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:18px;
+
+    margin-bottom:30px;
+
+}
+
+/* ==========================================================
+   CUSTOMER CARD
+==========================================================*/
+
+.customer-card{
+
+    background:#ffffff;
+
+    border-radius:20px;
+
+    border:1px solid var(--border);
+
+    padding:20px;
+
+    box-shadow:var(--shadow-sm);
+
+    transition:all .30s ease;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.customer-card:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:var(--shadow-lg);
+
+}
+
+.customer-card::before{
+
+    content:"";
+
+    position:absolute;
+
+    top:0;
+
+    left:0;
+
+    width:100%;
+
+    height:5px;
+
+    background:linear-gradient(
+
+        90deg,
+
+        #2563eb,
+
+        #1d4ed8
+
+    );
+
+}
+
+/* ==========================================================
+   CUSTOMER HEADER
+==========================================================*/
+
+.customer-top{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    margin-bottom:18px;
+
+}
+
+.customer-avatar{
+
+    width:60px;
+
+    height:60px;
+
+    border-radius:18px;
+
+    background:#dbeafe;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+.customer-avatar span{
+
+    font-size:32px;
+
+    color:#2563eb;
+
+}
+
+.customer-info{
+
+    flex:1;
+
+    margin-left:15px;
+
+}
+
+.customer-info h3{
+
+    font-size:18px;
+
+    font-weight:700;
+
+    color:var(--text);
+
+}
+
+.customer-info small{
+
+    color:var(--text-light);
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+   STATUS
+==========================================================*/
+
+.status{
+
+    padding:6px 14px;
+
+    border-radius:30px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+}
+
+.status.active{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+.status.closed{
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+}
+
+/* ==========================================================
+   CUSTOMER DETAILS
+==========================================================*/
+
+.customer-details{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+    margin-bottom:20px;
+
+}
+
+.customer-details p{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    font-size:14px;
+
+    color:var(--text-light);
+
+}
+
+.customer-details span{
+
+    color:#2563eb;
+
+}
+
+/* ==========================================================
+   ACTIONS
+==========================================================*/
+
+.customer-actions{
+
+    display:grid;
+
+    grid-template-columns:repeat(3,1fr);
+
+    gap:10px;
+
+}
+
+.customer-actions .btn{
+
+    padding:10px;
+
+    font-size:13px;
+
+}
+
+/* ==========================================================
+   TABLE
+==========================================================*/
+
+.table-section{
+
+    background:#ffffff;
+
+    border-radius:20px;
+
+    padding:20px;
+
+    border:1px solid var(--border);
+
+    box-shadow:var(--shadow-sm);
+
+}
+
+.table-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:18px;
+
+}
+
+.table-header h2{
+
+    font-size:20px;
+
+    font-weight:700;
+
+}
+
+.table-wrapper{
+
+    overflow:auto;
+
+}
+
+.table-wrapper table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.table-wrapper thead{
+
+    background:#2563eb;
+
+    color:#ffffff;
+
+}
+
+.table-wrapper th{
+
+    padding:15px;
+
+    text-align:left;
+
+    font-size:14px;
+
+}
+
+.table-wrapper td{
+
+    padding:15px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    vertical-align:middle;
+
+}
+
+.table-wrapper tbody tr:hover{
+
+    background:#f8fafc;
+
+}
+/* ==========================================================
+   FLOATING ADD BUTTON
+========================================================== */
+
+.floating-add-btn{
+
+    position:fixed;
+
+    right:25px;
+
+    bottom:95px;
+
+    width:65px;
+
+    height:65px;
+
+    border-radius:50%;
+
+    background:linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    color:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    box-shadow:0 15px 30px rgba(37,99,235,.35);
+
+    cursor:pointer;
+
+    z-index:999;
+
+    transition:all .30s ease;
+
+}
+
+.floating-add-btn:hover{
+
+    transform:scale(1.08);
+
+}
+
+.floating-add-btn span{
+
+    font-size:34px;
+
+}
+
+/* ==========================================================
+   MODAL
+========================================================== */
+
+.modal-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(15,23,42,.45);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    z-index:2000;
+
+    opacity:1;
+
+    transition:.30s;
+
+}
+
+.modal-overlay.hidden{
+
+    display:none;
+
+}
+
+.modal{
+
+    width:95%;
+
+    max-width:950px;
+
+    background:#ffffff;
+
+    border-radius:24px;
+
+    box-shadow:0 25px 60px rgba(0,0,0,.20);
+
+    overflow:hidden;
+
+    animation:popup .30s ease;
+
+}
+
+@keyframes popup{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(25px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+.modal-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:20px 25px;
+
+    background:linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    color:#ffffff;
+
+}
+
+.modal-header h2{
+
+    font-size:22px;
+
+    font-weight:700;
+
+}
+
+.modal-header .icon-btn{
+
+    background:rgba(255,255,255,.15);
+
+    border:none;
+
+}
+
+.modal-header .icon-btn span{
+
+    color:#ffffff;
+
+}
+
+.modal-body{
+
+    padding:25px;
+
+}
+
+/* ==========================================================
+   FOOTER
+========================================================== */
+
+.page-footer{
+
+    margin-top:35px;
+
+    text-align:center;
+
+    color:var(--text-light);
+
+    font-size:13px;
+
+}
+
+.page-footer strong{
+
+    color:#2563eb;
+
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width:1200px){
+
+    .customer-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .summary-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .customers-page{
+
+        padding:15px;
+
+        padding-bottom:100px;
+
+    }
+
+    .page-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:15px;
+
+    }
+
+    .header-right{
+
+        width:100%;
+
+        justify-content:flex-end;
+
+    }
+
+    .search-section{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .search-section .btn{
+
+        width:100%;
+
+    }
+
+    .customer-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+        gap:14px;
+
+    }
+
+    .summary-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+        gap:14px;
+
+    }
+
+    .customer-actions{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .table-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:12px;
+
+    }
+
+    .floating-add-btn{
+
+        width:60px;
+
+        height:60px;
+
+        right:18px;
+
+        bottom:90px;
+
+    }
+
+}
+
+@media (max-width:480px){
+
+    .customer-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .summary-grid{
+
+        grid-template-columns:repeat(2,1fr);
+
+    }
+
+    .customer-card{
+
+        padding:16px;
+
+    }
+
+    .customer-info h3{
+
+        font-size:16px;
+
+    }
+
+    .customer-avatar{
+
+        width:50px;
+
+        height:50px;
+
+    }
+
+    .customer-avatar span{
+
+        font-size:26px;
+
+    }
+
+    .modal{
+
+        width:96%;
+
+        border-radius:18px;
+
+    }
+
+}
+
+/* ==========================================================
+   END OF CUSTOMER CSS
+========================================================== */
