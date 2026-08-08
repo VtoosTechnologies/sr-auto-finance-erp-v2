@@ -888,12 +888,247 @@ function renderLoan() {
     );
 
 
-    setText(
-        "nextDueDate",
-        formatDate(
-            currentLoan.nextDueDate
-        )
-    );
+ // =================================================
+// NEXT DUE DATE
+// =================================================
+
+let nextDueDate =
+    currentLoan.nextDueDate ||
+    currentLoan.nextPaymentDate ||
+    currentLoan.dueDate ||
+    null;
+
+
+// If nextDueDate is not stored,
+// calculate it from firstDueDate.
+
+if (!nextDueDate) {
+
+    const firstDueDate =
+        currentLoan.firstDueDate ||
+        currentLoan.loanDate;
+
+
+    const frequency =
+        String(
+            currentLoan.frequency ||
+            currentLoan.paymentFrequency ||
+            "Monthly"
+        ).toLowerCase();
+
+
+    const totalInstallments =
+        numberValue(
+            currentLoan.totalInstallments ??
+            currentLoan.installments ??
+            currentLoan.duration ??
+            currentLoan.loanDuration ??
+            currentLoan.tenure
+        );
+
+
+    const totalPaid =
+        numberValue(
+            currentLoan.totalPaid ??
+            currentLoan.paidAmount ??
+            currentLoan.totalCollection
+        );
+
+
+    const installmentAmount =
+        numberValue(
+            currentLoan.installmentAmount ??
+            currentLoan.monthlyInstallment ??
+            currentLoan.emi
+        );
+
+
+    let paidInstallments = 0;
+
+
+    if (
+        installmentAmount > 0
+    ) {
+
+        paidInstallments =
+            Math.floor(
+                totalPaid /
+                installmentAmount
+            );
+
+    }
+
+
+    if (
+        totalInstallments > 0
+    ) {
+
+        paidInstallments =
+            Math.min(
+                paidInstallments,
+                totalInstallments
+            );
+
+    }
+
+
+    if (firstDueDate) {
+
+    let date;
+
+    // Firestore Timestamp
+    if (
+        firstDueDate &&
+        typeof firstDueDate.toDate === "function"
+    ) {
+
+        date = firstDueDate.toDate();
+
+    }
+
+    // JavaScript Date
+    else if (
+        firstDueDate instanceof Date
+    ) {
+
+        date = new Date(
+            firstDueDate.getTime()
+        );
+
+    }
+
+    // String
+    else {
+
+        const value =
+            String(firstDueDate).trim();
+
+        // YYYY-MM-DD
+        if (
+            /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ) {
+
+            const [
+                year,
+                month,
+                day
+            ] = value.split("-").map(Number);
+
+            date =
+                new Date(
+                    year,
+                    month - 1,
+                    day
+                );
+
+        }
+
+        // DD-MM-YYYY
+        else if (
+            /^\d{2}-\d{2}-\d{4}$/.test(value)
+        ) {
+
+            const [
+                day,
+                month,
+                year
+            ] = value.split("-").map(Number);
+
+            date =
+                new Date(
+                    year,
+                    month - 1,
+                    day
+                );
+
+        }
+
+        // DD/MM/YYYY
+        else if (
+            /^\d{2}\/\d{2}\/\d{4}$/.test(value)
+        ) {
+
+            const [
+                day,
+                month,
+                year
+            ] = value.split("/").map(Number);
+
+            date =
+                new Date(
+                    year,
+                    month - 1,
+                    day
+                );
+
+        }
+
+        else {
+
+            date =
+                new Date(value);
+
+        }
+
+    }
+
+
+    if (
+        date &&
+        !isNaN(date.getTime())
+    ) {
+
+        const periods =
+            paidInstallments;
+
+
+        if (
+            frequency === "monthly"
+        ) {
+
+            date.setMonth(
+                date.getMonth() +
+                periods
+            );
+
+        }
+
+        else if (
+            frequency === "weekly"
+        ) {
+
+            date.setDate(
+                date.getDate() +
+                (periods * 7)
+            );
+
+        }
+
+        else if (
+            frequency === "daily"
+        ) {
+
+            date.setDate(
+                date.getDate() +
+                periods
+            );
+
+        }
+
+
+        nextDueDate =
+            date;
+
+    }
+
+}
+
+setText(
+    "nextDueDate",
+    formatDate(
+        nextDueDate
+    )
+);
 
 
     setText(
