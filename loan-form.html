@@ -1,24 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
 
-    <title>New Loan | SR Auto Finance ERP</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Powered By VTOOS Software Solutions"
+    >
+
+    <title>Loan | SR Auto Finance ERP</title>
+
 
     <style>
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f1f5f9;
             color: #1e293b;
         }
+
+
+        /* ==============================
+           HEADER
+        ============================== */
 
         .header {
             height: 70px;
@@ -34,11 +57,13 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
 
+
         .brand-area {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
 
         .brand-logo {
             width: 42px;
@@ -52,16 +77,19 @@
             font-weight: 800;
         }
 
+
         .brand-text h1 {
             font-size: 16px;
             font-weight: 800;
         }
+
 
         .brand-text p {
             font-size: 10px;
             color: #94a3b8;
             margin-top: 2px;
         }
+
 
         .back-btn {
             border: 1px solid #475569;
@@ -73,9 +101,15 @@
             font-size: 12px;
         }
 
+
         .back-btn:hover {
             background: #1e293b;
         }
+
+
+        /* ==============================
+           MAIN
+        ============================== */
 
         .main {
             max-width: 1000px;
@@ -83,9 +117,11 @@
             padding: 25px;
         }
 
+
         .page-title {
             margin-bottom: 20px;
         }
+
 
         .page-title h2 {
             font-size: 25px;
@@ -93,11 +129,17 @@
             color: #0f172a;
         }
 
+
         .page-title p {
             color: #64748b;
             font-size: 12px;
             margin-top: 5px;
         }
+
+
+        /* ==============================
+           MESSAGE
+        ============================== */
 
         .message {
             display: none;
@@ -107,6 +149,7 @@
             margin-bottom: 18px;
         }
 
+
         .message.error {
             display: block;
             background: #fef2f2;
@@ -114,12 +157,18 @@
             border: 1px solid #fecaca;
         }
 
+
         .message.success {
             display: block;
             background: #f0fdf4;
             color: #15803d;
             border: 1px solid #bbf7d0;
         }
+
+
+        /* ==============================
+           FORM CARD
+        ============================== */
 
         .form-card {
             background: white;
@@ -130,11 +179,13 @@
             box-shadow: 0 5px 18px rgba(15,23,42,0.04);
         }
 
+
         .section-header {
             margin-bottom: 20px;
             padding-bottom: 12px;
             border-bottom: 1px solid #e2e8f0;
         }
+
 
         .section-header h3 {
             font-size: 16px;
@@ -142,11 +193,17 @@
             color: #0f172a;
         }
 
+
         .section-header p {
             font-size: 11px;
             color: #64748b;
             margin-top: 4px;
         }
+
+
+        /* ==============================
+           FORM
+        ============================== */
 
         .form-grid {
             display: grid;
@@ -154,14 +211,17 @@
             gap: 18px;
         }
 
+
         .form-group {
             display: flex;
             flex-direction: column;
         }
 
+
         .form-group.full {
             grid-column: 1 / -1;
         }
+
 
         label {
             font-size: 12px;
@@ -170,9 +230,11 @@
             margin-bottom: 7px;
         }
 
+
         .required {
             color: #dc2626;
         }
+
 
         input,
         select {
@@ -188,6 +250,7 @@
             font-size: 13px;
         }
 
+
         input:focus,
         select:focus {
             border-color: #2563eb;
@@ -195,10 +258,16 @@
             box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
         }
 
+
         input[readonly] {
             background: #f1f5f9;
             color: #475569;
         }
+
+
+        /* ==============================
+           CUSTOMER INFO
+        ============================== */
 
         .customer-info {
             margin-top: 14px;
@@ -209,11 +278,13 @@
             padding: 15px;
         }
 
+
         .customer-info.show {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
         }
+
 
         .info-label {
             color: #64748b;
@@ -221,11 +292,48 @@
             margin-bottom: 4px;
         }
 
+
         .info-value {
             color: #1e3a8a;
             font-size: 12px;
             font-weight: 700;
         }
+
+
+        /* ==============================
+           RELOAN INFO
+        ============================== */
+
+        .reloan-section {
+            display: none;
+        }
+
+
+        .reloan-section.show {
+            display: block;
+        }
+
+
+        .previous-loan-info {
+            display: none;
+            margin-top: 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+
+        .previous-loan-info.show {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+
+        /* ==============================
+           CALCULATION
+        ============================== */
 
         .calculation-box {
             background: #f8fafc;
@@ -234,11 +342,13 @@
             padding: 18px;
         }
 
+
         .calculation-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
         }
+
 
         .calc-item {
             background: white;
@@ -247,10 +357,12 @@
             padding: 13px;
         }
 
+
         .calc-label {
             color: #64748b;
             font-size: 10px;
         }
+
 
         .calc-value {
             color: #0f172a;
@@ -259,12 +371,18 @@
             margin-top: 5px;
         }
 
+
+        /* ==============================
+           ACTION
+        ============================== */
+
         .form-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
             margin-top: 22px;
         }
+
 
         .cancel-btn {
             border: 1px solid #cbd5e1;
@@ -276,6 +394,7 @@
             font-size: 13px;
             font-weight: 700;
         }
+
 
         .save-btn {
             border: none;
@@ -289,10 +408,36 @@
             box-shadow: 0 7px 18px rgba(37,99,235,0.22);
         }
 
+
         .save-btn:disabled {
             opacity: 0.65;
             cursor: not-allowed;
         }
+
+
+        /* ==============================
+           FOOTER
+        ============================== */
+
+        .app-footer {
+            text-align: center;
+            padding: 20px 15px 25px;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+
+        .app-footer div:last-child {
+            color: #64748b;
+            font-weight: 600;
+            font-size: 10px;
+        }
+
+
+        /* ==============================
+           MOBILE
+        ============================== */
 
         @media (max-width: 700px) {
 
@@ -301,54 +446,70 @@
                 padding: 0 14px;
             }
 
+
             .brand-text p {
                 display: none;
             }
+
 
             .main {
                 padding: 18px 14px;
             }
 
+
             .page-title h2 {
                 font-size: 21px;
             }
+
 
             .form-card {
                 padding: 18px 15px;
                 border-radius: 15px;
             }
 
+
             .form-grid {
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
 
+
             .form-group.full {
                 grid-column: auto;
             }
 
-            .customer-info.show {
+
+            .customer-info.show,
+            .previous-loan-info.show {
                 grid-template-columns: 1fr;
             }
+
 
             .calculation-grid {
                 grid-template-columns: 1fr;
             }
 
+
             .form-actions {
                 flex-direction: column-reverse;
             }
+
 
             .cancel-btn,
             .save-btn {
                 width: 100%;
                 height: 45px;
             }
+
         }
+
     </style>
+
 </head>
 
+
 <body>
+
 
 <header class="header">
 
@@ -359,11 +520,19 @@
         </div>
 
         <div class="brand-text">
-            <h1>SR Auto Finance</h1>
-            <p>Finance Management ERP</p>
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
         </div>
 
     </div>
+
 
     <button
         class="back-btn"
@@ -375,14 +544,18 @@
 </header>
 
 
+
 <main class="main">
+
 
     <div class="page-title">
 
-        <h2>New Loan</h2>
+        <h2>
+            Loan
+        </h2>
 
         <p>
-            Create a new loan account for an existing customer
+            Create a new loan or re-loan account
         </p>
 
     </div>
@@ -394,15 +567,78 @@
     ></div>
 
 
+
     <form id="loanForm">
 
-        <!-- CUSTOMER -->
+
+        <!-- =================================================
+             LOAN TYPE
+        ================================================== -->
 
         <section class="form-card">
 
             <div class="section-header">
 
-                <h3>Customer Details</h3>
+                <h3>
+                    Loan Type
+                </h3>
+
+                <p>
+                    Select New Loan or ReLoan
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label for="loanType">
+
+                        Loan Type
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <select
+                        id="loanType"
+                        required
+                    >
+
+                        <option value="new">
+                            New Loan
+                        </option>
+
+                        <option value="reloan">
+                            ReLoan
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             CUSTOMER DETAILS
+        ================================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Customer Details
+                </h3>
 
                 <p>
                     Select an existing customer
@@ -416,9 +652,15 @@
                 <div class="form-group full">
 
                     <label for="customerSelect">
+
                         Customer
-                        <span class="required">*</span>
+
+                        <span class="required">
+                            *
+                        </span>
+
                     </label>
+
 
                     <select
                         id="customerSelect"
@@ -442,6 +684,7 @@
             >
 
                 <div>
+
                     <div class="info-label">
                         Customer ID
                     </div>
@@ -452,10 +695,12 @@
                     >
                         -
                     </div>
+
                 </div>
 
 
                 <div>
+
                     <div class="info-label">
                         Mobile
                     </div>
@@ -466,10 +711,12 @@
                     >
                         -
                     </div>
+
                 </div>
 
 
                 <div>
+
                     <div class="info-label">
                         Status
                     </div>
@@ -480,6 +727,7 @@
                     >
                         -
                     </div>
+
                 </div>
 
             </div>
@@ -487,13 +735,514 @@
         </section>
 
 
-        <!-- LOAN DETAILS -->
+
+        <!-- =================================================
+             RELOAN DETAILS
+        ================================================== -->
+
+        <section
+            class="form-card reloan-section"
+            id="reloanSection"
+        >
+
+            <div class="section-header">
+
+                <h3>
+                    Previous Loan Details
+                </h3>
+
+                <p>
+                    ReLoan is available after the previous loan is completed
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <div class="form-group full">
+
+                    <label for="previousLoanSelect">
+
+                        Previous Loan
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <select
+                        id="previousLoanSelect"
+                    >
+
+                        <option value="">
+                            Select previous closed loan
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="previous-loan-info"
+                id="previousLoanInfo"
+            >
+
+                <div>
+
+                    <div class="info-label">
+                        Previous Loan ID
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Previous Loan Amount
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Previous Loan Status
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanStatus"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Closed Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanClosedDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Closing Amount
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanClosingAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Customer
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoanCustomer"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             VEHICLE DETAILS
+        ================================================== -->
 
         <section class="form-card">
 
             <div class="section-header">
 
-                <h3>Loan Details</h3>
+                <h3>
+                    Vehicle Details
+                </h3>
+
+                <p>
+                    Enter vehicle and showroom information
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+
+                <div class="form-group">
+
+                    <label for="vehicleType">
+
+                        Vehicle Type
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <select
+                        id="vehicleType"
+                        required
+                    >
+
+                        <option value="">
+                            Select vehicle type
+                        </option>
+
+                        <option value="Two Wheeler">
+                            Two Wheeler
+                        </option>
+
+                        <option value="Three Wheeler">
+                            Three Wheeler
+                        </option>
+
+                        <option value="Four Wheeler">
+                            Four Wheeler
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleBrand">
+
+                        Vehicle Brand
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="vehicleBrand"
+                        placeholder="Example: Honda"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleModel">
+
+                        Vehicle Model
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="vehicleModel"
+                        placeholder="Example: Activa"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleVariant">
+                        Variant
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="vehicleVariant"
+                        placeholder="Enter variant"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleNumber">
+                        Vehicle Number
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="vehicleNumber"
+                        placeholder="Example: TN29AB1234"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="chassisNumber">
+
+                        Chassis Number
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="chassisNumber"
+                        placeholder="Enter chassis number"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="engineNumber">
+
+                        Engine Number
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="engineNumber"
+                        placeholder="Enter engine number"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="manufacturingYear">
+                        Manufacturing Year
+                    </label>
+
+
+                    <input
+                        type="number"
+                        id="manufacturingYear"
+                        min="1900"
+                        max="2100"
+                        placeholder="Example: 2026"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="registrationDate">
+                        Registration Date
+                    </label>
+
+
+                    <input
+                        type="date"
+                        id="registrationDate"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleColour">
+                        Vehicle Colour
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="vehicleColour"
+                        placeholder="Enter colour"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="showroomName">
+
+                        Showroom Name
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="showroomName"
+                        placeholder="Enter showroom name"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="showroomBookingId">
+
+                        Showroom Booking ID
+
+                        <span
+                            class="required"
+                            id="bookingRequired"
+                        >
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="showroomBookingId"
+                        placeholder="Enter showroom booking ID"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="vehicleCost">
+                        Vehicle Cost
+                    </label>
+
+
+                    <input
+                        type="number"
+                        id="vehicleCost"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter vehicle cost"
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="downPayment">
+                        Down Payment
+                    </label>
+
+
+                    <input
+                        type="number"
+                        id="downPayment"
+                        min="0"
+                        step="0.01"
+                        value="0"
+                        placeholder="Enter down payment"
+                    >
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =================================================
+             LOAN DETAILS
+        ================================================== -->
+
+        <section class="form-card">
+
+            <div class="section-header">
+
+                <h3>
+                    Loan Details
+                </h3>
 
                 <p>
                     Enter loan amount and repayment terms
@@ -504,12 +1253,19 @@
 
             <div class="form-grid">
 
+
                 <div class="form-group">
 
                     <label for="loanAmount">
+
                         Loan Amount
-                        <span class="required">*</span>
+
+                        <span class="required">
+                            *
+                        </span>
+
                     </label>
+
 
                     <input
                         type="number"
@@ -523,12 +1279,19 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="interestRate">
+
                         Interest Rate (%)
-                        <span class="required">*</span>
+
+                        <span class="required">
+                            *
+                        </span>
+
                     </label>
+
 
                     <input
                         type="number"
@@ -542,11 +1305,13 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="interestType">
                         Interest Type
                     </label>
+
 
                     <select id="interestType">
 
@@ -563,12 +1328,19 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="tenure">
+
                         Tenure
-                        <span class="required">*</span>
+
+                        <span class="required">
+                            *
+                        </span>
+
                     </label>
+
 
                     <input
                         type="number"
@@ -582,11 +1354,13 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="repaymentFrequency">
                         Repayment Frequency
                     </label>
+
 
                     <select id="repaymentFrequency">
 
@@ -607,12 +1381,19 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="loanDate">
+
                         Loan Date
-                        <span class="required">*</span>
+
+                        <span class="required">
+                            *
+                        </span>
+
                     </label>
+
 
                     <input
                         type="date"
@@ -623,11 +1404,13 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="firstDueDate">
                         First Due Date
                     </label>
+
 
                     <input
                         type="date"
@@ -637,11 +1420,13 @@
                 </div>
 
 
+
                 <div class="form-group">
 
                     <label for="processingFee">
                         Processing Fee
                     </label>
+
 
                     <input
                         type="number"
@@ -653,18 +1438,24 @@
 
                 </div>
 
+
             </div>
 
         </section>
 
 
-        <!-- CALCULATION -->
+
+        <!-- =================================================
+             LOAN CALCULATION
+        ================================================== -->
 
         <section class="form-card">
 
             <div class="section-header">
 
-                <h3>Loan Calculation</h3>
+                <h3>
+                    Loan Calculation
+                </h3>
 
                 <p>
                     Calculated values will appear automatically
@@ -676,6 +1467,7 @@
             <div class="calculation-box">
 
                 <div class="calculation-grid">
+
 
                     <div class="calc-item">
 
@@ -691,6 +1483,7 @@
                         </div>
 
                     </div>
+
 
 
                     <div class="calc-item">
@@ -709,6 +1502,7 @@
                     </div>
 
 
+
                     <div class="calc-item">
 
                         <div class="calc-label">
@@ -723,6 +1517,7 @@
                         </div>
 
                     </div>
+
 
 
                     <div class="calc-item">
@@ -741,6 +1536,7 @@
                     </div>
 
 
+
                     <div class="calc-item">
 
                         <div class="calc-label">
@@ -755,6 +1551,7 @@
                         </div>
 
                     </div>
+
 
 
                     <div class="calc-item">
@@ -772,6 +1569,7 @@
 
                     </div>
 
+
                 </div>
 
             </div>
@@ -779,7 +1577,10 @@
         </section>
 
 
-        <!-- ACTION -->
+
+        <!-- =================================================
+             ACTION
+        ================================================== -->
 
         <section class="form-card">
 
@@ -806,18 +1607,33 @@
 
         </section>
 
+
     </form>
 
 </main>
+
+
+
 <footer class="app-footer">
-    <div>© 2026 SR Auto Finance ERP</div>
-    <div>Powered by VTOOS Software Solutions</div>
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
 </footer>
+
+
 
 <script
     type="module"
     src="js/loan-form.js"
 ></script>
 
+
 </body>
+
 </html>
