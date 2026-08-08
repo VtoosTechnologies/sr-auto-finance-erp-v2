@@ -23,20 +23,30 @@ import {
 // ELEMENTS
 // =====================================================
 
-const tableBody =
-    document.getElementById("customerTableBody");
-
-const searchInput =
-    document.getElementById("searchInput");
-
 const totalCustomers =
-    document.getElementById("totalCustomers");
+    document.getElementById(
+        "totalCustomers"
+    );
 
 const activeCustomers =
-    document.getElementById("activeCustomers");
+    document.getElementById(
+        "activeCustomers"
+    );
 
 const inactiveCustomers =
-    document.getElementById("inactiveCustomers");
+    document.getElementById(
+        "inactiveCustomers"
+    );
+
+const searchInput =
+    document.getElementById(
+        "searchInput"
+    );
+
+const customerTableBody =
+    document.getElementById(
+        "customerTableBody"
+    );
 
 
 // =====================================================
@@ -52,12 +62,30 @@ let customers = [];
 
 function escapeHTML(value) {
 
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
 }
 
 
@@ -67,54 +95,72 @@ function escapeHTML(value) {
 
 async function loadCustomers() {
 
+    showLoading();
+
     try {
 
-        showLoading();
-
         const customersRef =
-            collection(db, "customers");
+            collection(
+                db,
+                "customers"
+            );
+
 
         const snapshot =
-            await getDocs(customersRef);
+            await getDocs(
+                customersRef
+            );
 
 
         customers = [];
 
 
-        snapshot.forEach((docSnapshot) => {
+        snapshot.forEach(
+            customerDoc => {
 
-            const data =
-                docSnapshot.data();
+                customers.push({
+
+                    id:
+                        customerDoc.id,
+
+                    ...customerDoc.data()
+
+                });
+
+            }
+        );
 
 
-            customers.push({
+        /*
+         * Sort latest customers first
+         * when createdAt exists.
+         */
 
-                id: docSnapshot.id,
+        customers.sort(
+            (a, b) => {
 
-                ...data
+                const dateA =
+                    getDateValue(
+                        a.createdAt
+                    );
 
-            });
+                const dateB =
+                    getDateValue(
+                        b.createdAt
+                    );
 
-        });
 
+                return (
+                    dateB - dateA
+                );
 
-        // Newest first
-        customers.sort((a, b) => {
-
-            const dateA =
-                getDateValue(a.createdAt);
-
-            const dateB =
-                getDateValue(b.createdAt);
-
-            return dateB - dateA;
-
-        });
+            }
+        );
 
 
         updateSummary();
 
-        renderCustomers(customers);
+        applySearch();
 
 
     } catch (error) {
@@ -124,8 +170,9 @@ async function loadCustomers() {
             error
         );
 
+
         showError(
-            "Unable to load customers. Please try again."
+            "Unable to load customers."
         );
 
     }
@@ -140,32 +187,223 @@ async function loadCustomers() {
 function getDateValue(value) {
 
     if (!value) {
+
         return 0;
+
+    }
+
+
+    try {
+
+        if (
+            typeof value.toDate ===
+            "function"
+        ) {
+
+            return value
+                .toDate()
+                .getTime();
+
+        }
+
+
+        const date =
+            new Date(
+                value
+            );
+
+
+        if (
+            isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return 0;
+
+        }
+
+
+        return date.getTime();
+
+    } catch {
+
+        return 0;
+
+    }
+
+}
+
+
+// =====================================================
+// CUSTOMER STATUS
+// =====================================================
+
+function getCustomerStatus(
+    customer
+) {
+
+    const status =
+        String(
+            customer.status ||
+            "active"
+        )
+        .trim()
+        .toLowerCase();
+
+
+    if (
+
+        status === "inactive" ||
+
+        status === "disabled" ||
+
+        status === "blocked"
+
+    ) {
+
+        return "inactive";
+
+    }
+
+
+    return "active";
+
+}
+
+
+// =====================================================
+// CUSTOMER NAME
+// =====================================================
+
+function getCustomerName(
+    customer
+) {
+
+    return (
+
+        customer.name ||
+
+        customer.customerName ||
+
+        customer.fullName ||
+
+        customer.customer_name ||
+
+        "Unnamed Customer"
+
+    );
+
+}
+
+
+// =====================================================
+// CUSTOMER ID
+// =====================================================
+
+function getCustomerId(
+    customer
+) {
+
+    return (
+
+        customer.customerId ||
+
+        customer.customerCode ||
+
+        customer.code ||
+
+        customer.id
+
+    );
+
+}
+
+
+// =====================================================
+// MOBILE
+// =====================================================
+
+function getMobile(
+    customer
+) {
+
+    return (
+
+        customer.mobile ||
+
+        customer.phone ||
+
+        customer.phoneNumber ||
+
+        customer.mobileNumber ||
+
+        "-"
+
+    );
+
+}
+
+
+// =====================================================
+// LOCATION
+// =====================================================
+
+function getLocation(
+    customer
+) {
+
+    /*
+     * Support different possible
+     * address field names.
+     */
+
+    if (
+        customer.location
+    ) {
+
+        return customer.location;
+
     }
 
 
     if (
-        value &&
-        typeof value.toDate === "function"
+        customer.city
     ) {
 
-        return value.toDate().getTime();
+        return customer.city;
 
     }
 
 
-    const date =
-        new Date(value);
+    if (
+        customer.address
+    ) {
 
-
-    if (!isNaN(date.getTime())) {
-
-        return date.getTime();
+        return customer.address;
 
     }
 
 
-    return 0;
+    if (
+        customer.village
+    ) {
+
+        return customer.village;
+
+    }
+
+
+    if (
+        customer.taluk
+    ) {
+
+        return customer.taluk;
+
+    }
+
+
+    return "-";
 
 }
 
@@ -176,43 +414,158 @@ function getDateValue(value) {
 
 function updateSummary() {
 
-    let active = 0;
-    let inactive = 0;
+    let activeCount =
+        0;
+
+    let inactiveCount =
+        0;
 
 
-    customers.forEach((customer) => {
+    customers.forEach(
+        customer => {
 
-        const status =
-            String(
-                customer.status ?? "Active"
-            ).toLowerCase();
+            const status =
+                getCustomerStatus(
+                    customer
+                );
 
 
-        if (
-            status === "active"
-        ) {
+            if (
+                status === "active"
+            ) {
 
-            active++;
+                activeCount++;
 
-        } else {
+            } else {
 
-            inactive++;
+                inactiveCount++;
+
+            }
 
         }
-
-    });
-
-
-    totalCustomers.textContent =
-        customers.length;
+    );
 
 
-    activeCustomers.textContent =
-        active;
+    if (
+        totalCustomers
+    ) {
+
+        totalCustomers.textContent =
+            customers.length;
+
+    }
 
 
-    inactiveCustomers.textContent =
-        inactive;
+    if (
+        activeCustomers
+    ) {
+
+        activeCustomers.textContent =
+            activeCount;
+
+    }
+
+
+    if (
+        inactiveCustomers
+    ) {
+
+        inactiveCustomers.textContent =
+            inactiveCount;
+
+    }
+
+}
+
+
+// =====================================================
+// SEARCH
+// =====================================================
+
+function applySearch() {
+
+    const search =
+        searchInput
+            ? searchInput.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+
+    const filtered =
+        customers.filter(
+            customer => {
+
+                if (!search) {
+
+                    return true;
+
+                }
+
+
+                const customerId =
+                    String(
+                        getCustomerId(
+                            customer
+                        )
+                    )
+                    .toLowerCase();
+
+
+                const customerName =
+                    String(
+                        getCustomerName(
+                            customer
+                        )
+                    )
+                    .toLowerCase();
+
+
+                const mobile =
+                    String(
+                        getMobile(
+                            customer
+                        )
+                    )
+                    .toLowerCase();
+
+
+                const location =
+                    String(
+                        getLocation(
+                            customer
+                        )
+                    )
+                    .toLowerCase();
+
+
+                return (
+
+                    customerId.includes(
+                        search
+                    ) ||
+
+                    customerName.includes(
+                        search
+                    ) ||
+
+                    mobile.includes(
+                        search
+                    ) ||
+
+                    location.includes(
+                        search
+                    )
+
+                );
+
+            }
+        );
+
+
+    renderCustomers(
+        filtered
+    );
 
 }
 
@@ -221,19 +574,34 @@ function updateSummary() {
 // RENDER CUSTOMERS
 // =====================================================
 
-function renderCustomers(list) {
+function renderCustomers(
+    list
+) {
+
+    if (!customerTableBody) {
+
+        return;
+
+    }
+
 
     if (!list.length) {
 
-        tableBody.innerHTML = `
+        customerTableBody.innerHTML = `
 
             <tr>
 
-                <td colspan="6">
+                <td
+                    colspan="6"
+                >
 
-                    <div class="empty-state">
+                    <div
+                        class="empty-state"
+                    >
 
-                        <div class="empty-icon">
+                        <div
+                            class="empty-icon"
+                        >
                             👤
                         </div>
 
@@ -254,196 +622,183 @@ function renderCustomers(list) {
     }
 
 
-    tableBody.innerHTML =
-        list.map((customer) => {
-
-            const customerId =
-                customer.customerId ||
-                customer.customerCode ||
-                customer.id ||
-                "-";
-
-
-            const name =
-                customer.name ||
-                customer.customerName ||
-                "-";
-
-
-            const mobile =
-                customer.mobile ||
-                customer.phone ||
-                customer.mobileNumber ||
-                "-";
-
-
-            const location =
-                customer.location ||
-                customer.city ||
-                customer.address?.city ||
-                "-";
-
-
-            const status =
-                String(
-                    customer.status ?? "Active"
-                );
-
-
-            const isActive =
-                status.toLowerCase() === "active";
-
-
-            return `
-
-                <tr>
-
-                    <td>
-
-                        <span class="customer-id">
-                            ${escapeHTML(customerId)}
-                        </span>
-
-                    </td>
-
-
-                    <td>
-
-                        <span class="customer-name">
-                            ${escapeHTML(name)}
-                        </span>
-
-                    </td>
-
-
-                    <td>
-                        ${escapeHTML(mobile)}
-                    </td>
-
-
-                    <td>
-                        ${escapeHTML(location)}
-                    </td>
-
-
-                    <td>
-
-                        <span class="status ${
-                            isActive
-                                ? "active"
-                                : "inactive"
-                        }">
-
-                            ${escapeHTML(status)}
-
-                        </span>
-
-                    </td>
-
-
-                    <td>
-
-                        <button
-                            class="action-btn"
-                            data-id="${escapeHTML(customer.id)}"
-                            onclick="viewCustomer(this.dataset.id)"
-                        >
-                            View
-                        </button>
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        }).join("");
-
-}
-
-
-// =====================================================
-// SEARCH
-// =====================================================
-
-searchInput.addEventListener(
-    "input",
-    function () {
-
-        const search =
-            this.value
-                .trim()
-                .toLowerCase();
-
-
-        if (!search) {
-
-            renderCustomers(customers);
-
-            return;
-
-        }
-
-
-        const filtered =
-            customers.filter((customer) => {
+    customerTableBody.innerHTML =
+        list.map(
+            customer => {
 
                 const customerId =
-                    String(
-                        customer.customerId ||
-                        customer.customerCode ||
-                        customer.id ||
-                        ""
-                    ).toLowerCase();
+                    getCustomerId(
+                        customer
+                    );
 
 
-                const name =
-                    String(
-                        customer.name ||
-                        customer.customerName ||
-                        ""
-                    ).toLowerCase();
+                const customerName =
+                    getCustomerName(
+                        customer
+                    );
 
 
                 const mobile =
-                    String(
-                        customer.mobile ||
-                        customer.phone ||
-                        customer.mobileNumber ||
-                        ""
-                    ).toLowerCase();
+                    getMobile(
+                        customer
+                    );
 
 
-                return (
-                    customerId.includes(search) ||
-                    name.includes(search) ||
-                    mobile.includes(search)
-                );
-
-            });
+                const location =
+                    getLocation(
+                        customer
+                    );
 
 
-        renderCustomers(filtered);
+                const status =
+                    getCustomerStatus(
+                        customer
+                    );
 
-    }
-);
+
+                const statusText =
+                    status === "active"
+                        ? "Active"
+                        : "Inactive";
+
+
+                return `
+
+                    <tr>
+
+                        <!-- CUSTOMER ID -->
+
+                        <td>
+
+                            <span
+                                class="customer-id"
+                            >
+                                ${escapeHTML(
+                                    customerId
+                                )}
+                            </span>
+
+                        </td>
+
+
+                        <!-- NAME -->
+
+                        <td>
+
+                            <span
+                                class="customer-name"
+                            >
+                                ${escapeHTML(
+                                    customerName
+                                )}
+                            </span>
+
+                        </td>
+
+
+                        <!-- MOBILE -->
+
+                        <td>
+                            ${escapeHTML(
+                                mobile
+                            )}
+                        </td>
+
+
+                        <!-- LOCATION -->
+
+                        <td>
+                            ${escapeHTML(
+                                location
+                            )}
+                        </td>
+
+
+                        <!-- STATUS -->
+
+                        <td>
+
+                            <span
+                                class="
+                                    status
+                                    ${status}
+                                "
+                            >
+
+                                ${statusText}
+
+                            </span>
+
+                        </td>
+
+
+                        <!-- ACTION -->
+
+                        <td>
+
+                            <button
+                                class="action-btn"
+                                data-id="${escapeHTML(
+                                    customer.id
+                                )}"
+                                onclick="viewCustomer(this.dataset.id)"
+                            >
+                                View
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        )
+        .join("");
+
+}
 
 
 // =====================================================
 // VIEW CUSTOMER
 // =====================================================
 
-window.viewCustomer = function(customerId) {
+window.viewCustomer =
+    function(customerId) {
 
-    if (!customerId) {
-        return;
-    }
+        if (
+            !customerId
+        ) {
+
+            return;
+
+        }
 
 
-    window.location.href =
-        `customer-view.html?id=${encodeURIComponent(customerId)}`;
+        window.location.href =
+            `customer-view.html?id=${
+                encodeURIComponent(
+                    customerId
+                )
+            }`;
 
-};
+    };
+
+
+// =====================================================
+// SEARCH EVENT
+// =====================================================
+
+if (
+    searchInput
+) {
+
+    searchInput.addEventListener(
+        "input",
+        applySearch
+    );
+
+}
 
 
 // =====================================================
@@ -452,15 +807,30 @@ window.viewCustomer = function(customerId) {
 
 function showLoading() {
 
-    tableBody.innerHTML = `
+    if (
+        !customerTableBody
+    ) {
+
+        return;
+
+    }
+
+
+    customerTableBody.innerHTML = `
 
         <tr>
 
-            <td colspan="6">
+            <td
+                colspan="6"
+            >
 
-                <div class="empty-state">
+                <div
+                    class="empty-state"
+                >
 
-                    <div class="empty-icon">
+                    <div
+                        class="empty-icon"
+                    >
                         ⏳
                     </div>
 
@@ -483,22 +853,41 @@ function showLoading() {
 // ERROR
 // =====================================================
 
-function showError(message) {
+function showError(
+    message
+) {
 
-    tableBody.innerHTML = `
+    if (
+        !customerTableBody
+    ) {
+
+        return;
+
+    }
+
+
+    customerTableBody.innerHTML = `
 
         <tr>
 
-            <td colspan="6">
+            <td
+                colspan="6"
+            >
 
-                <div class="empty-state">
+                <div
+                    class="empty-state"
+                >
 
-                    <div class="empty-icon">
+                    <div
+                        class="empty-icon"
+                    >
                         ⚠️
                     </div>
 
                     <p>
-                        ${escapeHTML(message)}
+                        ${escapeHTML(
+                            message
+                        )}
                     </p>
 
                 </div>
