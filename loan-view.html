@@ -1,18 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0f172a">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Loan Details"
+    >
 
     <title>Loan Details | SR Auto Finance ERP</title>
 
+
     <style>
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
 
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -20,9 +38,6 @@
             color: #1e293b;
         }
 
-        /* ==============================
-           HEADER
-        ============================== */
 
         .header {
             height: 70px;
@@ -35,8 +50,8 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
+
 
         .brand-area {
             display: flex;
@@ -44,28 +59,35 @@
             gap: 12px;
         }
 
+
         .brand-logo {
             width: 42px;
             height: 42px;
             border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #0ea5e9
+            );
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 15px;
             font-weight: 800;
+            font-size: 15px;
         }
+
 
         .brand-text h1 {
             font-size: 16px;
-            font-weight: 800;
         }
+
 
         .brand-text p {
             font-size: 10px;
             color: #94a3b8;
             margin-top: 2px;
         }
+
 
         .back-btn {
             border: 1px solid #475569;
@@ -77,91 +99,113 @@
             font-size: 12px;
         }
 
-        .back-btn:hover {
-            background: #1e293b;
-        }
-
-
-        /* ==============================
-           MAIN
-        ============================== */
 
         .main {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: auto;
             padding: 25px;
         }
 
 
-        /* ==============================
-           LOADING
-        ============================== */
-
-        .loading {
-            text-align: center;
-            padding: 80px 20px;
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        .error {
-            text-align: center;
-            padding: 70px 20px;
-            color: #b91c1c;
-            font-size: 13px;
+        .page-title {
+            margin-bottom: 20px;
         }
 
 
-        /* ==============================
-           LOAN HEADER
-        ============================== */
-
-        .loan-header {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            padding: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            margin-bottom: 18px;
-        }
-
-        .loan-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .loan-icon {
-            width: 68px;
-            height: 68px;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 27px;
-        }
-
-        .loan-title {
-            font-size: 22px;
-            font-weight: 800;
+        .page-title h2 {
+            font-size: 24px;
             color: #0f172a;
         }
 
-        .loan-id {
-            color: #2563eb;
+
+        .page-title p {
+            color: #64748b;
             font-size: 12px;
-            font-weight: 700;
             margin-top: 5px;
         }
 
-        .loan-status {
+
+        .message {
+            display: none;
+            padding: 12px;
+            border-radius: 9px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+
+        .message.error {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+
+        .message.success {
+            display: block;
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 17px;
+            color: #0f172a;
+        }
+
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+
+        .info-label {
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+
+        .info-value {
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .loan-id {
+            color: #2563eb;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+
+        .status {
             display: inline-block;
-            margin-top: 8px;
             padding: 5px 10px;
             border-radius: 20px;
             background: #dcfce7;
@@ -171,25 +215,90 @@
         }
 
 
-        /* ==============================
-           ACTIONS
-        ============================== */
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
+        .status.closed {
+            background: #e2e8f0;
+            color: #475569;
         }
+
+
+        .document-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+
+        .document-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 10px;
+            text-align: left;
+            padding: 12px;
+        }
+
+
+        .document-table td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 11px;
+        }
+
+
+        .doc-name {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+        }
+
+
+        .badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+
+        .badge.received {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+
+        .badge.issued {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+
+        .badge.returned {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+
+        .holder {
+            font-weight: 700;
+            color: #334155;
+        }
+
 
         .action-btn {
             border: 1px solid #cbd5e1;
             background: white;
             color: #334155;
-            padding: 9px 13px;
-            border-radius: 9px;
+            padding: 7px 10px;
+            border-radius: 7px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
         }
+
 
         .action-btn:hover {
             border-color: #2563eb;
@@ -197,183 +306,75 @@
         }
 
 
-        /* ==============================
-           SUMMARY CARDS
-        ============================== */
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-bottom: 18px;
-        }
-
-        .summary-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 15px;
-            padding: 18px;
-        }
-
-        .summary-label {
-            color: #64748b;
-            font-size: 10px;
-        }
-
-        .summary-value {
-            margin-top: 7px;
-            color: #0f172a;
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        .summary-value.highlight {
-            color: #2563eb;
-        }
-
-
-        /* ==============================
-           DETAILS GRID
-        ============================== */
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
-
-        .card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 20px;
-        }
-
-        .card.full {
-            grid-column: 1 / -1;
-        }
-
-        .card-title {
-            font-size: 15px;
-            font-weight: 800;
-            color: #0f172a;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .info-label {
-            color: #94a3b8;
-            font-size: 10px;
-            margin-bottom: 4px;
-        }
-
-        .info-value {
-            color: #334155;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-
-        /* ==============================
-           COLLECTION EMPTY
-        ============================== */
-
-        .empty-state {
+        .empty {
             text-align: center;
-            padding: 35px 15px;
+            padding: 35px;
             color: #94a3b8;
-        }
-
-        .empty-icon {
-            font-size: 30px;
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
             font-size: 12px;
         }
 
 
-        /* ==============================
-           MOBILE
-        ============================== */
+        .app-footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
 
-        @media (max-width: 850px) {
 
-            .summary-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
+        .app-footer div:last-child {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 3px;
         }
 
 
         @media (max-width: 700px) {
 
             .header {
-                height: 64px;
                 padding: 0 14px;
             }
+
 
             .brand-text p {
                 display: none;
             }
 
+
             .main {
-                padding: 16px 14px;
+                padding: 16px 12px;
             }
 
-            .loan-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
 
-            .loan-left {
-                width: 100%;
-            }
-
-            .loan-title {
-                font-size: 19px;
-            }
-
-            .header-actions {
-                width: 100%;
-            }
-
-            .header-actions .action-btn {
-                flex: 1;
-            }
-
-            .details-grid {
+            .grid {
                 grid-template-columns: 1fr;
             }
+
 
             .card.full {
                 grid-column: auto;
             }
 
+
             .info-grid {
-                grid-template-columns: 1fr;
-                gap: 12px;
+                grid-template-columns: 1fr 1fr;
+            }
+
+
+            .document-table-wrapper {
+                overflow-x: auto;
+            }
+
+
+            .document-table {
+                min-width: 750px;
             }
 
         }
 
-
-        @media (max-width: 430px) {
-
-            .summary-grid {
-                grid-template-columns: 1fr;
-            }
-
-        }
     </style>
+
 </head>
 
 
@@ -387,6 +388,7 @@
         <div class="brand-logo">
             SR
         </div>
+
 
         <div class="brand-text">
 
@@ -416,19 +418,502 @@
 
 <main class="main">
 
-    <div id="pageContent">
 
-        <div class="loading">
-            Loading loan details...
-        </div>
+    <div class="page-title">
+
+        <h2>
+            Loan Details
+        </h2>
+
+        <p>
+            Loan, vehicle and document information
+        </p>
 
     </div>
 
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+
+    <div class="grid">
+
+
+        <!-- =========================================
+             LOAN INFORMATION
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Loan Information
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+
+                    <div class="info-label">
+                        Loan ID
+                    </div>
+
+                    <div
+                        class="info-value loan-id"
+                        id="loanId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Loan Type
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="loanType"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Loan Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="loanDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Status
+                    </div>
+
+                    <div
+                        id="loanStatus"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Loan Amount
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="loanAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Outstanding
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="outstanding"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Installment
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="installment"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        First Due Date
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="firstDueDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             CUSTOMER
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Customer Details
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+
+                    <div class="info-label">
+                        Customer ID
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="customerId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Customer Name
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="customerName"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Mobile
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="customerMobile"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Previous Loan
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="previousLoan"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             VEHICLE
+        ========================================== -->
+
+        <section class="card full">
+
+            <div class="card-title">
+                Vehicle Details
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+
+                    <div class="info-label">
+                        Vehicle Type
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="vehicleType"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Brand
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="vehicleBrand"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Model
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="vehicleModel"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Vehicle Number
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="vehicleNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Chassis Number
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="chassisNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Engine Number
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="engineNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Showroom
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="showroomName"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="info-label">
+                        Booking ID
+                    </div>
+
+                    <div
+                        class="info-value"
+                        id="bookingId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             DOCUMENTS
+        ========================================== -->
+
+        <section class="card full">
+
+            <div class="card-title">
+                Loan Documents
+            </div>
+
+
+            <div class="document-table-wrapper">
+
+                <table class="document-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                DOCUMENT
+                            </th>
+
+                            <th>
+                                STATUS
+                            </th>
+
+                            <th>
+                                CURRENT HOLDER
+                            </th>
+
+                            <th>
+                                STAFF
+                            </th>
+
+                            <th>
+                                RECEIVED
+                            </th>
+
+                            <th>
+                                ISSUED
+                            </th>
+
+                            <th>
+                                RETURNED
+                            </th>
+
+                            <th>
+                                ACTION
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="documentTableBody"
+                    >
+
+                        <tr>
+
+                            <td colspan="8">
+
+                                <div class="empty">
+                                    Loading documents...
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+
 </main>
+
+
+
 <footer class="app-footer">
-    <div>© 2026 SR Auto Finance ERP</div>
-    <div>Powered by VTOOS Software Solutions</div>
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
 </footer>
+
 
 
 <script
@@ -438,4 +923,5 @@
 
 
 </body>
+
 </html>
