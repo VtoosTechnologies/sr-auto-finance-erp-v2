@@ -1087,7 +1087,8 @@ function renderReceipt(
                     <strong>
                         SR Auto Finance ERP
                     </strong>
-
+     Powered by VTOOS Software Solutions
+    </span>
                     <br>
 
                     Generated:
