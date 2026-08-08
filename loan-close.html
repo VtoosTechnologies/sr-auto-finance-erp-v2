@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <title>
+        Loan Closing | SR Auto Finance ERP
+    </title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+
+        .header {
+            min-height: 70px;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+        }
+
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #0ea5e9
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+
+        .brand h1 {
+            font-size: 16px;
+        }
+
+
+        .brand p {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 3px;
+        }
+
+
+        .back-btn {
+            background: transparent;
+            color: white;
+            border: 1px solid #475569;
+            padding: 9px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+
+        .main {
+            max-width: 1100px;
+            margin: auto;
+            padding: 24px;
+        }
+
+
+        .page-title {
+            margin-bottom: 20px;
+        }
+
+
+        .page-title h2 {
+            font-size: 24px;
+            color: #0f172a;
+        }
+
+
+        .page-title p {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+
+        .message {
+            display: none;
+            padding: 12px;
+            border-radius: 9px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+
+        .message.error {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+
+        .message.success {
+            display: block;
+            background: #f0fdf4;
+            color: #15803d;
+        }
+
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 17px;
+        }
+
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+
+        .label {
+            color: #64748b;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+
+        .value {
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .loan-id {
+            color: #2563eb;
+            font-size: 17px;
+        }
+
+
+        .amount-box {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+
+        .amount {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 11px;
+            padding: 13px;
+        }
+
+
+        .amount.highlight {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+
+        .amount.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+        }
+
+
+        .amount.final {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+
+        .amount-value {
+            margin-top: 5px;
+            font-size: 17px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+
+        .field label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 10px;
+            font-size: 12px;
+            outline: none;
+            background: #fff;
+        }
+
+
+        .field input {
+            height: 42px;
+        }
+
+
+        .field textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+
+        .field input:focus,
+        .field textarea:focus {
+            border-color: #2563eb;
+        }
+
+
+        .document-check {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+
+        .document-name {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .document-holder {
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 3px;
+        }
+
+
+        .badge {
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+
+        .badge.ok {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+
+        .badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+
+        .badge.staff {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+
+        .closing-warning {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 9px;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+
+        .closing-warning.show {
+            display: block;
+        }
+
+
+        .action-area {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+
+        .cancel-btn {
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 11px 18px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .close-btn {
+            background: #15803d;
+            border: 0;
+            color: white;
+            padding: 11px 20px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .close-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+
+        .app-footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+
+        .app-footer div:last-child {
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+
+        @media (max-width: 700px) {
+
+            .header {
+                padding: 12px 14px;
+            }
+
+
+            .main {
+                padding: 15px 12px;
+            }
+
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .full {
+                grid-column: auto;
+            }
+
+
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+
+            .amount-box {
+                grid-template-columns: 1fr 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="header">
+
+    <div class="brand">
+
+        <div class="logo">
+            SR
+        </div>
+
+        <div>
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-btn"
+        onclick="history.back()"
+    >
+        ← Back
+    </button>
+
+</header>
+
+
+
+<main class="main">
+
+
+    <div class="page-title">
+
+        <h2>
+            Loan Closing
+        </h2>
+
+        <p>
+            Review dues, settlement and documents before closing the loan.
+        </p>
+
+    </div>
+
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+
+    <div class="grid">
+
+
+        <!-- =========================================
+             LOAN / CUSTOMER
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Loan Information
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+
+                    <div class="label">
+                        Loan ID
+                    </div>
+
+                    <div
+                        class="value loan-id"
+                        id="loanId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Loan Type
+                    </div>
+
+                    <div
+                        class="value"
+                        id="loanType"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Customer ID
+                    </div>
+
+                    <div
+                        class="value"
+                        id="customerId"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Customer Name
+                    </div>
+
+                    <div
+                        class="value"
+                        id="customerName"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Mobile
+                    </div>
+
+                    <div
+                        class="value"
+                        id="customerMobile"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Loan Date
+                    </div>
+
+                    <div
+                        class="value"
+                        id="loanDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             VEHICLE
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Vehicle Information
+            </div>
+
+
+            <div class="info-grid">
+
+                <div>
+
+                    <div class="label">
+                        Vehicle
+                    </div>
+
+                    <div
+                        class="value"
+                        id="vehicle"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Vehicle Number
+                    </div>
+
+                    <div
+                        class="value"
+                        id="vehicleNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Chassis Number
+                    </div>
+
+                    <div
+                        class="value"
+                        id="chassisNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div>
+
+                    <div class="label">
+                        Engine Number
+                    </div>
+
+                    <div
+                        class="value"
+                        id="engineNumber"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             DUES
+        ========================================== -->
+
+        <section class="card full">
+
+            <div class="card-title">
+                Overall Dues
+            </div>
+
+
+            <div class="amount-box">
+
+
+                <div class="amount">
+
+                    <div class="label">
+                        Principal Outstanding
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="principalOutstanding"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount">
+
+                    <div class="label">
+                        Interest Outstanding
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="interestOutstanding"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount warning">
+
+                    <div class="label">
+                        Penalty
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="penaltyDisplay"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="amount highlight">
+
+                    <div class="label">
+                        Overall Due
+                    </div>
+
+                    <div
+                        class="amount-value"
+                        id="overallDue"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             SETTLEMENT
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Manual Settlement
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Closing / Penalty Amount
+                </label>
+
+                <input
+                    type="number"
+                    id="penaltyAmount"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    placeholder="Enter penalty"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Waiver / Adjustment
+                </label>
+
+                <input
+                    type="number"
+                    id="waiverAmount"
+                    min="0"
+                    step="0.01"
+                    value="0"
+                    placeholder="Enter waiver or adjustment"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Final Settlement Amount
+                </label>
+
+                <input
+                    type="number"
+                    id="settlementAmount"
+                    min="0"
+                    step="0.01"
+                    placeholder="Enter final agreed amount"
+                >
+
+            </div>
+
+
+            <div class="amount final">
+
+                <div class="label">
+                    Customer Final Payable
+                </div>
+
+                <div
+                    class="amount-value"
+                    id="finalPayable"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             CLOSING DETAILS
+        ========================================== -->
+
+        <section class="card">
+
+            <div class="card-title">
+                Closing Details
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Closing Date
+                </label>
+
+                <input
+                    type="date"
+                    id="closingDate"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Closing Remarks
+                </label>
+
+                <textarea
+                    id="closingRemarks"
+                    placeholder="Enter owner/customer settlement remarks"
+                ></textarea>
+
+            </div>
+
+
+            <div
+                style="
+                    background:#f8fafc;
+                    border-radius:10px;
+                    padding:12px;
+                    font-size:10px;
+                    color:#64748b;
+                    line-height:1.5;
+                "
+            >
+
+                Owner and customer can mutually agree
+                on the final settlement amount.
+                The agreed amount will be stored
+                separately from the calculated overall due.
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             DOCUMENT CHECK
+        ========================================== -->
+
+        <section class="card full">
+
+            <div class="card-title">
+                Document Closing Check
+            </div>
+
+
+            <div id="documentCheckList">
+
+                <div
+                    style="
+                        padding:20px;
+                        text-align:center;
+                        color:#94a3b8;
+                        font-size:11px;
+                    "
+                >
+                    Loading documents...
+                </div>
+
+            </div>
+
+
+            <div
+                id="closingWarning"
+                class="closing-warning"
+            >
+                Loan cannot be closed while required
+                documents are pending or are still
+                issued to staff.
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================================
+             ACTION
+        ========================================== -->
+
+        <section class="card full">
+
+            <div
+                style="
+                    font-size:11px;
+                    color:#64748b;
+                    line-height:1.5;
+                "
+            >
+
+                Once the loan is closed, the loan status
+                will become <strong>Closed</strong>.
+                Closing amount, penalty, waiver,
+                settlement and document status will
+                remain linked to this Loan ID.
+
+            </div>
+
+
+            <div class="action-area">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="history.back()"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="button"
+                    class="close-btn"
+                    id="closeLoanBtn"
+                    disabled
+                >
+                    Close Loan
+                </button>
+
+            </div>
+
+        </section>
+
+
+    </div>
+
+
+</main>
+
+
+
+<footer class="app-footer">
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
+</footer>
+
+
+
+<script
+    type="module"
+    src="js/loan-close.js"
+></script>
+
+
+</body>
+
+</html>
