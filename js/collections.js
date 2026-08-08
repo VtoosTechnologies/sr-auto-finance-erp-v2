@@ -94,6 +94,7 @@ let currentLoan = null;
 
 let currentLoanId = null;
 
+
 /*
  * One token is kept for one payment attempt.
  *
@@ -203,6 +204,170 @@ function getTodayDate() {
 
 
 // =====================================================
+// PARSE DATE
+// =====================================================
+
+function parseDateValue(
+    value
+) {
+
+    if (!value) {
+        return null;
+    }
+
+
+    if (
+        value &&
+        typeof value.toDate ===
+        "function"
+    ) {
+
+        const date =
+            value.toDate();
+
+        return isNaN(
+            date.getTime()
+        )
+            ? null
+            : date;
+
+    }
+
+
+    if (
+        value instanceof Date
+    ) {
+
+        const date =
+            new Date(
+                value.getTime()
+            );
+
+        return isNaN(
+            date.getTime()
+        )
+            ? null
+            : date;
+
+    }
+
+
+    const raw =
+        String(
+            value
+        ).trim();
+
+
+    let match =
+        raw.match(
+            /^(\d{4})-(\d{2})-(\d{2})$/
+        );
+
+
+    if (match) {
+
+        const date =
+            new Date(
+                Number(match[1]),
+                Number(match[2]) - 1,
+                Number(match[3])
+            );
+
+        return isNaN(
+            date.getTime()
+        )
+            ? null
+            : date;
+
+    }
+
+
+    match =
+        raw.match(
+            /^(\d{2})[-\/](\d{2})[-\/](\d{4})$/
+        );
+
+
+    if (match) {
+
+        const date =
+            new Date(
+                Number(match[3]),
+                Number(match[2]) - 1,
+                Number(match[1])
+            );
+
+        return isNaN(
+            date.getTime()
+        )
+            ? null
+            : date;
+
+    }
+
+
+    const date =
+        new Date(
+            raw
+        );
+
+
+    return isNaN(
+        date.getTime()
+    )
+        ? null
+        : date;
+
+}
+
+
+// =====================================================
+// FORMAT DATE FOR STORAGE
+// =====================================================
+
+function formatDateForStorage(
+    value
+) {
+
+    const date =
+        parseDateValue(
+            value
+        );
+
+
+    if (!date) {
+        return "";
+    }
+
+
+    const year =
+        date.getFullYear();
+
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+// =====================================================
 // FORMAT DATE
 // =====================================================
 
@@ -214,35 +379,19 @@ function formatDate(
         return "-";
     }
 
+
     try {
 
-        let date;
+        const date =
+            parseDateValue(
+                value
+            );
 
-        if (
-            value &&
-            typeof value.toDate ===
-            "function"
-        ) {
 
-            date =
-                value.toDate();
-
-        } else {
-
-            date =
-                new Date(value);
-
-        }
-
-        if (
-            isNaN(
-                date.getTime()
-            )
-        ) {
-
+        if (!date) {
             return "-";
-
         }
+
 
         return date.toLocaleDateString(
             "en-IN",
@@ -252,6 +401,7 @@ function formatDate(
                 year: "numeric"
             }
         );
+
 
     } catch (error) {
 
@@ -311,9 +461,11 @@ function setText(
             id
         );
 
+
     if (!element) {
         return;
     }
+
 
     element.textContent =
         value ?? "-";
@@ -330,17 +482,471 @@ function numberValue(
 ) {
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
+
 
     if (
-        isNaN(number)
+        isNaN(
+            number
+        )
     ) {
 
         return 0;
 
     }
 
+
     return number;
+
+}
+
+
+// =====================================================
+// PENALTY RULES
+// =====================================================
+
+const PENALTY_COOLING_DAYS =
+    5;
+
+
+function getPenaltyForInstallment(
+    monthlyInstallment
+) {
+
+    const emi =
+        numberValue(
+            monthlyInstallment
+        );
+
+
+    if (emi <= 2500) {
+        return 100;
+    }
+
+
+    if (emi <= 5000) {
+        return 200;
+    }
+
+
+    if (emi < 7500) {
+        return 300;
+    }
+
+
+    if (emi <= 10000) {
+        return 400;
+    }
+
+
+    if (emi <= 15000) {
+        return 500;
+    }
+
+
+    return 600;
+
+}
+
+
+// =====================================================
+// DAYS BETWEEN
+// =====================================================
+
+function startOfDay(
+    date
+) {
+
+    const result =
+        new Date(
+            date
+        );
+
+    result.setHours(
+        0,
+        0,
+        0,
+        0
+    );
+
+    return result;
+
+}
+
+
+function daysBetween(
+    fromValue,
+    toValue
+) {
+
+    const from =
+        parseDateValue(
+            fromValue
+        );
+
+    const to =
+        parseDateValue(
+            toValue
+        );
+
+
+    if (
+        !from ||
+        !to
+    ) {
+
+        return 0;
+
+    }
+
+
+    const difference =
+        startOfDay(to).getTime() -
+        startOfDay(from).getTime();
+
+
+    return Math.max(
+        Math.floor(
+            difference /
+            86400000
+        ),
+        0
+    );
+
+}
+
+
+// =====================================================
+// DUE DATE FOR INSTALLMENT
+// =====================================================
+
+function getDueDateForInstallment(
+    loan,
+    installmentNumber
+) {
+
+    const firstDueDate =
+        loan.firstDueDate ||
+        loan.dueDate ||
+        loan.loanDate;
+
+
+    const baseDate =
+        parseDateValue(
+            firstDueDate
+        );
+
+
+    if (!baseDate) {
+        return null;
+    }
+
+
+    const frequency =
+        String(
+            loan.frequency ||
+            loan.paymentFrequency ||
+            "Monthly"
+        ).toLowerCase();
+
+
+    const periods =
+        Math.max(
+            Number(
+                installmentNumber ||
+                1
+            ) - 1,
+            0
+        );
+
+
+    const dueDate =
+        new Date(
+            baseDate.getTime()
+        );
+
+
+    if (
+        frequency ===
+        "weekly"
+    ) {
+
+        dueDate.setDate(
+            dueDate.getDate() +
+            (
+                periods *
+                7
+            )
+        );
+
+    }
+
+    else if (
+        frequency ===
+        "daily"
+    ) {
+
+        dueDate.setDate(
+            dueDate.getDate() +
+            periods
+        );
+
+    }
+
+    else {
+
+        dueDate.setMonth(
+            dueDate.getMonth() +
+            periods
+        );
+
+    }
+
+
+    return dueDate;
+
+}
+
+
+// =====================================================
+// PAID INSTALLMENTS
+// =====================================================
+
+function getPaidInstallments(
+    loan,
+    totalPaidOverride = null
+) {
+
+    const installmentAmount =
+        numberValue(
+            loan.installmentAmount ??
+            loan.monthlyInstallment ??
+            loan.emi
+        );
+
+
+    const totalPaid =
+        totalPaidOverride !== null
+            ? numberValue(
+                totalPaidOverride
+            )
+            : numberValue(
+                loan.totalPaid ??
+                loan.paidAmount ??
+                loan.totalCollection
+            );
+
+
+    const totalInstallments =
+        numberValue(
+            loan.totalInstallments ??
+            loan.installments ??
+            loan.duration ??
+            loan.loanDuration ??
+            loan.tenure
+        );
+
+
+    if (
+        installmentAmount <= 0
+    ) {
+
+        return 0;
+
+    }
+
+
+    let paid =
+        Math.floor(
+            totalPaid /
+            installmentAmount
+        );
+
+
+    if (
+        totalInstallments > 0
+    ) {
+
+        paid =
+            Math.min(
+                paid,
+                totalInstallments
+            );
+
+    }
+
+
+    return Math.max(
+        paid,
+        0
+    );
+
+}
+
+
+// =====================================================
+// NEXT DUE DATE
+// =====================================================
+
+function getNextDueDate(
+    loan,
+    totalPaidOverride = null
+) {
+
+    const stored =
+        loan.nextDueDate ||
+        loan.nextPaymentDate;
+
+
+    if (stored) {
+
+        const storedDate =
+            parseDateValue(
+                stored
+            );
+
+
+        if (storedDate) {
+            return storedDate;
+        }
+
+    }
+
+
+    const paidInstallments =
+        getPaidInstallments(
+            loan,
+            totalPaidOverride
+        );
+
+
+    return getDueDateForInstallment(
+        loan,
+        paidInstallments + 1
+    );
+
+}
+
+
+// =====================================================
+// AUTOMATIC PENALTY
+// =====================================================
+
+function calculateAutomaticPenalty(
+    loan,
+    paidDateValue,
+    totalPaidBeforePayment = null
+) {
+
+    const paidDate =
+        parseDateValue(
+            paidDateValue
+        );
+
+
+    if (!paidDate) {
+
+        return {
+            amount: 0,
+            daysDelayed: 0,
+            coolingApplied: false,
+            dueDate: null,
+            penaltyCycles: 0
+        };
+
+    }
+
+
+    const paidInstallments =
+        getPaidInstallments(
+            loan,
+            totalPaidBeforePayment
+        );
+
+
+    const dueDate =
+        getDueDateForInstallment(
+            loan,
+            paidInstallments + 1
+        );
+
+
+    if (!dueDate) {
+
+        return {
+            amount: 0,
+            daysDelayed: 0,
+            coolingApplied: false,
+            dueDate: null,
+            penaltyCycles: 0
+        };
+
+    }
+
+
+    const delayDays =
+        daysBetween(
+            dueDate,
+            paidDate
+        );
+
+
+    const daysAfterCooling =
+        Math.max(
+            delayDays -
+            PENALTY_COOLING_DAYS,
+            0
+        );
+
+
+    const monthlyPenalty =
+        getPenaltyForInstallment(
+            loan.installmentAmount ??
+            loan.monthlyInstallment ??
+            loan.emi
+        );
+
+
+    let penaltyCycles =
+        0;
+
+
+    if (
+        daysAfterCooling > 0
+    ) {
+
+        penaltyCycles =
+            Math.max(
+                Math.ceil(
+                    daysAfterCooling /
+                    30
+                ),
+                1
+            );
+
+    }
+
+
+    return {
+
+        amount:
+            monthlyPenalty *
+            penaltyCycles,
+
+        daysDelayed:
+            delayDays,
+
+        coolingApplied:
+            delayDays >
+            PENALTY_COOLING_DAYS,
+
+        dueDate,
+
+        penaltyCycles
+
+    };
 
 }
 
@@ -427,6 +1033,16 @@ function resetLoanDisplay() {
     );
 
     setText(
+        "totalInstallments",
+        "0"
+    );
+
+    setText(
+        "paidInstallments",
+        "0"
+    );
+
+    setText(
         "pendingInstallments",
         "0"
     );
@@ -441,10 +1057,25 @@ function resetLoanDisplay() {
         "₹0"
     );
 
+    setText(
+        "currentPenalty",
+        "₹0"
+    );
+
+    setText(
+        "penaltyStatus",
+        "No Penalty"
+    );
+
+    setText(
+        "daysDelayed",
+        "0"
+    );
+
 
     paymentHistoryBody.innerHTML = `
         <tr>
-            <td colspan="7">
+            <td colspan="10">
                 <div class="empty">
                     Search a loan to view collection history.
                 </div>
@@ -454,10 +1085,448 @@ function resetLoanDisplay() {
 
 }
 
+// =====================================================
+// OUTSTANDING
+// =====================================================
+
+function getOutstanding(
+    loan
+) {
+
+    if (!loan) {
+        return 0;
+    }
+
+
+    const totalPayable =
+        numberValue(
+            loan.totalPayable ??
+            loan.totalAmount ??
+            loan.totalLoanPayable
+        );
+
+
+    const totalPaid =
+        numberValue(
+            loan.totalPaid ??
+            loan.paidAmount ??
+            loan.totalCollection
+        );
+
+
+    const totalPenalty =
+        numberValue(
+            loan.penaltyAmount ??
+            loan.totalPenalty ??
+            loan.penalty
+        );
+
+
+    /*
+     * If total payable is available,
+     * calculate actual outstanding.
+     *
+     * Penalty is added separately because
+     * it is an amount payable by the customer.
+     */
+
+    if (
+        totalPayable > 0
+    ) {
+
+        return Math.max(
+            totalPayable -
+            totalPaid +
+            totalPenalty,
+            0
+        );
+
+    }
+
+
+    /*
+     * Fallback for older loans.
+     */
+
+    const loanAmount =
+        numberValue(
+            loan.loanAmount ??
+            loan.principalAmount ??
+            loan.amount
+        );
+
+
+    if (
+        loanAmount > 0
+    ) {
+
+        return Math.max(
+            loanAmount -
+            totalPaid +
+            totalPenalty,
+            0
+        );
+
+    }
+
+
+    return 0;
+
+}
+
 
 // =====================================================
-// LOAD LOAN BY SEARCH
+// RENDER LOAN
 // =====================================================
+
+function renderLoan() {
+
+    if (!currentLoan) {
+        return;
+    }
+
+
+    setText(
+        "loanId",
+        currentLoan.loanId ||
+        currentLoan.loanNumber ||
+        currentLoan.id
+    );
+
+
+    setText(
+        "loanType",
+        String(
+            currentLoan.loanType ||
+            "New Loan"
+        ).toLowerCase() ===
+        "reloan"
+            ? "ReLoan"
+            : "New Loan"
+    );
+
+
+    setText(
+        "loanDate",
+        formatDate(
+            currentLoan.loanDate
+        )
+    );
+
+
+    setText(
+        "loanStatus",
+        currentLoan.status ||
+        "Active"
+    );
+
+
+    setText(
+        "customerId",
+        currentLoan.customerId ||
+        "-"
+    );
+
+
+    setText(
+        "customerName",
+        currentLoan.customerName ||
+        "-"
+    );
+
+
+    setText(
+        "customerMobile",
+        currentLoan.customerMobile ||
+        currentLoan.mobile ||
+        "-"
+    );
+
+
+    setText(
+        "vehicleNumber",
+        currentLoan.vehicleNumber ||
+        "-"
+    );
+
+
+    // =================================================
+    // BASIC FINANCIAL VALUES
+    // =================================================
+
+    const monthlyInstallment =
+        numberValue(
+            currentLoan.installmentAmount ??
+            currentLoan.monthlyInstallment ??
+            currentLoan.emi
+        );
+
+
+    const totalPaid =
+        numberValue(
+            currentLoan.totalPaid ??
+            currentLoan.paidAmount ??
+            currentLoan.totalCollection
+        );
+
+
+    const totalPenalty =
+        numberValue(
+            currentLoan.penaltyAmount ??
+            currentLoan.totalPenalty ??
+            currentLoan.penalty
+        );
+
+
+    const outstanding =
+        getOutstanding(
+            currentLoan
+        );
+
+
+    // =================================================
+    // INSTALLMENT SUMMARY
+    // =================================================
+
+    const totalInstallments =
+        numberValue(
+            currentLoan.totalInstallments ??
+            currentLoan.installments ??
+            currentLoan.duration ??
+            currentLoan.loanDuration ??
+            currentLoan.tenure
+        );
+
+
+    const paidInstallments =
+        getPaidInstallments(
+            currentLoan,
+            totalPaid
+        );
+
+
+    const pendingInstallments =
+        Math.max(
+            totalInstallments -
+            paidInstallments,
+            0
+        );
+
+
+    // =================================================
+    // NEXT DUE DATE
+    // =================================================
+
+    const nextDueDate =
+        getNextDueDate(
+            currentLoan,
+            totalPaid
+        );
+
+
+    // =================================================
+    // SUMMARY DISPLAY
+    // =================================================
+
+    setText(
+        "monthlyInstallment",
+        formatCurrency(
+            monthlyInstallment
+        )
+    );
+
+
+    setText(
+        "totalPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
+
+
+    setText(
+        "totalPenalty",
+        formatCurrency(
+            totalPenalty
+        )
+    );
+
+
+    setText(
+        "outstanding",
+        formatCurrency(
+            outstanding
+        )
+    );
+
+
+    setText(
+        "totalInstallments",
+        totalInstallments
+    );
+
+
+    setText(
+        "paidInstallments",
+        paidInstallments
+    );
+
+
+    setText(
+        "pendingInstallments",
+        pendingInstallments
+    );
+
+
+    setText(
+        "nextDueDate",
+        formatDate(
+            nextDueDate
+        )
+    );
+
+
+    setText(
+        "lastPaymentDate",
+        formatDate(
+            currentLoan.lastPaymentDate
+        )
+    );
+
+
+    setText(
+        "lastPaymentAmount",
+        formatCurrency(
+            currentLoan.lastPaymentAmount
+        )
+    );
+
+
+    // =================================================
+    // PAYMENT ENTRY DEFAULTS
+    // =================================================
+
+    if (
+        paymentDate &&
+        !paymentDate.value
+    ) {
+
+        paymentDate.value =
+            getTodayDate();
+
+    }
+
+
+    updatePaymentPreview();
+
+
+    // =================================================
+    // CLOSED LOAN
+    // =================================================
+
+    const status =
+        String(
+            currentLoan.status ||
+            ""
+        ).toLowerCase();
+
+
+    if (
+        status === "closed" ||
+        status === "completed"
+    ) {
+
+        disablePaymentEntry();
+
+        showMessage(
+            "This loan is already closed. New collection is not allowed."
+        );
+
+        return;
+
+    }
+
+
+    enablePaymentEntry();
+
+}
+
+
+// =====================================================
+// ENABLE PAYMENT ENTRY
+// =====================================================
+
+function enablePaymentEntry() {
+
+    if (amountReceived) {
+        amountReceived.disabled =
+            false;
+    }
+
+
+    if (paymentDate) {
+        paymentDate.disabled =
+            false;
+    }
+
+
+    if (paymentMode) {
+        paymentMode.disabled =
+            false;
+    }
+
+
+    if (paymentRemarks) {
+        paymentRemarks.disabled =
+            false;
+    }
+
+
+    if (savePaymentBtn) {
+        savePaymentBtn.disabled =
+            false;
+    }
+
+}
+
+
+// =====================================================
+// DISABLE PAYMENT ENTRY
+// =====================================================
+
+function disablePaymentEntry() {
+
+    if (amountReceived) {
+        amountReceived.disabled =
+            true;
+    }
+
+
+    if (paymentDate) {
+        paymentDate.disabled =
+            true;
+    }
+
+
+    if (paymentMode) {
+        paymentMode.disabled =
+            true;
+    }
+
+
+    if (paymentRemarks) {
+        paymentRemarks.disabled =
+            true;
+    }
+
+
+    if (savePaymentBtn) {
+        savePaymentBtn.disabled =
+            true;
+    }
+
+}
+
 
 // =====================================================
 // SEARCH LOAN
@@ -502,15 +1571,6 @@ async function searchLoan() {
                 "loans"
             );
 
-
-        /*
-         * Load loan records.
-         *
-         * We compare Loan ID / Customer ID /
-         * Vehicle Number in JavaScript so that
-         * upper/lower case and accidental spaces
-         * do not cause search failure.
-         */
 
         const snapshot =
             await getDocs(
@@ -558,9 +1618,14 @@ async function searchLoan() {
 
 
                 if (
-                    loanId === searchValue ||
-                    customerId === searchValue ||
-                    vehicleNumber === searchValue
+                    loanId ===
+                    searchValue ||
+
+                    customerId ===
+                    searchValue ||
+
+                    vehicleNumber ===
+                    searchValue
                 ) {
 
                     matches.push({
@@ -646,9 +1711,16 @@ async function searchLoan() {
 
 
                     return (
-                        loanId === searchValue ||
-                        customerId === searchValue ||
-                        vehicleNumber === searchValue
+
+                        loanId ===
+                        searchValue ||
+
+                        customerId ===
+                        searchValue ||
+
+                        vehicleNumber ===
+                        searchValue
+
                     );
 
                 }
@@ -673,7 +1745,7 @@ async function searchLoan() {
 
 
         // =================================================
-        // DISPLAY
+        // RENDER
         // =================================================
 
         renderLoan();
@@ -712,7 +1784,7 @@ async function searchLoan() {
 
 
         showMessage(
-            "Unable to search loan. Please check Firestore access and try again."
+            "Unable to search loan. Please try again."
         );
 
 
@@ -728,617 +1800,9 @@ async function searchLoan() {
 
 }
 
-// =====================================================
-// RENDER LOAN
-// =====================================================
-
-function renderLoan() {
-
-    if (!currentLoan) {
-        return;
-    }
-
-
-    setText(
-        "loanId",
-        currentLoan.loanId ||
-        currentLoan.loanNumber ||
-        currentLoan.id
-    );
-
-
-    setText(
-        "loanType",
-        String(
-            currentLoan.loanType ||
-            "New Loan"
-        ).toLowerCase() ===
-        "reloan"
-            ? "ReLoan"
-            : "New Loan"
-    );
-
-
-    setText(
-        "loanDate",
-        formatDate(
-            currentLoan.loanDate
-        )
-    );
-
-
-    setText(
-        "loanStatus",
-        currentLoan.status ||
-        "Active"
-    );
-
-
-    setText(
-        "customerId",
-        currentLoan.customerId ||
-        "-"
-    );
-
-
-    setText(
-        "customerName",
-        currentLoan.customerName ||
-        "-"
-    );
-
-
-    setText(
-        "customerMobile",
-        currentLoan.customerMobile ||
-        currentLoan.mobile ||
-        "-"
-    );
-
-
-    setText(
-        "vehicleNumber",
-        currentLoan.vehicleNumber ||
-        "-"
-    );
-
-
-    const monthlyInstallment =
-        numberValue(
-            currentLoan.installmentAmount ??
-            currentLoan.monthlyInstallment ??
-            currentLoan.emi
-        );
-
-
-    const totalPaid =
-        numberValue(
-            currentLoan.totalPaid ??
-            currentLoan.paidAmount ??
-            currentLoan.totalCollection
-        );
-
-
-    const penalty =
-        numberValue(
-            currentLoan.penaltyAmount ??
-            currentLoan.penalty ??
-            currentLoan.totalPenalty
-        );
-
-
-    const outstanding =
-        getOutstanding(
-            currentLoan
-        );
-
-
-    const pendingInstallments =
-        numberValue(
-            currentLoan.pendingInstallments ??
-            currentLoan.installmentsPending
-        );
-
-
-    setText(
-        "monthlyInstallment",
-        formatCurrency(
-            monthlyInstallment
-        )
-    );
-
-
-    setText(
-        "totalPaid",
-        formatCurrency(
-            totalPaid
-        )
-    );
-
-
-    setText(
-        "totalPenalty",
-        formatCurrency(
-            penalty
-        )
-    );
-
-
-    setText(
-        "outstanding",
-        formatCurrency(
-            outstanding
-        )
-    );
-
-
-    setText(
-        "previousOutstanding",
-        formatCurrency(
-            outstanding
-        )
-    );
-
-
-    setText(
-        "newOutstanding",
-        formatCurrency(
-            outstanding
-        )
-    );
-
-
- // =================================================
-// NEXT DUE DATE
-// =================================================
-
-let nextDueDate =
-    currentLoan.nextDueDate ||
-    currentLoan.nextPaymentDate ||
-    currentLoan.dueDate ||
-    null;
-
-
-// If nextDueDate is not stored,
-// calculate it from firstDueDate.
-
-if (!nextDueDate) {
-
-    const firstDueDate =
-        currentLoan.firstDueDate ||
-        currentLoan.loanDate;
-
-
-    const frequency =
-        String(
-            currentLoan.frequency ||
-            currentLoan.paymentFrequency ||
-            "Monthly"
-        ).toLowerCase();
-
-
-    const totalInstallments =
-        numberValue(
-            currentLoan.totalInstallments ??
-            currentLoan.installments ??
-            currentLoan.duration ??
-            currentLoan.loanDuration ??
-            currentLoan.tenure
-        );
-
-
-    const totalPaid =
-        numberValue(
-            currentLoan.totalPaid ??
-            currentLoan.paidAmount ??
-            currentLoan.totalCollection
-        );
-
-
-    const installmentAmount =
-        numberValue(
-            currentLoan.installmentAmount ??
-            currentLoan.monthlyInstallment ??
-            currentLoan.emi
-        );
-
-
-    let paidInstallments = 0;
-
-
-    if (
-        installmentAmount > 0
-    ) {
-
-        paidInstallments =
-            Math.floor(
-                totalPaid /
-                installmentAmount
-            );
-
-    }
-
-
-    if (
-        totalInstallments > 0
-    ) {
-
-        paidInstallments =
-            Math.min(
-                paidInstallments,
-                totalInstallments
-            );
-
-    }
-
-
-    if (firstDueDate) {
-
-    let date;
-
-    // Firestore Timestamp
-    if (
-        firstDueDate &&
-        typeof firstDueDate.toDate === "function"
-    ) {
-
-        date = firstDueDate.toDate();
-
-    }
-
-    // JavaScript Date
-    else if (
-        firstDueDate instanceof Date
-    ) {
-
-        date = new Date(
-            firstDueDate.getTime()
-        );
-
-    }
-
-    // String
-    else {
-
-        const value =
-            String(firstDueDate).trim();
-
-        // YYYY-MM-DD
-        if (
-            /^\d{4}-\d{2}-\d{2}$/.test(value)
-        ) {
-
-            const [
-                year,
-                month,
-                day
-            ] = value.split("-").map(Number);
-
-            date =
-                new Date(
-                    year,
-                    month - 1,
-                    day
-                );
-
-        }
-
-        // DD-MM-YYYY
-        else if (
-            /^\d{2}-\d{2}-\d{4}$/.test(value)
-        ) {
-
-            const [
-                day,
-                month,
-                year
-            ] = value.split("-").map(Number);
-
-            date =
-                new Date(
-                    year,
-                    month - 1,
-                    day
-                );
-
-        }
-
-        // DD/MM/YYYY
-        else if (
-            /^\d{2}\/\d{2}\/\d{4}$/.test(value)
-        ) {
-
-            const [
-                day,
-                month,
-                year
-            ] = value.split("/").map(Number);
-
-            date =
-                new Date(
-                    year,
-                    month - 1,
-                    day
-                );
-
-        }
-
-        else {
-
-            date =
-                new Date(value);
-
-        }
-
-    }
-
-
-    if (
-        date &&
-        !isNaN(date.getTime())
-    ) {
-
-        const periods =
-            paidInstallments;
-
-
-        if (
-            frequency === "monthly"
-        ) {
-
-            date.setMonth(
-                date.getMonth() +
-                periods
-            );
-
-        }
-
-        else if (
-            frequency === "weekly"
-        ) {
-
-            date.setDate(
-                date.getDate() +
-                (periods * 7)
-            );
-
-        }
-
-        else if (
-            frequency === "daily"
-        ) {
-
-            date.setDate(
-                date.getDate() +
-                periods
-            );
-
-        }
-
-
-        nextDueDate =
-            date;
-
-    }
-
-}
-
-setText(
-    "nextDueDate",
-    formatDate(
-        nextDueDate
-    )
-);
-
-
-    setText(
-        "pendingInstallments",
-        pendingInstallments
-    );
-
-
-    setText(
-        "lastPaymentDate",
-        formatDate(
-            currentLoan.lastPaymentDate
-        )
-    );
-
-
-    setText(
-        "lastPaymentAmount",
-        formatCurrency(
-            currentLoan.lastPaymentAmount
-        )
-    );
-
-
-    /*
-     * Closed loans should not accept
-     * new collections.
-     */
-
-    const status =
-        String(
-            currentLoan.status ||
-            ""
-        ).toLowerCase();
-
-
-    if (
-        status === "closed" ||
-        status === "completed"
-    ) {
-
-        disablePaymentEntry();
-
-
-        showMessage(
-            "This loan is already closed. New collection is not allowed."
-        );
-
-    }
-
-}
-
 
 // =====================================================
-// OUTSTANDING
-// =====================================================
-
-function getOutstanding(
-    loan
-) {
-
-    /*
-     * Current balance is always preferred.
-     */
-
-    if (
-        loan.outstandingAmount !==
-        undefined &&
-        loan.outstandingAmount !==
-        null
-    ) {
-
-        return Math.max(
-            numberValue(
-                loan.outstandingAmount
-            ),
-            0
-        );
-
-    }
-
-
-    if (
-        loan.balanceAmount !==
-        undefined &&
-        loan.balanceAmount !==
-        null
-    ) {
-
-        return Math.max(
-            numberValue(
-                loan.balanceAmount
-            ),
-            0
-        );
-
-    }
-
-
-    if (
-        loan.remainingAmount !==
-        undefined &&
-        loan.remainingAmount !==
-        null
-    ) {
-
-        return Math.max(
-            numberValue(
-                loan.remainingAmount
-            ),
-            0
-        );
-
-    }
-
-
-    /*
-     * Fallback calculation.
-     */
-
-    const loanAmount =
-        numberValue(
-            loan.loanAmount ??
-            loan.principalAmount ??
-            loan.amount
-        );
-
-
-    const totalPaid =
-        numberValue(
-            loan.totalPaid ??
-            loan.paidAmount
-        );
-
-
-    return Math.max(
-        loanAmount -
-        totalPaid,
-        0
-    );
-
-}
-
-
-// =====================================================
-// ENABLE PAYMENT
-// =====================================================
-
-function enablePaymentEntry() {
-
-    if (!amountReceived) {
-        return;
-    }
-
-
-    amountReceived.disabled =
-        false;
-
-    penaltyCollected.disabled =
-        false;
-
-    paymentMode.disabled =
-        false;
-
-    paymentDate.disabled =
-        false;
-
-    paymentRemarks.disabled =
-        false;
-
-
-    updatePaymentPreview();
-
-}
-
-
-// =====================================================
-// DISABLE PAYMENT
-// =====================================================
-
-function disablePaymentEntry() {
-
-    if (!amountReceived) {
-        return;
-    }
-
-
-    amountReceived.disabled =
-        true;
-
-    penaltyCollected.disabled =
-        true;
-
-    paymentMode.disabled =
-        true;
-
-    paymentDate.disabled =
-        true;
-
-    paymentRemarks.disabled =
-        true;
-
-    savePaymentBtn.disabled =
-        true;
-
-}
-
-
-// =====================================================
-// PAYMENT PREVIEW
+// UPDATE PAYMENT PREVIEW
 // =====================================================
 
 function updatePaymentPreview() {
@@ -1365,6 +1829,21 @@ function updatePaymentPreview() {
             "₹0"
         );
 
+        setText(
+            "currentPenalty",
+            "₹0"
+        );
+
+        setText(
+            "penaltyStatus",
+            "No Penalty"
+        );
+
+        setText(
+            "daysDelayed",
+            "0"
+        );
+
         return;
 
     }
@@ -1379,37 +1858,48 @@ function updatePaymentPreview() {
     const amount =
         Math.max(
             numberValue(
-                amountReceived.value
+                amountReceived?.value
             ),
             0
+        );
+
+
+    const totalPaid =
+        numberValue(
+            currentLoan.totalPaid ??
+            currentLoan.paidAmount ??
+            currentLoan.totalCollection
+        );
+
+
+    const automaticPenalty =
+        calculateAutomaticPenalty(
+            currentLoan,
+            paymentDate?.value ||
+            getTodayDate(),
+            totalPaid
         );
 
 
     const penalty =
-        Math.max(
-            numberValue(
-                penaltyCollected.value
-            ),
-            0
-        );
+        automaticPenalty.amount;
 
 
-    /*
-     * Amount Received is treated as
-     * payment against loan outstanding.
-     *
-     * Penalty is recorded separately.
-     *
-     * Therefore:
-     *
-     * New Outstanding =
-     * Previous Outstanding - Amount Received
-     */
+    if (penaltyCollected) {
+
+        penaltyCollected.value =
+            String(
+                penalty
+            );
+
+    }
+
 
     const newOutstanding =
         Math.max(
             outstanding -
-            amount,
+            amount +
+            penalty,
             0
         );
 
@@ -1446,6 +1936,28 @@ function updatePaymentPreview() {
     );
 
 
+    setText(
+        "currentPenalty",
+        formatCurrency(
+            penalty
+        )
+    );
+
+
+    setText(
+        "daysDelayed",
+        automaticPenalty.daysDelayed
+    );
+
+
+    setText(
+        "penaltyStatus",
+        penalty > 0
+            ? `Penalty Applied (${automaticPenalty.penaltyCycles} month)`
+            : "No Penalty"
+    );
+
+
     validatePaymentForm();
 
 }
@@ -1457,15 +1969,55 @@ function updatePaymentPreview() {
 
 function validatePaymentForm() {
 
+    if (!currentLoan) {
+        return false;
+    }
+
+
+    const amount =
+        numberValue(
+            amountReceived?.value
+        );
+
+
     if (
-        !currentLoan ||
-        !currentLoanId
+        amount <= 0
     ) {
 
-        savePaymentBtn.disabled =
-            true;
+        if (savePaymentBtn) {
+            savePaymentBtn.disabled =
+                true;
+        }
 
-        return;
+        return false;
+
+    }
+
+
+    if (
+        !paymentDate?.value
+    ) {
+
+        if (savePaymentBtn) {
+            savePaymentBtn.disabled =
+                true;
+        }
+
+        return false;
+
+    }
+
+
+    if (
+        !paymentMode?.value
+    ) {
+
+        if (savePaymentBtn) {
+            savePaymentBtn.disabled =
+                true;
+        }
+
+        return false;
 
     }
 
@@ -1482,935 +2034,25 @@ function validatePaymentForm() {
         status === "completed"
     ) {
 
+        if (savePaymentBtn) {
+            savePaymentBtn.disabled =
+                true;
+        }
+
+        return false;
+
+    }
+
+
+    if (savePaymentBtn) {
+
         savePaymentBtn.disabled =
-            true;
-
-        return;
+            false;
 
     }
 
 
-    const amount =
-        numberValue(
-            amountReceived.value
-        );
-
-
-    const penalty =
-        numberValue(
-            penaltyCollected.value
-        );
-
-
-    const outstanding =
-        getOutstanding(
-            currentLoan
-        );
-
-
-    const validAmount =
-        amount > 0 &&
-        amount <= outstanding;
-
-
-    const validPenalty =
-        penalty >= 0;
-
-
-    const validDate =
-        Boolean(
-            paymentDate.value
-        );
-
-
-    const validMode =
-        Boolean(
-            paymentMode.value
-        );
-
-
-    savePaymentBtn.disabled =
-        !(
-            validAmount &&
-            validPenalty &&
-            validDate &&
-            validMode
-        );
-
-}
-
-
-// =====================================================
-// LOAD PAYMENT HISTORY
-// =====================================================
-
-async function loadPaymentHistory() {
-
-    if (!currentLoanId) {
-        return;
-    }
-
-
-    paymentHistoryBody.innerHTML = `
-        <tr>
-            <td colspan="7">
-                <div class="empty">
-                    Loading collection history...
-                </div>
-            </td>
-        </tr>
-    `;
-
-
-    try {
-
-        const paymentsRef =
-            collection(
-                db,
-                "payments"
-            );
-
-
-        const paymentQuery =
-            query(
-                paymentsRef,
-                where(
-                    "loanDocumentId",
-                    "==",
-                    currentLoanId
-                )
-            );
-
-
-        const snapshot =
-            await getDocs(
-                paymentQuery
-            );
-
-
-        const payments = [];
-
-
-        snapshot.forEach(
-            paymentDoc => {
-
-                payments.push({
-
-                    id:
-                        paymentDoc.id,
-
-                    ...paymentDoc.data()
-
-                });
-
-            }
-        );
-
-
-        /*
-         * Newest payment first.
-         */
-
-        payments.sort(
-            (a, b) => {
-
-                const dateA =
-                    new Date(
-                        a.paymentDate ||
-                        a.createdAt?.toDate?.() ||
-                        0
-                    );
-
-                const dateB =
-                    new Date(
-                        b.paymentDate ||
-                        b.createdAt?.toDate?.() ||
-                        0
-                    );
-
-                return (
-                    dateB - dateA
-                );
-
-            }
-        );
-
-
-        renderPaymentHistory(
-            payments
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Payment history error:",
-            error
-        );
-
-
-        paymentHistoryBody.innerHTML = `
-            <tr>
-                <td colspan="7">
-                    <div class="empty">
-                        Unable to load collection history.
-                    </div>
-                </td>
-            </tr>
-        `;
-
-    }
-
-}
-
-
-// =====================================================
-// RENDER HISTORY
-// =====================================================
-
-function renderPaymentHistory(
-    payments
-) {
-
-    if (
-        !payments.length
-    ) {
-
-        paymentHistoryBody.innerHTML = `
-            <tr>
-                <td colspan="7">
-                    <div class="empty">
-                        No collection history found.
-                    </div>
-                </td>
-            </tr>
-        `;
-
-        return;
-
-    }
-
-
-    paymentHistoryBody.innerHTML =
-        payments.map(
-            payment => {
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            <span class="receipt">
-                                ${escapeHTML(
-                                    payment.receiptNumber ||
-                                    payment.receiptNo ||
-                                    "-"
-                                )}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-                            ${formatDate(
-                                payment.paymentDate
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${formatCurrency(
-                                payment.amountReceived
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${formatCurrency(
-                                payment.penaltyCollected
-                            )}
-                        </td>
-
-
-                        <td>
-
-                            <span class="payment-mode">
-                                ${escapeHTML(
-                                    payment.paymentMode ||
-                                    "-"
-                                )}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-                            ${formatCurrency(
-                                payment.balanceAfterPayment
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${escapeHTML(
-                                payment.remarks ||
-                                "-"
-                            )}
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join("");
-
-}
-
-
-// =====================================================
-// RECEIPT NUMBER
-// =====================================================
-
-function generateReceiptNumber(
-    sequence
-) {
-
-    const year =
-        new Date()
-            .getFullYear();
-
-
-    const number =
-        String(
-            sequence
-        ).padStart(
-            6,
-            "0"
-        );
-
-
-    return `SR-RCP-${year}-${number}`;
-
-}
-
-
-// =====================================================
-// SAVE PAYMENT
-// =====================================================
-
-async function savePayment() {
-
-    if (!currentLoanId) {
-
-        showMessage(
-            "Please search and select a loan first."
-        );
-
-        return;
-
-    }
-
-
-    const status =
-        String(
-            currentLoan?.status ||
-            ""
-        ).toLowerCase();
-
-
-    if (
-        status === "closed" ||
-        status === "completed"
-    ) {
-
-        showMessage(
-            "Closed loan cannot receive a new payment."
-        );
-
-        return;
-
-    }
-
-
-    const amount =
-        numberValue(
-            amountReceived.value
-        );
-
-
-    const penalty =
-        numberValue(
-            penaltyCollected.value
-        );
-
-
-    const date =
-        paymentDate.value;
-
-
-    const mode =
-        paymentMode.value;
-
-
-    const remarks =
-        paymentRemarks.value.trim();
-
-
-    const outstanding =
-        getOutstanding(
-            currentLoan
-        );
-
-
-    // =================================================
-    // VALIDATION
-    // =================================================
-
-    if (
-        !date
-    ) {
-
-        showMessage(
-            "Please select payment date."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        amount <= 0
-    ) {
-
-        showMessage(
-            "Please enter a valid amount received."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        amount > outstanding
-    ) {
-
-        showMessage(
-            `Amount cannot exceed current outstanding ${formatCurrency(
-                outstanding
-            )}.`
-        );
-
-        return;
-
-    }
-
-
-    if (
-        penalty < 0
-    ) {
-
-        showMessage(
-            "Penalty cannot be negative."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        !mode
-    ) {
-
-        showMessage(
-            "Please select payment mode."
-        );
-
-        return;
-
-    }
-
-
-    savePaymentBtn.disabled =
-        true;
-
-    savePaymentBtn.textContent =
-        "Saving...";
-
-
-    try {
-
-        /*
-         * Payment document ID is deterministic
-         * for this payment attempt.
-         *
-         * Double-click will therefore use
-         * the same document ID.
-         */
-
-        const paymentId =
-            `${currentLoanId}_${paymentToken}`;
-
-
-        const paymentRef =
-            doc(
-                db,
-                "payments",
-                paymentId
-            );
-
-
-        const loanRef =
-            doc(
-                db,
-                "loans",
-                currentLoanId
-            );
-
-
-        let savedReceiptNumber =
-            "";
-
-
-        await runTransaction(
-            db,
-            async transaction => {
-
-                // =====================================
-                // RE-READ LOAN
-                // =====================================
-
-                const loanSnap =
-                    await transaction.get(
-                        loanRef
-                    );
-
-
-                if (
-                    !loanSnap.exists()
-                ) {
-
-                    throw new Error(
-                        "Loan not found."
-                    );
-
-                }
-
-
-                const latestLoan =
-                    loanSnap.data();
-
-
-                const latestStatus =
-                    String(
-                        latestLoan.status ||
-                        ""
-                    ).toLowerCase();
-
-
-                if (
-                    latestStatus ===
-                        "closed" ||
-                    latestStatus ===
-                        "completed"
-                ) {
-
-                    throw new Error(
-                        "This loan is already closed."
-                    );
-
-                }
-
-
-                // =====================================
-                // LATEST BALANCE
-                // =====================================
-
-                const latestOutstanding =
-                    getOutstanding(
-                        latestLoan
-                    );
-
-
-                if (
-                    amount >
-                    latestOutstanding
-                ) {
-
-                    throw new Error(
-                        "Payment amount is greater than current outstanding."
-                    );
-
-                }
-
-
-                const newOutstanding =
-                    Math.max(
-                        latestOutstanding -
-                        amount,
-                        0
-                    );
-
-
-                // =====================================
-                // TOTAL PAID
-                // =====================================
-
-                const previousTotalPaid =
-                    numberValue(
-                        latestLoan.totalPaid ??
-                        latestLoan.paidAmount ??
-                        latestLoan.totalCollection
-                    );
-
-
-                const newTotalPaid =
-                    previousTotalPaid +
-                    amount;
-
-
-                // =====================================
-                // TOTAL PENALTY
-                // =====================================
-
-                const previousPenalty =
-                    numberValue(
-                        latestLoan.penaltyAmount ??
-                        latestLoan.penalty ??
-                        latestLoan.totalPenalty
-                    );
-
-
-                const newTotalPenalty =
-                    previousPenalty +
-                    penalty;
-
-
-                // =====================================
-                // PAYMENT SEQUENCE
-                // =====================================
-
-                const previousSequence =
-                    numberValue(
-                        latestLoan.paymentSequence
-                    );
-
-
-                const nextSequence =
-                    previousSequence +
-                    1;
-
-
-                savedReceiptNumber =
-                    generateReceiptNumber(
-                        nextSequence
-                    );
-
-// =====================================
-// INSTALLMENT CALCULATION
-// =====================================
-
-const monthlyInstallment =
-    numberValue(
-        latestLoan.installmentAmount ??
-        latestLoan.monthlyInstallment ??
-        latestLoan.emi
-    );
-
-const totalInstallments =
-    numberValue(
-        latestLoan.totalInstallments ??
-        latestLoan.installments ??
-        latestLoan.duration ??
-        latestLoan.loanDuration ??
-        latestLoan.tenure
-    );
-
-let newPaidInstallments = 0;
-
-if (monthlyInstallment > 0) {
-
-    newPaidInstallments =
-        Math.floor(
-            newTotalPaid /
-            monthlyInstallment
-        );
-}
-
-if (totalInstallments > 0) {
-
-    newPaidInstallments =
-        Math.min(
-            newPaidInstallments,
-            totalInstallments
-        );
-}
-
-let newPendingInstallments = 0;
-
-if (totalInstallments > 0) {
-
-    newPendingInstallments =
-        Math.max(
-            totalInstallments -
-            newPaidInstallments,
-            0
-        );
-}
-                // =====================================
-                // PAYMENT DOCUMENT
-                // =====================================
-
-                transaction.set(
-                    paymentRef,
-                    {
-
-                        paymentId:
-                            paymentId,
-
-                        loanDocumentId:
-                            currentLoanId,
-
-                        loanId:
-                            latestLoan.loanId ||
-                            latestLoan.loanNumber ||
-                            currentLoanId,
-
-                        customerId:
-                            latestLoan.customerId ||
-                            "",
-
-                        customerName:
-                            latestLoan.customerName ||
-                            "",
-
-                        vehicleNumber:
-                            latestLoan.vehicleNumber ||
-                            "",
-
-                        receiptNumber:
-                            savedReceiptNumber,
-
-                        paymentDate:
-                            date,
-
-                        amountReceived:
-                            amount,
-
-                        penaltyCollected:
-                            penalty,
-
-                        totalCollection:
-                            amount +
-                            penalty,
-
-                        paymentMode:
-                            mode,
-
-                        previousOutstanding:
-                            latestOutstanding,
-
-                        balanceAfterPayment:
-                            newOutstanding,
-
-                        remarks:
-                            remarks,
-
-                        createdBy:
-                            currentUser.uid,
-
-                        createdAt:
-                            serverTimestamp()
-
-                    }
-                );
-
-
-                // =====================================
-                // UPDATE LOAN
-                // =====================================
-
-                transaction.update(
-                    loanRef,
-                    {
-
-                        totalPaid:
-                            newTotalPaid,
-
-                        paidAmount:
-                            newTotalPaid,
-
-                        totalCollection:
-                            newTotalPaid,
-
-                        outstandingAmount:
-                            newOutstanding,
-
-                        balanceAmount:
-                            newOutstanding,
-
-                        remainingAmount:
-                            newOutstanding,
-
-                        penaltyAmount:
-                            newTotalPenalty,
-
-                        totalPenalty:
-                            newTotalPenalty,
-
-                        paymentSequence:
-                            nextSequence,
-
-                        lastPaymentDate:
-                            date,
-
-                        lastPaymentAmount:
-                            amount,
-
-                        lastPaymentMode:
-                            mode,
-
-                        lastReceiptNumber:
-                            savedReceiptNumber,
-
-                        paidInstallments:
-                            newPaidInstallments,
-
-                        installmentsPaid:
-                            newPaidInstallments,
-
-                        pendingInstallments:
-                            newPendingInstallments,
-
-                        installmentsPending:
-                            newPendingInstallments,
-
-                        updatedAt:
-                            serverTimestamp(),
-
-                        updatedBy:
-                            currentUser.uid
-
-                    }
-                );
-
-            }
-        );
-
-
-        /*
-         * Update local loan state.
-         */
-
-        currentLoan.totalPaid =
-            numberValue(
-                currentLoan.totalPaid
-            ) +
-            amount;
-
-
-        currentLoan.paidAmount =
-            currentLoan.totalPaid;
-
-
-        currentLoan.totalCollection =
-            currentLoan.totalPaid;
-
-
-        currentLoan.outstandingAmount =
-            Math.max(
-                outstanding -
-                amount,
-                0
-            );
-
-
-        currentLoan.balanceAmount =
-            currentLoan.outstandingAmount;
-
-
-        currentLoan.remainingAmount =
-            currentLoan.outstandingAmount;
-
-
-        currentLoan.penaltyAmount =
-            numberValue(
-                currentLoan.penaltyAmount
-            ) +
-            penalty;
-
-
-        currentLoan.totalPenalty =
-            currentLoan.penaltyAmount;
-
-
-        currentLoan.lastPaymentDate =
-            date;
-
-
-        currentLoan.lastPaymentAmount =
-            amount;
-
-
-        currentLoan.lastPaymentMode =
-            mode;
-
-
-        currentLoan.lastReceiptNumber =
-            savedReceiptNumber;
-
-
-        renderLoan();
-
-
-        await loadPaymentHistory();
-
-
-        showMessage(
-            `Collection saved successfully. Receipt: ${savedReceiptNumber}`,
-            "success"
-        );
-
-
-        /*
-         * New payment attempt gets a new token.
-         */
-
-        paymentToken =
-            createPaymentToken();
-
-
-        clearPaymentForm(
-            false
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Payment save error:",
-            error
-        );
-
-
-        showMessage(
-            error.message ||
-            "Unable to save collection."
-        );
-
-    } finally {
-
-        savePaymentBtn.textContent =
-            "Save Collection";
-
-
-        validatePaymentForm();
-
-    }
+    return true;
 
 }
 
@@ -2419,9 +2061,7 @@ if (totalInstallments > 0) {
 // CLEAR PAYMENT FORM
 // =====================================================
 
-function clearPaymentForm(
-    resetToken = true
-) {
+function clearPaymentForm() {
 
     if (paymentDate) {
 
@@ -2463,12 +2103,8 @@ function clearPaymentForm(
     }
 
 
-    if (resetToken) {
-
-        paymentToken =
-            createPaymentToken();
-
-    }
+    paymentToken =
+        createPaymentToken();
 
 
     updatePaymentPreview();
@@ -2477,7 +2113,41 @@ function clearPaymentForm(
 
 
 // =====================================================
-// EVENTS
+// PAYMENT PREVIEW EVENTS
+// =====================================================
+
+if (amountReceived) {
+
+    amountReceived.addEventListener(
+        "input",
+        updatePaymentPreview
+    );
+
+}
+
+
+if (paymentDate) {
+
+    paymentDate.addEventListener(
+        "change",
+        updatePaymentPreview
+    );
+
+}
+
+
+if (paymentMode) {
+
+    paymentMode.addEventListener(
+        "change",
+        validatePaymentForm
+    );
+
+}
+
+
+// =====================================================
+// SEARCH EVENTS
 // =====================================================
 
 if (searchLoanBtn) {
@@ -2494,12 +2164,14 @@ if (loanSearchInput) {
 
     loanSearchInput.addEventListener(
         "keydown",
-        function(event) {
+        event => {
 
             if (
                 event.key ===
                 "Enter"
             ) {
+
+                event.preventDefault();
 
                 searchLoan();
 
@@ -2511,45 +2183,777 @@ if (loanSearchInput) {
 }
 
 
-if (amountReceived) {
+// =====================================================
+// CLEAR BUTTON
+// =====================================================
 
-    amountReceived.addEventListener(
-        "input",
-        updatePaymentPreview
+if (clearPaymentBtn) {
+
+    clearPaymentBtn.addEventListener(
+        "click",
+        clearPaymentForm
+    );
+
+}
+
+// =====================================================
+// GET PAYMENT PENALTY
+// =====================================================
+
+function getPaymentPenalty(
+    loan,
+    paymentDateValue,
+    totalPaidBeforePayment
+) {
+
+    return calculateAutomaticPenalty(
+        loan,
+        paymentDateValue,
+        totalPaidBeforePayment
     );
 
 }
 
 
-if (penaltyCollected) {
+// =====================================================
+// SAVE PAYMENT
+// =====================================================
 
-    penaltyCollected.addEventListener(
-        "input",
-        updatePaymentPreview
-    );
+async function savePayment() {
+
+    if (!currentLoan) {
+
+        showMessage(
+            "Please search and select a loan first."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !validatePaymentForm()
+    ) {
+
+        showMessage(
+            "Please enter valid payment details."
+        );
+
+        return;
+
+    }
+
+
+    const amount =
+        numberValue(
+            amountReceived?.value
+        );
+
+
+    const date =
+        paymentDate?.value ||
+        getTodayDate();
+
+
+    const mode =
+        paymentMode?.value?.trim() ||
+        "";
+
+
+    const remarks =
+        paymentRemarks?.value?.trim() ||
+        "";
+
+
+    if (
+        amount <= 0
+    ) {
+
+        showMessage(
+            "Please enter a valid payment amount."
+        );
+
+        return;
+
+    }
+
+
+    if (!mode) {
+
+        showMessage(
+            "Please select payment mode."
+        );
+
+        return;
+
+    }
+
+
+    // =================================================
+    // LOAN STATUS CHECK
+    // =================================================
+
+    const currentStatus =
+        String(
+            currentLoan.status ||
+            "Active"
+        ).toLowerCase();
+
+
+    if (
+        currentStatus === "closed" ||
+        currentStatus === "completed"
+    ) {
+
+        showMessage(
+            "This loan is already closed."
+        );
+
+        disablePaymentEntry();
+
+        return;
+
+    }
+
+
+    // =================================================
+    // BUTTON LOCK
+    // =================================================
+
+    if (savePaymentBtn) {
+
+        savePaymentBtn.disabled =
+            true;
+
+        savePaymentBtn.textContent =
+            "Saving...";
+
+    }
+
+
+    try {
+
+        const loanRef =
+            doc(
+                db,
+                "loans",
+                currentLoanId
+            );
+
+
+        /*
+         * Payment document ID is generated from
+         * the current payment token.
+         *
+         * This prevents duplicate payment creation
+         * if the Save button is clicked twice.
+         */
+
+        const paymentId =
+            `${currentLoanId}_${paymentToken}`;
+
+
+        const paymentRef =
+            doc(
+                db,
+                "payments",
+                paymentId
+            );
+
+
+        let savedReceiptNumber =
+            "";
+
+
+        let savedPayment = null;
+
+
+        // =================================================
+        // FIRESTORE TRANSACTION
+        // =================================================
+
+        await runTransaction(
+            db,
+            async transaction => {
+
+                const loanSnap =
+                    await transaction.get(
+                        loanRef
+                    );
+
+
+                if (
+                    !loanSnap.exists()
+                ) {
+
+                    throw new Error(
+                        "Loan record not found."
+                    );
+
+                }
+
+
+                const latestLoan =
+                    loanSnap.data();
+
+
+                const latestStatus =
+                    String(
+                        latestLoan.status ||
+                        "Active"
+                    ).toLowerCase();
+
+
+                if (
+                    latestStatus ===
+                    "closed" ||
+
+                    latestStatus ===
+                    "completed"
+                ) {
+
+                    throw new Error(
+                        "This loan is already closed."
+                    );
+
+                }
+
+
+                // =================================================
+                // CURRENT TOTALS
+                // =================================================
+
+                const previousTotalPaid =
+                    numberValue(
+                        latestLoan.totalPaid ??
+                        latestLoan.paidAmount ??
+                        latestLoan.totalCollection
+                    );
+
+
+                const previousTotalPenalty =
+                    numberValue(
+                        latestLoan.penaltyAmount ??
+                        latestLoan.totalPenalty ??
+                        latestLoan.penalty
+                    );
+
+
+                const previousOutstanding =
+                    getOutstanding(
+                        latestLoan
+                    );
+
+
+                // =================================================
+                // AUTOMATIC PENALTY
+                // =================================================
+
+                const penaltyResult =
+                    getPaymentPenalty(
+                        latestLoan,
+                        date,
+                        previousTotalPaid
+                    );
+
+
+                const penalty =
+                    penaltyResult.amount;
+
+
+                // =================================================
+                // NEW TOTALS
+                // =================================================
+
+                const newTotalPaid =
+                    previousTotalPaid +
+                    amount;
+
+
+                const newTotalPenalty =
+                    previousTotalPenalty +
+                    penalty;
+
+
+                /*
+                 * Balance is calculated from the actual
+                 * previous outstanding plus new penalty,
+                 * then reduced by the principal payment.
+                 */
+
+                const balanceAfterPayment =
+                    Math.max(
+                        previousOutstanding +
+                        penalty -
+                        amount,
+                        0
+                    );
+
+
+                // =================================================
+                // INSTALLMENT SUMMARY
+                // =================================================
+
+                const monthlyInstallment =
+                    numberValue(
+                        latestLoan.installmentAmount ??
+                        latestLoan.monthlyInstallment ??
+                        latestLoan.emi
+                    );
+
+
+                const totalInstallments =
+                    numberValue(
+                        latestLoan.totalInstallments ??
+                        latestLoan.installments ??
+                        latestLoan.duration ??
+                        latestLoan.loanDuration ??
+                        latestLoan.tenure
+                    );
+
+
+                let newPaidInstallments =
+                    0;
+
+
+                if (
+                    monthlyInstallment >
+                    0
+                ) {
+
+                    newPaidInstallments =
+                        Math.floor(
+                            newTotalPaid /
+                            monthlyInstallment
+                        );
+
+                }
+
+
+                if (
+                    totalInstallments >
+                    0
+                ) {
+
+                    newPaidInstallments =
+                        Math.min(
+                            newPaidInstallments,
+                            totalInstallments
+                        );
+
+                }
+
+
+                const newPendingInstallments =
+                    Math.max(
+                        totalInstallments -
+                        newPaidInstallments,
+                        0
+                    );
+
+
+                // =================================================
+                // NEXT DUE DATE
+                // =================================================
+
+                const calculatedNextDueDate =
+                    getDueDateForInstallment(
+                        latestLoan,
+                        newPaidInstallments + 1
+                    );
+
+
+                const nextDueDate =
+                    calculatedNextDueDate
+                        ? formatDateForStorage(
+                            calculatedNextDueDate
+                        )
+                        : "";
+
+
+                // =================================================
+                // RECEIPT NUMBER
+                // =================================================
+
+                const previousReceiptNumber =
+                    numberValue(
+                        latestLoan.receiptSequence
+                    );
+
+
+                const nextReceiptSequence =
+                    previousReceiptNumber +
+                    1;
+
+
+                savedReceiptNumber =
+                    `SR-RCP-${new Date().getFullYear()}-${String(
+                        nextReceiptSequence
+                    ).padStart(
+                        6,
+                        "0"
+                    )}`;
+
+
+                // =================================================
+                // PAYMENT DOCUMENT
+                // =================================================
+
+                savedPayment = {
+
+                    paymentId:
+                        paymentId,
+
+                    loanId:
+                        currentLoanId,
+
+                    receiptNumber:
+                        savedReceiptNumber,
+
+                    customerId:
+                        latestLoan.customerId ||
+                        "",
+
+                    customerName:
+                        latestLoan.customerName ||
+                        "",
+
+                    customerMobile:
+                        latestLoan.customerMobile ||
+                        latestLoan.mobile ||
+                        "",
+
+                    vehicleNumber:
+                        latestLoan.vehicleNumber ||
+                        "",
+
+                    paymentDate:
+                        date,
+
+                    dueDate:
+                        penaltyResult.dueDate
+                            ? formatDateForStorage(
+                                penaltyResult.dueDate
+                            )
+                            : "",
+
+                    daysDelayed:
+                        penaltyResult.daysDelayed,
+
+                    coolingDays:
+                        PENALTY_COOLING_DAYS,
+
+                    penaltyCycles:
+                        penaltyResult.penaltyCycles,
+
+                    previousOutstanding:
+                        previousOutstanding,
+
+                    previousTotalPaid:
+                        previousTotalPaid,
+
+                    amountReceived:
+                        amount,
+
+                    penaltyCollected:
+                        penalty,
+
+                    totalReceived:
+                        amount +
+                        penalty,
+
+                    balanceAfterPayment:
+                        balanceAfterPayment,
+
+                    paymentMode:
+                        mode,
+
+                    remarks:
+                        remarks,
+
+                    staffId:
+                        currentUser?.uid ||
+                        "",
+
+                    staffName:
+                        currentUser?.displayName ||
+                        currentUser?.email ||
+                        "",
+
+                    collectedByName:
+                        currentUser?.displayName ||
+                        currentUser?.email ||
+                        "",
+
+                    paidInstallments:
+                        newPaidInstallments,
+
+                    pendingInstallments:
+                        newPendingInstallments,
+
+                    totalInstallments:
+                        totalInstallments,
+
+                    createdAt:
+                        serverTimestamp()
+
+                };
+
+
+                transaction.set(
+                    paymentRef,
+                    savedPayment
+                );
+
+
+                // =================================================
+                // UPDATE LOAN
+                // =================================================
+
+                transaction.update(
+                    loanRef,
+                    {
+
+                        totalPaid:
+                            newTotalPaid,
+
+                        paidAmount:
+                            newTotalPaid,
+
+                        totalCollection:
+                            newTotalPaid,
+
+                        penaltyAmount:
+                            newTotalPenalty,
+
+                        totalPenalty:
+                            newTotalPenalty,
+
+                        paidInstallments:
+                            newPaidInstallments,
+
+                        installmentsPaid:
+                            newPaidInstallments,
+
+                        pendingInstallments:
+                            newPendingInstallments,
+
+                        installmentsPending:
+                            newPendingInstallments,
+
+                        previousOutstanding:
+                            previousOutstanding,
+
+                        outstanding:
+                            balanceAfterPayment,
+
+                        lastPaymentDate:
+                            date,
+
+                        lastPaymentAmount:
+                            amount,
+
+                        lastPaymentPenalty:
+                            penalty,
+
+                        lastPaymentMode:
+                            mode,
+
+                        lastPaymentRemarks:
+                            remarks,
+
+                        nextDueDate:
+                            nextDueDate,
+
+                        receiptSequence:
+                            nextReceiptSequence,
+
+                        lastReceiptNumber:
+                            savedReceiptNumber,
+
+                        updatedAt:
+                            serverTimestamp()
+
+                    }
+                );
+
+            }
+        );
+
+
+        // =================================================
+        // UPDATE LOCAL LOAN
+        // =================================================
+
+        currentLoan.totalPaid =
+            numberValue(
+                currentLoan.totalPaid
+            ) +
+            amount;
+
+
+        currentLoan.paidAmount =
+            currentLoan.totalPaid;
+
+
+        currentLoan.totalCollection =
+            currentLoan.totalPaid;
+
+
+        currentLoan.penaltyAmount =
+            numberValue(
+                currentLoan.penaltyAmount
+            ) +
+            numberValue(
+                savedPayment?.penaltyCollected
+            );
+
+
+        currentLoan.totalPenalty =
+            currentLoan.penaltyAmount;
+
+
+        currentLoan.paidInstallments =
+            getPaidInstallments(
+                currentLoan,
+                currentLoan.totalPaid
+            );
+
+
+        currentLoan.installmentsPaid =
+            currentLoan.paidInstallments;
+
+
+        const localTotalInstallments =
+            numberValue(
+                currentLoan.totalInstallments ??
+                currentLoan.installments ??
+                currentLoan.duration ??
+                currentLoan.loanDuration ??
+                currentLoan.tenure
+            );
+
+
+        currentLoan.pendingInstallments =
+            Math.max(
+                localTotalInstallments -
+                currentLoan.paidInstallments,
+                0
+            );
+
+
+        currentLoan.installmentsPending =
+            currentLoan.pendingInstallments;
+
+
+        currentLoan.outstanding =
+            Math.max(
+                numberValue(
+                    currentLoan.outstanding
+                ) -
+                amount +
+                numberValue(
+                    savedPayment?.penaltyCollected
+                ),
+                0
+            );
+
+
+        currentLoan.lastPaymentDate =
+            date;
+
+
+        currentLoan.lastPaymentAmount =
+            amount;
+
+
+        currentLoan.lastPaymentPenalty =
+            numberValue(
+                savedPayment?.penaltyCollected
+            );
+
+
+        currentLoan.lastPaymentMode =
+            mode;
+
+
+        currentLoan.lastPaymentRemarks =
+            remarks;
+
+
+        currentLoan.lastReceiptNumber =
+            savedReceiptNumber;
+
+
+        currentLoan.nextDueDate =
+            getDueDateForInstallment(
+                currentLoan,
+                currentLoan.paidInstallments + 1
+            );
+
+
+        // =================================================
+        // RESET TOKEN
+        // =================================================
+
+        paymentToken =
+            createPaymentToken();
+
+
+        // =================================================
+        // REFRESH UI
+        // =================================================
+
+        renderLoan();
+
+
+        await loadPaymentHistory();
+
+
+        clearPaymentForm();
+
+
+        showMessage(
+            `Payment saved successfully. Receipt No: ${savedReceiptNumber}`,
+            "success"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Payment save error:",
+            error
+        );
+
+
+        showMessage(
+            error?.message ||
+            "Unable to save payment. Please try again."
+        );
+
+
+    } finally {
+
+        if (savePaymentBtn) {
+
+            savePaymentBtn.disabled =
+                false;
+
+            savePaymentBtn.textContent =
+                "Save Payment";
+
+        }
+
+    }
 
 }
 
 
-if (paymentDate) {
-
-    paymentDate.addEventListener(
-        "change",
-        validatePaymentForm
-    );
-
-}
-
-
-if (paymentMode) {
-
-    paymentMode.addEventListener(
-        "change",
-        validatePaymentForm
-    );
-
-}
-
+// =====================================================
+// SAVE PAYMENT EVENT
+// =====================================================
 
 if (savePaymentBtn) {
 
@@ -2560,14 +2964,453 @@ if (savePaymentBtn) {
 
 }
 
+// =====================================================
+// PAYMENT HISTORY HEADER
+// =====================================================
 
-if (clearPaymentBtn) {
+function updatePaymentHistoryHeader() {
 
-    clearPaymentBtn.addEventListener(
-        "click",
-        function() {
+    if (!paymentHistoryBody) {
+        return;
+    }
 
-            clearPaymentForm();
+
+    const table =
+        paymentHistoryBody.closest(
+            "table"
+        );
+
+
+    const headerRow =
+        table?.querySelector(
+            "thead tr"
+        );
+
+
+    if (!headerRow) {
+        return;
+    }
+
+
+    headerRow.innerHTML = `
+
+        <th>Receipt</th>
+
+        <th>Due Date</th>
+
+        <th>Paid Date</th>
+
+        <th>Previous Pending</th>
+
+        <th>Paid Amount</th>
+
+        <th>Penalty</th>
+
+        <th>Mode</th>
+
+        <th>Balance</th>
+
+        <th>Remarks</th>
+
+        <th>Action</th>
+
+    `;
+
+}
+
+
+// =====================================================
+// LOAD PAYMENT HISTORY
+// =====================================================
+
+async function loadPaymentHistory() {
+
+    if (
+        !currentLoanId ||
+        !paymentHistoryBody
+    ) {
+
+        return;
+
+    }
+
+
+    paymentHistoryBody.innerHTML = `
+
+        <tr>
+            <td colspan="10">
+                <div class="empty">
+                    Loading collection history...
+                </div>
+            </td>
+        </tr>
+
+    `;
+
+
+    try {
+
+        const paymentsRef =
+            collection(
+                db,
+                "payments"
+            );
+
+
+        const paymentQuery =
+            query(
+                paymentsRef,
+                where(
+                    "loanId",
+                    "==",
+                    currentLoanId
+                )
+            );
+
+
+        const snapshot =
+            await getDocs(
+                paymentQuery
+            );
+
+
+        const payments = [];
+
+
+        snapshot.forEach(
+            paymentDoc => {
+
+                payments.push({
+
+                    id:
+                        paymentDoc.id,
+
+                    ...paymentDoc.data()
+
+                });
+
+            }
+        );
+
+
+        // =================================================
+        // SORT BY PAYMENT DATE
+        // =================================================
+
+        payments.sort(
+            (
+                first,
+                second
+            ) => {
+
+                const firstDate =
+                    parseDateValue(
+                        first.paymentDate
+                    );
+
+
+                const secondDate =
+                    parseDateValue(
+                        second.paymentDate
+                    );
+
+
+                if (
+                    !firstDate &&
+                    !secondDate
+                ) {
+
+                    return 0;
+
+                }
+
+
+                if (!firstDate) {
+                    return 1;
+                }
+
+
+                if (!secondDate) {
+                    return -1;
+                }
+
+
+                return (
+                    secondDate.getTime() -
+                    firstDate.getTime()
+                );
+
+            }
+        );
+
+
+        renderPaymentHistory(
+            payments
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Payment history error:",
+            error
+        );
+
+
+        paymentHistoryBody.innerHTML = `
+
+            <tr>
+                <td colspan="10">
+
+                    <div class="empty">
+                        Unable to load collection history.
+                    </div>
+
+                </td>
+            </tr>
+
+        `;
+
+    }
+
+}
+
+
+// =====================================================
+// RENDER PAYMENT HISTORY
+// =====================================================
+
+function renderPaymentHistory(
+    payments
+) {
+
+    if (
+        !payments.length
+    ) {
+
+        paymentHistoryBody.innerHTML = `
+
+            <tr>
+                <td colspan="10">
+
+                    <div class="empty">
+                        No collection history found.
+                    </div>
+
+                </td>
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+    paymentHistoryBody.innerHTML =
+        payments.map(
+            payment => {
+
+                const previousPending =
+                    numberValue(
+                        payment.previousOutstanding
+                    );
+
+
+                const paidAmount =
+                    numberValue(
+                        payment.amountReceived
+                    );
+
+
+                const penalty =
+                    numberValue(
+                        payment.penaltyCollected
+                    );
+
+
+                const balance =
+                    numberValue(
+                        payment.balanceAfterPayment
+                    );
+
+
+                const paymentData =
+                    encodeURIComponent(
+                        JSON.stringify(
+                            payment
+                        )
+                    );
+
+
+                return `
+
+                    <tr>
+
+                        <td>
+
+                            <span class="receipt">
+
+                                ${escapeHTML(
+                                    payment.receiptNumber ||
+                                    payment.receiptNo ||
+                                    "-"
+                                )}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatDate(
+                                payment.dueDate
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatDate(
+                                payment.paymentDate
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatCurrency(
+                                previousPending
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatCurrency(
+                                paidAmount
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatCurrency(
+                                penalty
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${escapeHTML(
+                                payment.paymentMode ||
+                                "-"
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${formatCurrency(
+                                balance
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            ${escapeHTML(
+                                payment.remarks ||
+                                "-"
+                            )}
+
+                        </td>
+
+
+                        <td>
+
+                            <button
+                                type="button"
+                                class="view-payment-btn"
+                                data-payment="${paymentData}"
+                            >
+                                View
+                            </button>
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+            }
+        ).join("");
+
+
+    bindPaymentViewButtons();
+
+}
+
+
+// =====================================================
+// VIEW BUTTON
+// =====================================================
+
+function bindPaymentViewButtons() {
+
+    const buttons =
+        document.querySelectorAll(
+            ".view-payment-btn"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                function() {
+
+                    try {
+
+                        const payment =
+                            JSON.parse(
+                                decodeURIComponent(
+                                    this.dataset.payment
+                                )
+                            );
+
+
+                        showPaymentDetails(
+                            payment
+                        );
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Payment details error:",
+                            error
+                        );
+
+
+                        showMessage(
+                            "Unable to open payment details."
+                        );
+
+                    }
+
+                }
+            );
 
         }
     );
@@ -2576,12 +3419,1115 @@ if (clearPaymentBtn) {
 
 
 // =====================================================
+// PAYMENT DETAILS MODAL
+// =====================================================
+
+function showPaymentDetails(
+    payment
+) {
+
+    const existingModal =
+        document.getElementById(
+            "paymentDetailsModal"
+        );
+
+
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+
+    const paidAmount =
+        numberValue(
+            payment.amountReceived
+        );
+
+
+    const penalty =
+        numberValue(
+            payment.penaltyCollected
+        );
+
+
+    const totalReceived =
+        paidAmount +
+        penalty;
+
+
+    const modal =
+        document.createElement(
+            "div"
+        );
+
+
+    modal.id =
+        "paymentDetailsModal";
+
+
+    modal.innerHTML = `
+
+        <div class="payment-modal-backdrop">
+
+            <div class="payment-modal">
+
+                <div class="payment-modal-header">
+
+                    <h3>
+                        Collection Details
+                    </h3>
+
+
+                    <button
+                        type="button"
+                        id="closePaymentDetails"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="printablePaymentReceipt"
+                    class="payment-receipt"
+                >
+
+                    <h2>
+                        SR Auto Finance
+                    </h2>
+
+
+                    <h4>
+                        Collection Receipt
+                    </h4>
+
+
+                    <div class="receipt-grid">
+
+
+                        <div>
+
+                            <strong>
+                                Receipt No
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.receiptNumber ||
+                                    payment.receiptNo ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Loan ID
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.loanId ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Customer
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.customerName ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Customer ID
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.customerId ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Vehicle No
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.vehicleNumber ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Due Date
+                            </strong>
+
+                            <span>
+                                ${formatDate(
+                                    payment.dueDate
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Paid Date
+                            </strong>
+
+                            <span>
+                                ${formatDate(
+                                    payment.paymentDate
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Days Delayed
+                            </strong>
+
+                            <span>
+                                ${numberValue(
+                                    payment.daysDelayed
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Previous Pending
+                            </strong>
+
+                            <span>
+                                ${formatCurrency(
+                                    payment.previousOutstanding
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Paid Amount
+                            </strong>
+
+                            <span>
+                                ${formatCurrency(
+                                    paidAmount
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Penalty
+                            </strong>
+
+                            <span>
+                                ${formatCurrency(
+                                    penalty
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Total Received
+                            </strong>
+
+                            <span>
+                                ${formatCurrency(
+                                    totalReceived
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Balance
+                            </strong>
+
+                            <span>
+                                ${formatCurrency(
+                                    payment.balanceAfterPayment
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Payment Mode
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.paymentMode ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div>
+
+                            <strong>
+                                Collected By
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.staffName ||
+                                    payment.collectedByName ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                        <div class="receipt-remarks">
+
+                            <strong>
+                                Remarks
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(
+                                    payment.remarks ||
+                                    "-"
+                                )}
+                            </span>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="receipt-footer">
+
+                        Thank you.
+
+                    </div>
+
+                </div>
+
+
+                <div class="payment-modal-actions">
+
+
+                    <button
+                        type="button"
+                        id="printPaymentReceipt"
+                    >
+                        Print Receipt
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="downloadPaymentReceipt"
+                    >
+                        Download Receipt
+                    </button>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    document.body.appendChild(
+        modal
+    );
+
+
+    // =================================================
+    // CLOSE
+    // =================================================
+
+    document
+        .getElementById(
+            "closePaymentDetails"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                modal.remove();
+
+            }
+        );
+
+
+    // =================================================
+    // PRINT
+    // =================================================
+
+    document
+        .getElementById(
+            "printPaymentReceipt"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                printPaymentReceipt();
+
+            }
+        );
+
+
+    // =================================================
+    // DOWNLOAD
+    // =================================================
+
+    document
+        .getElementById(
+            "downloadPaymentReceipt"
+        )
+        ?.addEventListener(
+            "click",
+            () => {
+
+                downloadPaymentReceipt(
+                    payment
+                );
+
+            }
+        );
+
+}
+
+
+// =====================================================
+// PRINT PAYMENT RECEIPT
+// =====================================================
+
+function printPaymentReceipt() {
+
+    const receipt =
+        document.getElementById(
+            "printablePaymentReceipt"
+        );
+
+
+    if (!receipt) {
+        return;
+    }
+
+
+    const printWindow =
+        window.open(
+            "",
+            "_blank",
+            "width=800,height=900"
+        );
+
+
+    if (!printWindow) {
+
+        showMessage(
+            "Please allow pop-ups to print the receipt."
+        );
+
+        return;
+
+    }
+
+
+    printWindow.document.write(`
+
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+            <title>
+                SR Auto Finance Receipt
+            </title>
+
+            <meta
+                charset="UTF-8"
+            >
+
+            <style>
+
+                body {
+
+                    font-family:
+                        Arial,
+                        sans-serif;
+
+                    padding:
+                        30px;
+
+                    color:
+                        #111;
+
+                }
+
+
+                h2,
+                h4 {
+
+                    text-align:
+                        center;
+
+                    margin:
+                        4px 0;
+
+                }
+
+
+                .receipt-grid {
+
+                    display:
+                        grid;
+
+                    grid-template-columns:
+                        1fr 1fr;
+
+                    gap:
+                        12px;
+
+                    margin-top:
+                        25px;
+
+                }
+
+
+                .receipt-grid > div {
+
+                    border-bottom:
+                        1px solid #ddd;
+
+                    padding:
+                        8px 0;
+
+                }
+
+
+                strong {
+
+                    display:
+                        block;
+
+                    margin-bottom:
+                        4px;
+
+                }
+
+
+                .receipt-remarks {
+
+                    grid-column:
+                        1 / -1;
+
+                }
+
+
+                .receipt-footer {
+
+                    text-align:
+                        center;
+
+                    margin-top:
+                        30px;
+
+                }
+
+
+                @media print {
+
+                    body {
+
+                        padding:
+                            10px;
+
+                    }
+
+                }
+
+            </style>
+
+        </head>
+
+
+        <body>
+
+            ${receipt.innerHTML}
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    printWindow.document.close();
+
+
+    printWindow.focus();
+
+
+    setTimeout(
+        () => {
+
+            printWindow.print();
+
+            printWindow.close();
+
+        },
+        300
+    );
+
+}
+
+
+// =====================================================
+// DOWNLOAD PAYMENT RECEIPT
+// =====================================================
+
+function downloadPaymentReceipt(
+    payment
+) {
+
+    const paidAmount =
+        numberValue(
+            payment.amountReceived
+        );
+
+
+    const penalty =
+        numberValue(
+            payment.penaltyCollected
+        );
+
+
+    const totalReceived =
+        paidAmount +
+        penalty;
+
+
+    const html = `
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>
+SR Auto Finance Receipt
+</title>
+
+
+<style>
+
+body {
+
+    font-family:
+        Arial,
+        sans-serif;
+
+    max-width:
+        800px;
+
+    margin:
+        30px auto;
+
+    padding:
+        20px;
+
+}
+
+
+h2,
+h4 {
+
+    text-align:
+        center;
+
+}
+
+
+table {
+
+    width:
+        100%;
+
+    border-collapse:
+        collapse;
+
+    margin-top:
+        25px;
+
+}
+
+
+td {
+
+    border:
+        1px solid #ddd;
+
+    padding:
+        10px;
+
+}
+
+
+td:first-child {
+
+    font-weight:
+        bold;
+
+    width:
+        35%;
+
+}
+
+
+.footer {
+
+    text-align:
+        center;
+
+    margin-top:
+        30px;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h2>
+SR Auto Finance
+</h2>
+
+
+<h4>
+Collection Receipt
+</h4>
+
+
+<table>
+
+
+<tr>
+
+<td>
+Receipt No
+</td>
+
+<td>
+${escapeHTML(
+    payment.receiptNumber ||
+    payment.receiptNo ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Loan ID
+</td>
+
+<td>
+${escapeHTML(
+    payment.loanId ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Customer
+</td>
+
+<td>
+${escapeHTML(
+    payment.customerName ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Customer ID
+</td>
+
+<td>
+${escapeHTML(
+    payment.customerId ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Vehicle No
+</td>
+
+<td>
+${escapeHTML(
+    payment.vehicleNumber ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Due Date
+</td>
+
+<td>
+${formatDate(
+    payment.dueDate
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Paid Date
+</td>
+
+<td>
+${formatDate(
+    payment.paymentDate
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Days Delayed
+</td>
+
+<td>
+${numberValue(
+    payment.daysDelayed
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Previous Pending
+</td>
+
+<td>
+${formatCurrency(
+    payment.previousOutstanding
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Paid Amount
+</td>
+
+<td>
+${formatCurrency(
+    paidAmount
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Penalty
+</td>
+
+<td>
+${formatCurrency(
+    penalty
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Total Received
+</td>
+
+<td>
+${formatCurrency(
+    totalReceived
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Balance
+</td>
+
+<td>
+${formatCurrency(
+    payment.balanceAfterPayment
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Mode
+</td>
+
+<td>
+${escapeHTML(
+    payment.paymentMode ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Collected By
+</td>
+
+<td>
+${escapeHTML(
+    payment.staffName ||
+    payment.collectedByName ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+<tr>
+
+<td>
+Remarks
+</td>
+
+<td>
+${escapeHTML(
+    payment.remarks ||
+    "-"
+)}
+</td>
+
+</tr>
+
+
+</table>
+
+
+<div class="footer">
+
+Thank you.
+
+</div>
+
+
+</body>
+
+</html>
+
+`;
+
+
+    const blob =
+        new Blob(
+            [html],
+            {
+                type:
+                    "text/html;charset=utf-8"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        `SR-Auto-Finance-Receipt-${payment.receiptNumber || "receipt"}.html`;
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+// =====================================================
+// INITIAL DATE
+// =====================================================
+
+if (paymentDate) {
+
+    paymentDate.value =
+        getTodayDate();
+
+}
+
+
+// =====================================================
+// PAYMENT HISTORY HEADER
+// =====================================================
+
+updatePaymentHistoryHeader();
+
+
+// =====================================================
+// INITIAL SCREEN
+// =====================================================
+
+resetLoanDisplay();
+
+
+// =====================================================
 // AUTH
 // =====================================================
 
 onAuthStateChanged(
     auth,
-    async function(user) {
+    async user => {
 
         if (!user) {
 
@@ -2597,93 +4543,23 @@ onAuthStateChanged(
             user;
 
 
-        /*
-         * Default payment date.
-         */
+        updatePaymentHistoryHeader();
 
-        if (paymentDate) {
-
-            paymentDate.value =
-                getTodayDate();
-
-        }
-
-
-        disablePaymentEntry();
 
         resetLoanDisplay();
 
 
-        /*
-         * If collection page is opened
-         * directly with ?id=LOAN_DOCUMENT_ID,
-         * load that loan automatically.
-         */
+        // =================================================
+        // COLLECTION PAGE
+        // =================================================
 
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
+        if (
+            paymentDate &&
+            !paymentDate.value
+        ) {
 
-
-        const urlLoanId =
-            params.get("id");
-
-
-        if (urlLoanId) {
-
-            try {
-
-                const loanRef =
-                    doc(
-                        db,
-                        "loans",
-                        urlLoanId
-                    );
-
-
-                const loanSnap =
-                    await getDoc(
-                        loanRef
-                    );
-
-
-                if (
-                    loanSnap.exists()
-                ) {
-
-                    currentLoanId =
-                        loanSnap.id;
-
-
-                    currentLoan = {
-
-                        id:
-                            loanSnap.id,
-
-                        ...loanSnap.data()
-
-                    };
-
-
-                    renderLoan();
-
-
-                    await loadPaymentHistory();
-
-
-                    enablePaymentEntry();
-
-                }
-
-            } catch (error) {
-
-                console.error(
-                    "Direct loan loading error:",
-                    error
-                );
-
-            }
+            paymentDate.value =
+                getTodayDate();
 
         }
 
