@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Staff Management - Powered By VTOOS Software Solutions"
+    >
+
+    <title>Staff | SR Auto Finance ERP</title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+
+        /* ==============================
+           HEADER
+        ============================== */
+
+        .header {
+            height: 70px;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+
+        .brand-text h1 {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+
+        .brand-text p {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+
+        .back-btn {
+            border: 1px solid #475569;
+            background: transparent;
+            color: white;
+            padding: 9px 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+
+        .back-btn:hover {
+            background: #1e293b;
+        }
+
+
+        /* ==============================
+           MAIN
+        ============================== */
+
+        .main {
+            max-width: 1100px;
+            margin: auto;
+            padding: 25px;
+        }
+
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+
+        .page-title h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+
+        .page-title p {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+
+        .add-btn {
+            border: none;
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #0ea5e9
+            );
+            color: white;
+            padding: 11px 16px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        /* ==============================
+           MESSAGE
+        ============================== */
+
+        .message {
+            display: none;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-bottom: 18px;
+        }
+
+
+        .message.success {
+            display: block;
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+
+        .message.error {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+
+        /* ==============================
+           SUMMARY
+        ============================== */
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+
+        .summary-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 18px;
+        }
+
+
+        .summary-label {
+            color: #64748b;
+            font-size: 10px;
+        }
+
+
+        .summary-value {
+            margin-top: 7px;
+            color: #0f172a;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+
+        .summary-value.blue {
+            color: #2563eb;
+        }
+
+
+        .summary-value.green {
+            color: #15803d;
+        }
+
+
+        .summary-value.orange {
+            color: #c2410c;
+        }
+
+
+        /* ==============================
+           STAFF LIST
+        ============================== */
+
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+
+        .search-box {
+            width: 240px;
+            height: 38px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 0 12px;
+            outline: none;
+            font-size: 12px;
+        }
+
+
+        .search-box:focus {
+            border-color: #2563eb;
+        }
+
+
+        /* ==============================
+           TABLE
+        ============================== */
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+
+        th {
+            text-align: left;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 10px;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+
+        td {
+            padding: 13px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 12px;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+
+        .staff-name {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+
+        .staff-id {
+            color: #2563eb;
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+
+        /* ==============================
+           STATUS
+        ============================== */
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+
+        .status.active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+
+        .status.inactive {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+
+        /* ==============================
+           ACTION
+        ============================== */
+
+        .action-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 7px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+
+        .action-btn:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+
+        /* ==============================
+           EMPTY / LOADING
+        ============================== */
+
+        .loading,
+        .empty-state {
+            text-align: center;
+            padding: 55px 20px;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+
+        .empty-icon {
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+
+        /* ==============================
+           MODAL
+        ============================== */
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 500;
+        }
+
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+
+        .modal {
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 18px;
+            padding: 22px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+
+        .modal-header h3 {
+            font-size: 17px;
+            color: #0f172a;
+        }
+
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+
+        label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+
+        .required {
+            color: #dc2626;
+        }
+
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            padding: 10px 11px;
+            background: #f8fafc;
+            color: #1e293b;
+            outline: none;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+
+        input,
+        select {
+            height: 40px;
+        }
+
+
+        textarea {
+            min-height: 75px;
+            resize: vertical;
+        }
+
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2563eb;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.07);
+        }
+
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 9px;
+            margin-top: 20px;
+        }
+
+
+        .cancel-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 10px 16px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .save-btn {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+
+        /* ==============================
+           FOOTER
+        ============================== */
+
+        .app-footer {
+            text-align: center;
+            padding: 25px 15px;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+
+        .app-footer div:last-child {
+            color: #64748b;
+            font-weight: 600;
+            font-size: 10px;
+        }
+
+
+        /* ==============================
+           MOBILE
+        ============================== */
+
+        @media (max-width: 700px) {
+
+            .header {
+                height: 64px;
+                padding: 0 14px;
+            }
+
+
+            .brand-text p {
+                display: none;
+            }
+
+
+            .main {
+                padding: 16px 14px;
+            }
+
+
+            .page-title {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+
+            .add-btn {
+                width: 100%;
+            }
+
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .card {
+                padding: 15px;
+            }
+
+
+            .card-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+
+            .search-box {
+                width: 100%;
+            }
+
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+
+            .form-group.full {
+                grid-column: auto;
+            }
+
+
+            .modal {
+                padding: 18px;
+            }
+
+
+            .modal-actions {
+                flex-direction: column-reverse;
+            }
+
+
+            .cancel-btn,
+            .save-btn {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+====================================================== -->
+
+<header class="header">
+
+    <div class="brand-area">
+
+        <div class="brand-logo">
+            SR
+        </div>
+
+        <div class="brand-text">
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-btn"
+        onclick="location.href='dashboard.html'"
+    >
+        ← Dashboard
+    </button>
+
+</header>
+
+
+
+<!-- =====================================================
+     MAIN
+====================================================== -->
+
+<main class="main">
+
+
+    <div class="page-title">
+
+        <div>
+
+            <h2>
+                Staff Management
+            </h2>
+
+            <p>
+                Manage staff details and responsibilities
+            </p>
+
+        </div>
+
+
+        <button
+            class="add-btn"
+            id="addStaffBtn"
+        >
+            + Add Staff
+        </button>
+
+    </div>
+
+
+
+    <!-- MESSAGE -->
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+
+
+    <!-- =================================================
+         SUMMARY
+    ================================================== -->
+
+    <div class="summary-grid">
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Staff
+            </div>
+
+            <div
+                class="summary-value blue"
+                id="totalStaff"
+            >
+                0
+            </div>
+
+        </div>
+
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Active Staff
+            </div>
+
+            <div
+                class="summary-value green"
+                id="activeStaff"
+            >
+                0
+            </div>
+
+        </div>
+
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Inactive Staff
+            </div>
+
+            <div
+                class="summary-value orange"
+                id="inactiveStaff"
+            >
+                0
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         STAFF LIST
+    ================================================== -->
+
+    <section class="card">
+
+        <div class="card-header">
+
+            <div class="card-title">
+                Staff List
+            </div>
+
+
+            <input
+                type="search"
+                id="searchStaff"
+                class="search-box"
+                placeholder="Search staff..."
+            >
+
+        </div>
+
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            STAFF
+                        </th>
+
+                        <th>
+                            MOBILE
+                        </th>
+
+                        <th>
+                            ROLE
+                        </th>
+
+                        <th>
+                            JOINING DATE
+                        </th>
+
+                        <th>
+                            STATUS
+                        </th>
+
+                        <th>
+                            ACTION
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="staffTableBody">
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            <div class="loading">
+                                Loading staff...
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =====================================================
+     STAFF MODAL
+====================================================== -->
+
+<div
+    class="modal-overlay"
+    id="staffModal"
+>
+
+    <div class="modal">
+
+
+        <div class="modal-header">
+
+            <h3 id="modalTitle">
+                Add Staff
+            </h3>
+
+
+            <button
+                class="close-btn"
+                id="closeModalBtn"
+                type="button"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+
+        <form id="staffForm">
+
+
+            <div class="form-grid">
+
+
+                <!-- STAFF NAME -->
+
+                <div class="form-group full">
+
+                    <label for="staffName">
+
+                        Staff Name
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="staffName"
+                        placeholder="Enter staff name"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- MOBILE -->
+
+                <div class="form-group">
+
+                    <label for="staffMobile">
+
+                        Mobile Number
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="tel"
+                        id="staffMobile"
+                        placeholder="Enter mobile number"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- EMAIL -->
+
+                <div class="form-group">
+
+                    <label for="staffEmail">
+                        Email
+                    </label>
+
+
+                    <input
+                        type="email"
+                        id="staffEmail"
+                        placeholder="Enter email"
+                    >
+
+                </div>
+
+
+
+                <!-- ROLE -->
+
+                <div class="form-group">
+
+                    <label for="staffRole">
+
+                        Role / Designation
+
+                        <span class="required">
+                            *
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="staffRole"
+                        placeholder="Example: Collection Staff"
+                        required
+                    >
+
+                </div>
+
+
+
+                <!-- JOINING DATE -->
+
+                <div class="form-group">
+
+                    <label for="joiningDate">
+                        Joining Date
+                    </label>
+
+
+                    <input
+                        type="date"
+                        id="joiningDate"
+                    >
+
+                </div>
+
+
+
+                <!-- STATUS -->
+
+                <div class="form-group">
+
+                    <label for="staffStatus">
+                        Status
+                    </label>
+
+
+                    <select id="staffStatus">
+
+                        <option value="Active">
+                            Active
+                        </option>
+
+                        <option value="Inactive">
+                            Inactive
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ADDRESS -->
+
+                <div class="form-group full">
+
+                    <label for="staffAddress">
+                        Address
+                    </label>
+
+
+                    <textarea
+                        id="staffAddress"
+                        placeholder="Enter staff address"
+                    ></textarea>
+
+                </div>
+
+
+
+                <!-- REMARKS -->
+
+                <div class="form-group full">
+
+                    <label for="staffRemarks">
+                        Remarks
+                    </label>
+
+
+                    <textarea
+                        id="staffRemarks"
+                        placeholder="Enter remarks if required"
+                    ></textarea>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    id="cancelStaffBtn"
+                >
+                    Cancel
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn"
+                    id="saveStaffBtn"
+                >
+                    Save Staff
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- =====================================================
+     FOOTER
+====================================================== -->
+
+<footer class="app-footer">
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
+</footer>
+
+
+
+<script
+    type="module"
+    src="js/staff.js"
+></script>
+
+
+</body>
+
+</html>
