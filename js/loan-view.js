@@ -1123,19 +1123,240 @@ window.receiveDocument =
 // ISSUE DOCUMENT
 // =====================================================
 
+// =====================================================
+// STAFF DATA
+// =====================================================
+
+let staffList = [];
+
+let selectedIssueDocumentId = null;
+
+
+// =====================================================
+// ISSUE MODAL ELEMENTS
+// =====================================================
+
+const documentIssueModal =
+    document.getElementById(
+        "documentIssueModal"
+    );
+
+const closeIssueModalBtn =
+    document.getElementById(
+        "closeIssueModalBtn"
+    );
+
+const cancelIssueBtn =
+    document.getElementById(
+        "cancelIssueBtn"
+    );
+
+const confirmIssueBtn =
+    document.getElementById(
+        "confirmIssueBtn"
+    );
+
+const issueStaffSelect =
+    document.getElementById(
+        "issueStaffSelect"
+    );
+
+const issueDateInput =
+    document.getElementById(
+        "issueDateInput"
+    );
+
+const issueDocumentName =
+    document.getElementById(
+        "issueDocumentName"
+    );
+
+const issueRemarksInput =
+    document.getElementById(
+        "issueRemarksInput"
+    );
+
+
+// =====================================================
+// TODAY
+// =====================================================
+
+function getTodayDate() {
+
+    const today =
+        new Date();
+
+    const year =
+        today.getFullYear();
+
+    const month =
+        String(
+            today.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        );
+
+    const day =
+        String(
+            today.getDate()
+        ).padStart(
+            2,
+            "0"
+        );
+
+    return `${year}-${month}-${day}`;
+
+}
+
+
+// =====================================================
+// LOAD ACTIVE STAFF
+// =====================================================
+
+async function loadActiveStaff() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "staff"
+                )
+            );
+
+
+        staffList = [];
+
+
+        snapshot.forEach(
+            staffDoc => {
+
+                const data =
+                    staffDoc.data();
+
+
+                const status =
+                    String(
+                        data.status ||
+                        ""
+                    ).toLowerCase();
+
+
+                const active =
+                    data.active !== false;
+
+
+                if (
+                    status &&
+                    status !== "active"
+                ) {
+
+                    return;
+
+                }
+
+
+                if (!active) {
+
+                    return;
+
+                }
+
+
+                staffList.push({
+
+                    id:
+                        staffDoc.id,
+
+                    staffId:
+                        data.staffId ||
+                        data.employeeId ||
+                        staffDoc.id,
+
+                    name:
+                        data.name ||
+                        data.staffName ||
+                        data.fullName ||
+                        data.username ||
+                        "Staff"
+
+                });
+
+            }
+        );
+
+
+        staffList.sort(
+            (a, b) =>
+                a.name.localeCompare(
+                    b.name
+                )
+        );
+
+
+        if (issueStaffSelect) {
+
+            issueStaffSelect.innerHTML = `
+                <option value="">
+                    Select Staff
+                </option>
+            `;
+
+
+            staffList.forEach(
+                staff => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    option.value =
+                        staff.id;
+
+
+                    option.textContent =
+                        `${staff.name} (${staff.staffId})`;
+
+
+                    issueStaffSelect.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Staff loading error:",
+            error
+        );
+
+
+        showMessage(
+            "Unable to load active staff."
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// OPEN ISSUE MODAL
+// =====================================================
+
 window.issueDocument =
     async function(
         documentId
     ) {
-
-        /*
-         * Temporary action.
-         *
-         * Staff selection will be connected
-         * after Staff document responsibility
-         * module is added.
-         */
-
 
         const documentItem =
             loanDocuments.find(
@@ -1146,16 +1367,385 @@ window.issueDocument =
 
 
         if (!documentItem) {
+
+            showMessage(
+                "Document not found."
+            );
+
             return;
+
         }
 
 
-        showMessage(
-            "Staff selection will be added in the Staff document issue module."
-        );
+        /*
+         * Only Received document can
+         * be issued to staff.
+         */
+
+        if (
+            String(
+                documentItem.status ||
+                ""
+            ).toLowerCase() !==
+            "received"
+        ) {
+
+            showMessage(
+                "Only received documents can be issued to staff."
+            );
+
+            return;
+
+        }
+
+
+        selectedIssueDocumentId =
+            documentId;
+
+
+        if (issueDocumentName) {
+
+            issueDocumentName.textContent =
+                documentItem.documentType ||
+                "Document";
+
+        }
+
+
+        if (issueDateInput) {
+
+            issueDateInput.value =
+                getTodayDate();
+
+        }
+
+
+        if (issueRemarksInput) {
+
+            issueRemarksInput.value =
+                "";
+
+        }
+
+
+        await loadActiveStaff();
+
+
+        if (documentIssueModal) {
+
+            documentIssueModal.style.display =
+                "flex";
+
+        }
 
     };
 
+
+// =====================================================
+// CLOSE ISSUE MODAL
+// =====================================================
+
+function closeIssueModal() {
+
+    selectedIssueDocumentId =
+        null;
+
+
+    if (documentIssueModal) {
+
+        documentIssueModal.style.display =
+            "none";
+
+    }
+
+
+    if (issueStaffSelect) {
+
+        issueStaffSelect.value =
+            "";
+
+    }
+
+
+    if (issueRemarksInput) {
+
+        issueRemarksInput.value =
+            "";
+
+    }
+
+}
+
+
+if (closeIssueModalBtn) {
+
+    closeIssueModalBtn.addEventListener(
+        "click",
+        closeIssueModal
+    );
+
+}
+
+
+if (cancelIssueBtn) {
+
+    cancelIssueBtn.addEventListener(
+        "click",
+        closeIssueModal
+    );
+
+}
+
+
+// =====================================================
+// CONFIRM ISSUE
+// =====================================================
+
+if (confirmIssueBtn) {
+
+    confirmIssueBtn.addEventListener(
+        "click",
+        async function() {
+
+            if (
+                !selectedIssueDocumentId
+            ) {
+
+                showMessage(
+                    "Document not selected."
+                );
+
+                return;
+
+            }
+
+
+            const staffDocumentId =
+                issueStaffSelect.value;
+
+
+            if (!staffDocumentId) {
+
+                showMessage(
+                    "Please select staff."
+                );
+
+                return;
+
+            }
+
+
+            const staff =
+                staffList.find(
+                    item =>
+                        item.id ===
+                        staffDocumentId
+                );
+
+
+            if (!staff) {
+
+                showMessage(
+                    "Selected staff not found."
+                );
+
+                return;
+
+            }
+
+
+            const issueDate =
+                issueDateInput.value ||
+                getTodayDate();
+
+
+            const remarks =
+                issueRemarksInput.value.trim();
+
+
+            const documentItem =
+                loanDocuments.find(
+                    item =>
+                        item.id ===
+                        selectedIssueDocumentId
+                );
+
+
+            if (!documentItem) {
+
+                showMessage(
+                    "Document not found."
+                );
+
+                return;
+
+            }
+
+
+            confirmIssueBtn.disabled =
+                true;
+
+
+            confirmIssueBtn.textContent =
+                "Issuing...";
+
+
+            try {
+
+                const history =
+                    Array.isArray(
+                        documentItem.history
+                    )
+                        ? [
+                            ...documentItem.history
+                        ]
+                        : [];
+
+
+                history.push({
+
+                    action:
+                        "Document Issued to Staff",
+
+                    status:
+                        "Issued",
+
+                    currentHolder:
+                        "Staff",
+
+                    staffId:
+                        staff.id,
+
+                    staffCode:
+                        staff.staffId,
+
+                    staffName:
+                        staff.name,
+
+                    date:
+                        issueDate,
+
+                    remarks:
+                        remarks
+
+                });
+
+
+                const documentRef =
+                    doc(
+                        db,
+                        "documents",
+                        selectedIssueDocumentId
+                    );
+
+
+                await updateDoc(
+                    documentRef,
+                    {
+
+                        status:
+                            "Issued",
+
+                        currentHolder:
+                            "Staff",
+
+                        staffId:
+                            staff.id,
+
+                        staffCode:
+                            staff.staffId,
+
+                        staffName:
+                            staff.name,
+
+                        issuedDate:
+                            issueDate,
+
+                        lastAction:
+                            "Document Issued to Staff",
+
+                        lastActionDate:
+                            issueDate,
+
+                        remarks:
+                            remarks,
+
+                        history:
+                            history,
+
+                        updatedAt:
+                            serverTimestamp(),
+
+                        updatedBy:
+                            currentUser.uid
+
+                    }
+                );
+
+
+                closeIssueModal();
+
+
+                showMessage(
+                    `${documentItem.documentType} issued to ${staff.name}.`,
+                    "success"
+                );
+
+
+                await loadDocuments();
+
+
+            } catch (error) {
+
+                console.error(
+                    "Document issue error:",
+                    error
+                );
+
+
+                showMessage(
+                    "Unable to issue document."
+                );
+
+            } finally {
+
+                confirmIssueBtn.disabled =
+                    false;
+
+                confirmIssueBtn.textContent =
+                    "Issue Document";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// CLOSE MODAL ON OUTSIDE CLICK
+// =====================================================
+
+if (documentIssueModal) {
+
+    documentIssueModal.addEventListener(
+        "click",
+        function(event) {
+
+            if (
+                event.target ===
+                documentIssueModal
+            ) {
+
+                closeIssueModal();
+
+            }
+
+        }
+    );
+
+}
 
 // =====================================================
 // RETURN DOCUMENT
