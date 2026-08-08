@@ -1,0 +1,8 @@
+{
+  "name": "SR Auto Finance ERP",
+  "short_name": "SR Finance",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb"
+}
