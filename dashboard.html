@@ -1,24 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="theme-color" content="#0f172a">
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Powered By VTOOS Software Solutions"
+    >
 
     <title>Dashboard | SR Auto Finance ERP</title>
+
+
     <style>
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+
         body {
             font-family: Arial, Helvetica, sans-serif;
             background: #f1f5f9;
             color: #1e293b;
         }
+
 
         /* ================================
            HEADER
@@ -38,11 +57,13 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
 
+
         .brand-area {
             display: flex;
             align-items: center;
             gap: 12px;
         }
+
 
         .brand-logo {
             width: 42px;
@@ -56,10 +77,12 @@
             font-size: 15px;
         }
 
+
         .brand-text h1 {
             font-size: 17px;
             font-weight: 800;
         }
+
 
         .brand-text p {
             font-size: 11px;
@@ -67,26 +90,31 @@
             margin-top: 2px;
         }
 
+
         .header-right {
             display: flex;
             align-items: center;
             gap: 14px;
         }
 
+
         .user-info {
             text-align: right;
         }
+
 
         .user-name {
             font-size: 13px;
             font-weight: 700;
         }
 
+
         .user-role {
             font-size: 10px;
             color: #94a3b8;
             text-transform: uppercase;
         }
+
 
         .logout-btn {
             border: 1px solid #475569;
@@ -97,6 +125,7 @@
             cursor: pointer;
             font-size: 12px;
         }
+
 
         .logout-btn:hover {
             background: #1e293b;
@@ -122,11 +151,13 @@
             margin-bottom: 24px;
         }
 
+
         .welcome-section h2 {
             font-size: 25px;
             font-weight: 800;
             color: #0f172a;
         }
+
 
         .welcome-section p {
             color: #64748b;
@@ -146,6 +177,7 @@
             margin-bottom: 25px;
         }
 
+
         .stat-card {
             background: white;
             border-radius: 16px;
@@ -154,17 +186,20 @@
             box-shadow: 0 4px 12px rgba(15,23,42,0.04);
         }
 
+
         .stat-top {
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
+
         .stat-title {
             font-size: 12px;
             color: #64748b;
             font-weight: 600;
         }
+
 
         .stat-icon {
             width: 38px;
@@ -177,12 +212,14 @@
             font-size: 18px;
         }
 
+
         .stat-value {
             margin-top: 13px;
             font-size: 24px;
             font-weight: 800;
             color: #0f172a;
         }
+
 
         .stat-note {
             margin-top: 5px;
@@ -202,12 +239,14 @@
             margin-bottom: 13px;
         }
 
+
         .quick-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
             margin-bottom: 25px;
         }
+
 
         .quick-card {
             background: white;
@@ -218,21 +257,25 @@
             transition: 0.2s;
         }
 
+
         .quick-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(15,23,42,0.08);
             border-color: #bfdbfe;
         }
 
+
         .quick-icon {
             font-size: 22px;
             margin-bottom: 10px;
         }
 
+
         .quick-title {
             font-size: 13px;
             font-weight: 700;
         }
+
 
         .quick-desc {
             font-size: 10px;
@@ -251,12 +294,14 @@
             gap: 18px;
         }
 
+
         .panel {
             background: white;
             border: 1px solid #e2e8f0;
             border-radius: 16px;
             padding: 20px;
         }
+
 
         .panel-header {
             display: flex;
@@ -265,10 +310,12 @@
             margin-bottom: 18px;
         }
 
+
         .panel-title {
             font-size: 15px;
             font-weight: 800;
         }
+
 
         .view-all {
             border: none;
@@ -290,10 +337,12 @@
             color: #94a3b8;
         }
 
+
         .empty-icon {
             font-size: 30px;
             margin-bottom: 8px;
         }
+
 
         .empty-state p {
             font-size: 12px;
@@ -310,19 +359,22 @@
             color: #94a3b8;
             font-size: 10px;
         }
-        .app-footer {
-    text-align: center;
-    padding: 20px 15px 25px;
-    color: #94a3b8;
-    font-size: 11px;
-    line-height: 1.6;
-}
 
-.app-footer div:last-child {
-    color: #64748b;
-    font-weight: 600;
-    font-size: 10px;
-}
+
+        .app-footer {
+            text-align: center;
+            padding: 20px 15px 25px;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+
+        .app-footer div:last-child {
+            color: #64748b;
+            font-weight: 600;
+            font-size: 10px;
+        }
 
 
         /* ================================
@@ -335,13 +387,16 @@
                 grid-template-columns: repeat(2, 1fr);
             }
 
+
             .quick-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
 
+
             .bottom-grid {
                 grid-template-columns: 1fr;
             }
+
         }
 
 
@@ -352,47 +407,60 @@
                 height: 64px;
             }
 
+
             .brand-text h1 {
                 font-size: 14px;
             }
+
 
             .brand-text p {
                 display: none;
             }
 
+
             .user-info {
                 display: none;
             }
+
 
             .main {
                 padding: 18px 14px;
             }
 
+
             .welcome-section h2 {
                 font-size: 21px;
             }
+
 
             .stats-grid {
                 gap: 10px;
             }
 
+
             .stat-card {
                 padding: 15px;
             }
+
 
             .stat-value {
                 font-size: 20px;
             }
 
+
             .quick-grid {
                 gap: 10px;
             }
 
+
             .quick-card {
                 padding: 15px;
             }
+
         }
+
     </style>
+
 </head>
 
 
@@ -410,6 +478,7 @@
         <div class="brand-logo">
             SR
         </div>
+
 
         <div class="brand-text">
 
@@ -436,6 +505,7 @@
             >
                 Admin
             </div>
+
 
             <div
                 class="user-role"
@@ -475,6 +545,7 @@
             Dashboard
         </h2>
 
+
         <p id="welcomeText">
             Welcome back. Here's your business overview.
         </p>
@@ -490,6 +561,8 @@
     <section class="stats-grid">
 
 
+        <!-- Total Customers -->
+
         <div class="stat-card">
 
             <div class="stat-top">
@@ -498,11 +571,13 @@
                     Total Customers
                 </div>
 
+
                 <div class="stat-icon">
                     👥
                 </div>
 
             </div>
+
 
             <div
                 class="stat-value"
@@ -510,6 +585,7 @@
             >
                 0
             </div>
+
 
             <div class="stat-note">
                 Registered customers
@@ -519,6 +595,8 @@
 
 
 
+        <!-- Active Loans -->
+
         <div class="stat-card">
 
             <div class="stat-top">
@@ -527,11 +605,13 @@
                     Active Loans
                 </div>
 
+
                 <div class="stat-icon">
                     💰
                 </div>
 
             </div>
+
 
             <div
                 class="stat-value"
@@ -539,6 +619,7 @@
             >
                 0
             </div>
+
 
             <div class="stat-note">
                 Currently active
@@ -548,6 +629,8 @@
 
 
 
+        <!-- Today's Collection -->
+
         <div class="stat-card">
 
             <div class="stat-top">
@@ -556,11 +639,13 @@
                     Today's Collection
                 </div>
 
+
                 <div class="stat-icon">
                     📥
                 </div>
 
             </div>
+
 
             <div
                 class="stat-value"
@@ -568,6 +653,7 @@
             >
                 ₹0
             </div>
+
 
             <div class="stat-note">
                 Today's received amount
@@ -577,6 +663,8 @@
 
 
 
+        <!-- Outstanding -->
+
         <div class="stat-card">
 
             <div class="stat-top">
@@ -585,11 +673,13 @@
                     Outstanding
                 </div>
 
+
                 <div class="stat-icon">
                     📊
                 </div>
 
             </div>
+
 
             <div
                 class="stat-value"
@@ -598,11 +688,13 @@
                 ₹0
             </div>
 
+
             <div class="stat-note">
                 Pending loan amount
             </div>
 
         </div>
+
 
     </section>
 
@@ -620,6 +712,8 @@
     <section class="quick-grid">
 
 
+        <!-- Customers -->
+
         <div
             class="quick-card"
             onclick="location.href='customers.html'"
@@ -629,9 +723,11 @@
                 👤
             </div>
 
+
             <div class="quick-title">
                 Customers
             </div>
+
 
             <div class="quick-desc">
                 Manage customers
@@ -640,6 +736,8 @@
         </div>
 
 
+
+        <!-- Loans -->
 
         <div
             class="quick-card"
@@ -650,9 +748,11 @@
                 💳
             </div>
 
+
             <div class="quick-title">
                 Loans
             </div>
+
 
             <div class="quick-desc">
                 Manage loan accounts
@@ -661,6 +761,8 @@
         </div>
 
 
+
+        <!-- Collections -->
 
         <div
             class="quick-card"
@@ -671,9 +773,11 @@
                 💵
             </div>
 
+
             <div class="quick-title">
                 Collections
             </div>
+
 
             <div class="quick-desc">
                 Record collections
@@ -682,6 +786,8 @@
         </div>
 
 
+
+        <!-- Reports -->
 
         <div
             class="quick-card"
@@ -692,129 +798,44 @@
                 📈
             </div>
 
+
             <div class="quick-title">
                 Reports
             </div>
-</div>
+
+
             <div class="quick-desc">
                 View business reports
             </div>
 
         </div>
-<section class="quick-grid">
 
-    <!-- Customers -->
 
-    <div
-        class="quick-card"
-        onclick="location.href='customers.html'"
-    >
 
-        <div class="quick-icon">
-            👤
+        <!-- Staff -->
+
+        <div
+            class="quick-card"
+            onclick="location.href='staff.html'"
+        >
+
+            <div class="quick-icon">
+                👥
+            </div>
+
+
+            <div class="quick-title">
+                Staff
+            </div>
+
+
+            <div class="quick-desc">
+                Manage staff
+            </div>
+
         </div>
 
-        <div class="quick-title">
-            Customers
-        </div>
 
-        <div class="quick-desc">
-            Manage customers
-        </div>
-
-    </div>
-
-
-    <!-- Loans -->
-
-    <div
-        class="quick-card"
-        onclick="location.href='loans.html'"
-    >
-
-        <div class="quick-icon">
-            💳
-        </div>
-
-        <div class="quick-title">
-            Loans
-        </div>
-
-        <div class="quick-desc">
-            Manage loan accounts
-        </div>
-
-    </div>
-
-
-    <!-- Collections -->
-
-    <div
-        class="quick-card"
-        onclick="location.href='collections.html'"
-    >
-
-        <div class="quick-icon">
-            💵
-        </div>
-
-        <div class="quick-title">
-            Collections
-        </div>
-
-        <div class="quick-desc">
-            Record collections
-        </div>
-
-    </div>
-
-
-    <!-- Reports -->
-
-    <div
-        class="quick-card"
-        onclick="location.href='reports.html'"
-    >
-
-        <div class="quick-icon">
-            📈
-        </div>
-
-        <div class="quick-title">
-            Reports
-        </div>
-
-        <div class="quick-desc">
-            View business reports
-        </div>
-
-    </div>
-
-
-    <!-- Staff -->
-
-    <div
-        class="quick-card"
-        onclick="location.href='staff.html'"
-    >
-
-        <div class="quick-icon">
-            👥
-        </div>
-
-        <div class="quick-title">
-            Staff
-        </div>
-
-        <div class="quick-desc">
-            Manage staff
-        </div>
-
-    </div>
-
-</section>
-
-</div>
     </section>
 
 
@@ -836,6 +857,7 @@
                     Recent Collections
                 </div>
 
+
                 <button
                     class="view-all"
                     onclick="location.href='collections.html'"
@@ -851,6 +873,7 @@
                 <div class="empty-icon">
                     📋
                 </div>
+
 
                 <p>
                     No recent collections available.
@@ -872,6 +895,7 @@
                     Company Information
                 </div>
 
+
                 <button
                     class="view-all"
                     onclick="location.href='settings.html'"
@@ -891,6 +915,7 @@
                     🏢
                 </div>
 
+
                 <p>
                     Loading company information...
                 </p>
@@ -899,15 +924,36 @@
 
         </div>
 
+
     </section>
 
+
 </main>
+
+
+
+<!-- =========================================
+     FOOTER
+========================================= -->
+
 <footer class="app-footer">
-    <div>© 2026 SR Auto Finance ERP</div>
-    <div>Powered by VTOOS Software Solutions</div>
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
 </footer>
 
-<!-- Dashboard JavaScript -->
+
+
+<!-- =========================================
+     DASHBOARD JAVASCRIPT
+========================================= -->
 
 <script
     type="module"
@@ -916,4 +962,5 @@
 
 
 </body>
+
 </html>
