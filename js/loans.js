@@ -587,15 +587,48 @@ function renderLoans(list) {
 
                         <td>
 
-                            <button
-                                class="action-btn"
-                                data-id="${escapeHTML(
-                                    loan.id
-                                )}"
-                                onclick="viewLoan(this.dataset.id)"
-                            >
-                                View
-                            </button>
+                         <div
+    style="
+        display:flex;
+        gap:6px;
+        flex-wrap:wrap;
+    "
+>
+
+    <button
+        class="action-btn"
+        data-id="${escapeHTML(
+            loan.id
+        )}"
+        onclick="viewLoan(this.dataset.id)"
+    >
+        View
+    </button>
+
+
+    ${
+        String(
+            loan.status || ""
+        ).toLowerCase() === "active"
+            ? `
+                <button
+                    class="action-btn"
+                    style="
+                        border-color:#16a34a;
+                        color:#15803d;
+                    "
+                    data-id="${escapeHTML(
+                        loan.id
+                    )}"
+                    onclick="closeLoan(this.dataset.id)"
+                >
+                    Close
+                </button>
+            `
+            : ""
+    }
+
+</div>
 
                         </td>
 
@@ -714,7 +747,26 @@ window.viewLoan =
 
     };
 
+// =====================================================
+// CLOSE LOAN
+// =====================================================
 
+window.closeLoan =
+    function(loanId) {
+
+        if (!loanId) {
+            return;
+        }
+
+
+        window.location.href =
+            `loan-close.html?id=${
+                encodeURIComponent(
+                    loanId
+                )
+            }`;
+
+    };
 // =====================================================
 // LOADING
 // =====================================================
