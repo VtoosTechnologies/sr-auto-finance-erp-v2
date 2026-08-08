@@ -24,7 +24,8 @@ const customerInfo = document.getElementById(“customerInfo”);
 
 const selectedCustomerId =
 document.getElementById(“selectedCustomerId”);
-
+const selectedCustomerName =
+    document.getElementById("selectedCustomerName");
 const selectedCustomerMobile =
 document.getElementById(“selectedCustomerMobile”);
 
@@ -335,7 +336,11 @@ async function loadCustomers() {
                     customer.customerId ||
                     customer.customerCode ||
                     customer.id;
-
+const customerName =
+    customer.name ||
+    customer.customerName ||
+    customer.fullName ||
+    "Unknown Customer";
 
                 const name =
                     customer.name ||
