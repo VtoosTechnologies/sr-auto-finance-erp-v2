@@ -624,18 +624,63 @@ function renderLoan() {
         );
 
 
-    const paidInstallments =
-        getNumber(
-            loan.paidInstallments,
-            loan.installmentsPaid
+// =================================================
+// INSTALLMENT SUMMARY
+// =================================================
+
+const installmentAmount =
+    getNumber(
+        loan.installmentAmount,
+        loan.monthlyInstallment,
+        loan.emi
+    );
+
+
+let paidInstallments =
+    getNumber(
+        loan.paidInstallments,
+        loan.installmentsPaid
+    );
+
+
+let pendingInstallments =
+    getNumber(
+        loan.pendingInstallments,
+        loan.installmentsPending
+    );
+
+
+/*
+ * Always derive installment count from
+ * cumulative total paid when possible.
+ *
+ * This also fixes older loans where
+ * paidInstallments was saved as 0.
+ */
+
+if (
+    installmentAmount > 0 &&
+    totalInstallments > 0
+) {
+
+    paidInstallments =
+        Math.min(
+            Math.floor(
+                totalPaid /
+                installmentAmount
+            ),
+            totalInstallments
         );
 
 
-    const pendingInstallments =
-        getNumber(
-            loan.pendingInstallments,
-            loan.installmentsPending
+    pendingInstallments =
+        Math.max(
+            totalInstallments -
+            paidInstallments,
+            0
         );
+
+}
 
 
     setText(
