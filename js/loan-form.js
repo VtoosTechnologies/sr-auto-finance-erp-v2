@@ -956,7 +956,8 @@ function calculateLoan() {
         ) || 0;
 
 
-    const rate =
+    // Annual interest rate
+    const annualRate =
         Number(
             interestRate.value
         ) || 0;
@@ -974,31 +975,40 @@ function calculateLoan() {
         ) || 0;
 
 
-    let interest =
-        0;
+    let interest = 0;
+
+    let totalPayable = 0;
+
+    let installment = 0;
 
 
-    let totalPayable =
-        0;
-
-
-    let installment =
-        0;
-
-
-    // -----------------------------------------------
-    // FLAT
-    // -----------------------------------------------
+    // =================================================
+    // FLAT INTEREST
+    // Annual Rate based calculation
+    // =================================================
 
     if (
         interestType.value ===
         "Flat"
     ) {
 
+        /*
+         * Example:
+         *
+         * Principal = 60,000
+         * Annual Rate = 24%
+         * Tenure = 24 months
+         *
+         * Interest =
+         * 60,000 × 24/100 × 24/12
+         *
+         * = 28,800
+         */
+
         interest =
             principal *
-            (rate / 100) *
-            periods;
+            (annualRate / 100) *
+            (periods / 12);
 
 
         totalPayable =
@@ -1014,20 +1024,31 @@ function calculateLoan() {
     }
 
 
-    // -----------------------------------------------
-    // REDUCING
-    // -----------------------------------------------
+    // =================================================
+    // REDUCING BALANCE
+    // Annual Rate converted to Monthly Rate
+    // =================================================
 
     else {
 
         if (
             principal > 0 &&
-            rate > 0 &&
+            annualRate > 0 &&
             periods > 0
         ) {
 
+            /*
+             * Annual 24%
+             *
+             * Monthly rate =
+             * 24 / 12 = 2%
+             *
+             * Decimal monthly rate =
+             * 2 / 100 = 0.02
+             */
+
             const monthlyRate =
-                rate / 100;
+                (annualRate / 12) / 100;
 
 
             const numerator =
@@ -1083,10 +1104,18 @@ function calculateLoan() {
     }
 
 
+    // =================================================
+    // NET DISBURSEMENT
+    // =================================================
+
     const netDisbursement =
         principal -
         fee;
 
+
+    // =================================================
+    // DISPLAY CALCULATION
+    // =================================================
 
     document.getElementById(
         "calcPrincipal"
@@ -1153,7 +1182,6 @@ function calculateLoan() {
     };
 
 }
-
 
 // =====================================================
 // LIVE CALCULATION
@@ -2237,17 +2265,19 @@ async function saveLoan() {
                             principalAmount:
                                 calculation.principal,
 
-                            interestRate:
-                                Number(
-                                    interestRate.value
-                                ) || 0,
+                           interestRate:
+    Number(
+        interestRate.value
+    ) || 0,
 
-                            interestType:
-                                interestType.value,
+interestRatePeriod:
+    "Yearly",
 
-                            interestAmount:
-                                calculation.interest,
+interestType:
+    interestType.value,
 
+interestAmount:
+    calculation.interest,
                             totalPayable:
                                 calculation.totalPayable,
 
