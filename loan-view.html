@@ -615,6 +615,200 @@
 
         }
 
+
+        /* =================================================
+           REPAYMENT SCHEDULE
+        ================================================= */
+
+        .schedule-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .schedule-summary {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .schedule-summary-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 11px 12px;
+        }
+
+        .schedule-summary-card .info-label {
+            margin-bottom: 4px;
+        }
+
+        .schedule-summary-card .summary-value {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .schedule-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .schedule-table {
+            width: 100%;
+            min-width: 1100px;
+            border-collapse: collapse;
+        }
+
+        .schedule-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 9px;
+            text-align: left;
+            padding: 11px 10px;
+            white-space: nowrap;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .schedule-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 10px;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .schedule-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .schedule-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .emi-number {
+            font-weight: 800;
+            color: #2563eb;
+        }
+
+        .amount-cell {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .pending-amount {
+            color: #b91c1c;
+            font-weight: 800;
+        }
+
+        .penalty-amount {
+            color: #c2410c;
+            font-weight: 800;
+        }
+
+        .paid-date {
+            color: #334155;
+        }
+
+        .schedule-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .schedule-status.paid {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .schedule-status.penalty {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .schedule-status.pending,
+        .schedule-status.overdue {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .schedule-status.today {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .schedule-status.upcoming {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .schedule-download-btn {
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #334155;
+            padding: 6px 9px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .schedule-download-btn:hover {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #eff6ff;
+        }
+
+        .schedule-download-all {
+            border: 0;
+            background: #2563eb;
+            color: white;
+            padding: 9px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .schedule-download-all:hover {
+            background: #1d4ed8;
+        }
+
+        .schedule-note {
+            margin-top: 10px;
+            color: #64748b;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 800px) {
+            .schedule-header {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .schedule-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .schedule-summary {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .schedule-download-all {
+                width: 100%;
+            }
+        }
+
     </style>
 
 </head>
@@ -1422,6 +1616,100 @@
 
         </section>
 
+
+
+        <!-- =================================================
+             REPAYMENT SCHEDULE
+        ================================================== -->
+
+        <section class="card full">
+
+            <div class="schedule-header">
+
+                <div>
+                    <div class="card-title" style="margin-bottom:4px;">
+                        Repayment Schedule
+                    </div>
+
+                    <div class="schedule-note" style="margin-top:0;">
+                        Complete installment-wise due, paid, pending and penalty details.
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="schedule-download-all"
+                    id="downloadScheduleBtn"
+                >
+                    ↓ Download Schedule
+                </button>
+
+            </div>
+
+            <div class="schedule-summary">
+
+                <div class="schedule-summary-card">
+                    <div class="info-label">Total Due</div>
+                    <div class="summary-value" id="scheduleTotalDue">₹0</div>
+                </div>
+
+                <div class="schedule-summary-card">
+                    <div class="info-label">Total Paid</div>
+                    <div class="summary-value" id="scheduleTotalPaid">₹0</div>
+                </div>
+
+                <div class="schedule-summary-card">
+                    <div class="info-label">Total Pending</div>
+                    <div class="summary-value" id="scheduleTotalPending">₹0</div>
+                </div>
+
+                <div class="schedule-summary-card">
+                    <div class="info-label">Total Penalty</div>
+                    <div class="summary-value" id="scheduleTotalPenalty">₹0</div>
+                </div>
+
+            </div>
+
+            <div class="schedule-table-wrapper">
+
+                <table class="schedule-table">
+
+                    <thead>
+                        <tr>
+                            <th>EMI</th>
+                            <th>DUE DATE</th>
+                            <th>DUE AMOUNT</th>
+                            <th>PAID AMOUNT</th>
+                            <th>PENDING</th>
+                            <th>PENALTY</th>
+                            <th>PAID DATE</th>
+                            <th>STATUS</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="repaymentScheduleBody">
+
+                        <tr>
+                            <td colspan="9">
+                                <div class="empty">
+                                    Loading repayment schedule...
+                                </div>
+                            </td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="schedule-note">
+                Penalty follows the existing finance rule: 5 cooling days, then the applicable monthly penalty slab.
+                Paid amount and penalty are shown separately.
+            </div>
+
+        </section>
 
 
         <!-- =================================================
