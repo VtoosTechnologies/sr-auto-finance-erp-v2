@@ -420,17 +420,13 @@ async function loadLoan() {
 
         };
 
-
         await loadCustomer();
-
 
         renderLoan();
 
-
-        await loadDocuments();
-
-        await loadRepaymentSchedule();
-
+        // IMPORTANT
+        // Documents should NOT load when page opens.
+        // Repayment should NOT load when page opens.
 
     } catch (error) {
 
@@ -446,7 +442,6 @@ async function loadLoan() {
     }
 
 }
-
 
 // =====================================================
 // LOAD CUSTOMER
