@@ -5,7 +5,8 @@
 // =====================================================
 
 import {
-    onAuthStateChanged
+    onAuthStateChanged,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
@@ -13,7 +14,9 @@ import {
     doc,
     getDocs,
     runTransaction,
-    serverTimestamp
+    serverTimestamp,
+    updateDoc,
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -66,7 +69,9 @@ const inactiveStaff =
     document.getElementById("inactiveStaff");
 
 
-// Form fields
+// =====================================================
+// FORM FIELDS
+// =====================================================
 
 const staffName =
     document.getElementById("staffName");
@@ -122,7 +127,6 @@ function showMessage(
 
     message.className =
         `message ${type}`;
-
 }
 
 
@@ -137,7 +141,6 @@ function clearMessage() {
 
     message.className =
         "message";
-
 }
 
 
@@ -145,14 +148,31 @@ function clearMessage() {
 // TEXT NORMALIZE
 // =====================================================
 
-function normalizeText(value) {
+function normalizeText(
+    value
+) {
 
     return String(
         value || ""
     )
         .trim()
         .toUpperCase();
+}
 
+
+// =====================================================
+// EMAIL NORMALIZE
+// =====================================================
+
+function normalizeEmail(
+    value
+) {
+
+    return String(
+        value || ""
+    )
+        .trim()
+        .toLowerCase();
 }
 
 
@@ -174,9 +194,7 @@ function setDefaultJoiningDate() {
 
         joiningDate.value =
             today;
-
     }
-
 }
 
 
@@ -184,7 +202,9 @@ function setDefaultJoiningDate() {
 // FORMAT DATE
 // =====================================================
 
-function formatDate(value) {
+function formatDate(
+    value
+) {
 
     if (!value) {
         return "-";
@@ -201,7 +221,6 @@ function formatDate(value) {
             .toLocaleDateString(
                 "en-IN"
             );
-
     }
 
 
@@ -215,15 +234,15 @@ function formatDate(value) {
         )
     ) {
 
-        return String(value);
-
+        return String(
+            value
+        );
     }
 
 
     return date.toLocaleDateString(
         "en-IN"
     );
-
 }
 
 
@@ -243,20 +262,15 @@ function openModal(
         editingStaffId =
             null;
 
-
         modalTitle.textContent =
             "Add Staff";
 
-
         staffForm.reset();
-
 
         staffStatus.value =
             "Active";
 
-
         setDefaultJoiningDate();
-
 
         saveStaffBtn.textContent =
             "Save Staff";
@@ -265,7 +279,6 @@ function openModal(
 
         editingStaffId =
             staff.id;
-
 
         modalTitle.textContent =
             "Edit Staff";
@@ -305,14 +318,12 @@ function openModal(
 
         saveStaffBtn.textContent =
             "Update Staff";
-
     }
 
 
     staffModal.classList.add(
         "show"
     );
-
 }
 
 
@@ -330,7 +341,6 @@ function closeModal() {
         null;
 
     clearMessage();
-
 }
 
 
@@ -370,7 +380,6 @@ staffModal.addEventListener(
         ) {
 
             closeModal();
-
         }
 
     }
@@ -386,19 +395,13 @@ async function loadStaff() {
     try {
 
         staffTableBody.innerHTML = `
-
             <tr>
-
                 <td colspan="6">
-
                     <div class="loading">
                         Loading staff...
                     </div>
-
                 </td>
-
             </tr>
-
         `;
 
 
@@ -457,6 +460,7 @@ async function loadStaff() {
 
         renderStaff();
 
+
     } catch (error) {
 
         console.error(
@@ -466,25 +470,15 @@ async function loadStaff() {
 
 
         staffTableBody.innerHTML = `
-
             <tr>
-
                 <td colspan="6">
-
                     <div class="empty-state">
-
                         Unable to load staff.
-
                     </div>
-
                 </td>
-
             </tr>
-
         `;
-
     }
-
 }
 
 
@@ -523,7 +517,6 @@ function updateSummary() {
 
     inactiveStaff.textContent =
         inactive;
-
 }
 
 
@@ -580,14 +573,13 @@ function renderStaff(
         );
 
 
-    if (!filtered.length) {
+    if (
+        !filtered.length
+    ) {
 
         staffTableBody.innerHTML = `
-
             <tr>
-
                 <td colspan="6">
-
                     <div class="empty-state">
 
                         <div class="empty-icon">
@@ -599,15 +591,11 @@ function renderStaff(
                         </p>
 
                     </div>
-
                 </td>
-
             </tr>
-
         `;
 
         return;
-
     }
 
 
@@ -636,58 +624,47 @@ function renderStaff(
 
 
                     return `
-
                         <tr>
 
                             <td>
 
                                 <div class="staff-name">
-
                                     ${escapeHtml(
                                         staff.name ||
                                         "-"
                                     )}
-
                                 </div>
 
                                 <div class="staff-id">
-
                                     ${escapeHtml(
                                         staff.staffId ||
                                         staff.id
                                     )}
-
                                 </div>
 
                             </td>
 
 
                             <td>
-
                                 ${escapeHtml(
                                     staff.mobile ||
                                     "-"
                                 )}
-
                             </td>
 
 
                             <td>
-
                                 ${escapeHtml(
                                     staff.role ||
                                     "-"
                                 )}
-
                             </td>
 
 
                             <td>
-
                                 ${formatDate(
                                     staff.joiningDate
                                 )}
-
                             </td>
 
 
@@ -696,9 +673,7 @@ function renderStaff(
                                 <span
                                     class="status ${statusClass}"
                                 >
-
                                     ${statusText}
-
                                 </span>
 
                             </td>
@@ -719,7 +694,6 @@ function renderStaff(
                             </td>
 
                         </tr>
-
                     `;
 
                 }
@@ -727,7 +701,9 @@ function renderStaff(
             .join("");
 
 
-// Edit buttons
+    // =================================================
+    // EDIT BUTTONS
+    // =================================================
 
     staffTableBody
         .querySelectorAll(
@@ -765,7 +741,6 @@ function renderStaff(
 
             }
         );
-
 }
 
 
@@ -773,7 +748,9 @@ function renderStaff(
 // ESCAPE HTML
 // =====================================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     return String(
         value ?? ""
@@ -798,7 +775,6 @@ function escapeHtml(value) {
             /'/g,
             "&#039;"
         );
-
 }
 
 
@@ -832,40 +808,72 @@ function validateStaff() {
         staffMobile.value.trim();
 
 
+    const email =
+        normalizeEmail(
+            staffEmail.value
+        );
+
+
     const role =
         staffRole.value.trim();
 
 
     if (!name) {
 
-        return "Please enter staff name.";
-
+        return (
+            "Please enter staff name."
+        );
     }
 
 
     if (!mobile) {
 
-        return "Please enter mobile number.";
-
+        return (
+            "Please enter mobile number."
+        );
     }
 
 
-    if (!/^[0-9]{10}$/.test(mobile)) {
+    if (
+        !/^[0-9]{10}$/.test(
+            mobile
+        )
+    ) {
 
-        return "Please enter a valid 10-digit mobile number.";
+        return (
+            "Please enter a valid 10-digit mobile number."
+        );
+    }
 
+
+    if (!email) {
+
+        return (
+            "Please enter staff email."
+        );
+    }
+
+
+    if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            .test(email)
+    ) {
+
+        return (
+            "Please enter a valid staff email address."
+        );
     }
 
 
     if (!role) {
 
-        return "Please enter staff role/designation.";
-
+        return (
+            "Please enter staff role/designation."
+        );
     }
 
 
     return null;
-
 }
 
 
@@ -899,7 +907,6 @@ function checkDuplicateMobile(
             ) {
 
                 return false;
-
             }
 
 
@@ -910,7 +917,6 @@ function checkDuplicateMobile(
             ) {
 
                 return false;
-
             }
 
 
@@ -918,7 +924,56 @@ function checkDuplicateMobile(
 
         }
     );
+}
 
+
+// =====================================================
+// DUPLICATE EMAIL CHECK
+// =====================================================
+
+function checkDuplicateEmail(
+    email
+) {
+
+    const normalizedEmail =
+        normalizeEmail(
+            email
+        );
+
+
+    return staffList.find(
+        staff => {
+
+            const existingEmail =
+                normalizeEmail(
+                    staff.email
+                );
+
+
+            if (
+                !existingEmail ||
+                existingEmail !==
+                normalizedEmail
+            ) {
+
+                return false;
+            }
+
+
+            if (
+                editingStaffId &&
+                staff.id ===
+                editingStaffId
+            ) {
+
+                return false;
+            }
+
+
+            return true;
+
+        }
+    );
 }
 
 
@@ -964,7 +1019,6 @@ async function generateStaffId(
                 data.lastNumber ??
                 0
             ) + 1;
-
     }
 
 
@@ -994,7 +1048,201 @@ async function generateStaffId(
             "0"
         )
     );
+}
 
+
+// =====================================================
+// CREATE TEMP PASSWORD
+// =====================================================
+
+function createTemporaryPassword() {
+
+    const chars =
+        "ABCDEFGHJKLMNPQRSTUVWXYZ" +
+        "abcdefghijkmnopqrstuvwxyz" +
+        "23456789" +
+        "!@#$%";
+
+
+    let password =
+        "";
+
+
+    for (
+        let i = 0;
+        i < 24;
+        i++
+    ) {
+
+        const index =
+            Math.floor(
+                Math.random() *
+                chars.length
+            );
+
+
+        password +=
+            chars[index];
+    }
+
+
+    return password;
+}
+
+
+// =====================================================
+// CREATE FIREBASE AUTH ACCOUNT
+//
+// IMPORTANT:
+// We use Firebase Auth REST signup here instead of
+// createUserWithEmailAndPassword() on the main auth
+// instance.
+//
+// This keeps the owner logged in.
+//
+// The temporary password is NEVER stored.
+// A password-reset email is sent immediately.
+// Staff creates their own real password.
+// =====================================================
+
+async function createStaffAuthAccount(
+    email
+) {
+
+    const apiKey =
+        auth?.app?.options?.apiKey;
+
+
+    if (!apiKey) {
+
+        throw new Error(
+            "Firebase API key could not be found."
+        );
+    }
+
+
+    const temporaryPassword =
+        createTemporaryPassword();
+
+
+    const endpoint =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signUp" +
+        `?key=${encodeURIComponent(
+            apiKey
+        )}`;
+
+
+    const response =
+        await fetch(
+            endpoint,
+            {
+
+                method:
+                    "POST",
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+                body:
+                    JSON.stringify({
+
+                        email:
+                            email,
+
+                        password:
+                            temporaryPassword,
+
+                        returnSecureToken:
+                            true
+
+                    })
+
+            }
+        );
+
+
+    const result =
+        await response.json();
+
+
+    if (
+        !response.ok
+    ) {
+
+        const code =
+            result?.error?.message ||
+            "";
+
+
+        if (
+            code ===
+            "EMAIL_EXISTS"
+        ) {
+
+            throw new Error(
+                "This email already has a Firebase login account."
+            );
+        }
+
+
+        if (
+            code ===
+            "OPERATION_NOT_ALLOWED"
+        ) {
+
+            throw new Error(
+                "Firebase Email/Password Authentication is not enabled."
+            );
+        }
+
+
+        if (
+            code ===
+            "TOO_MANY_ATTEMPTS_TRY_LATER"
+        ) {
+
+            throw new Error(
+                "Too many account creation attempts. Please try again later."
+            );
+        }
+
+
+        throw new Error(
+            `Firebase account creation failed: ${code || "Unknown error"}`
+        );
+    }
+
+
+    if (
+        !result.localId
+    ) {
+
+        throw new Error(
+            "Firebase account was created but UID was not returned."
+        );
+    }
+
+
+    return result.localId;
+}
+
+
+// =====================================================
+// SEND FIRST-TIME PASSWORD EMAIL
+// =====================================================
+
+async function sendStaffPasswordSetupEmail(
+    email
+) {
+
+    await sendPasswordResetEmail(
+        auth,
+        email
+    );
 }
 
 
@@ -1007,7 +1255,6 @@ staffForm.addEventListener(
     async function(event) {
 
         event.preventDefault();
-
 
         clearMessage();
 
@@ -1023,24 +1270,44 @@ staffForm.addEventListener(
             );
 
             return;
-
         }
 
 
-        const duplicate =
+        const duplicateMobile =
             checkDuplicateMobile(
                 staffMobile.value
             );
 
 
-        if (duplicate) {
+        if (duplicateMobile) {
 
             showMessage(
                 "This mobile number is already registered with another staff."
             );
 
             return;
+        }
 
+
+        const email =
+            normalizeEmail(
+                staffEmail.value
+            );
+
+
+        const duplicateEmail =
+            checkDuplicateEmail(
+                email
+            );
+
+
+        if (duplicateEmail) {
+
+            showMessage(
+                "This email address is already registered with another staff."
+            );
+
+            return;
         }
 
 
@@ -1062,10 +1329,6 @@ staffForm.addEventListener(
 
             const mobile =
                 staffMobile.value.trim();
-
-
-            const email =
-                staffEmail.value.trim();
 
 
             const role =
@@ -1090,11 +1353,13 @@ staffForm.addEventListener(
                 staffRemarks.value.trim();
 
 
-            // -----------------------------------------
-            // UPDATE
-            // -----------------------------------------
+            // =================================================
+            // UPDATE EXISTING STAFF
+            // =================================================
 
-            if (editingStaffId) {
+            if (
+                editingStaffId
+            ) {
 
                 const staffRef =
                     doc(
@@ -1121,8 +1386,11 @@ staffForm.addEventListener(
                             throw new Error(
                                 "Staff record not found."
                             );
-
                         }
+
+
+                        const oldData =
+                            snapshot.data();
 
 
                         transaction.update(
@@ -1155,6 +1423,30 @@ staffForm.addEventListener(
                             }
                         );
 
+
+                        /*
+                         * If email is changed after the Auth
+                         * account was already created, we do NOT
+                         * automatically change Firebase Auth email
+                         * from this screen.
+                         *
+                         * This prevents accidental login mismatch.
+                         */
+
+                        if (
+                            oldData.email &&
+                            normalizeEmail(
+                                oldData.email
+                            ) !==
+                            email &&
+                            oldData.authUid
+                        ) {
+
+                            console.warn(
+                                "Staff email changed in Firestore, but Firebase Auth email was not changed automatically."
+                            );
+                        }
+
                     }
                 );
 
@@ -1165,91 +1457,273 @@ staffForm.addEventListener(
                 );
 
 
+                await loadStaff();
+
+
+                setTimeout(
+                    function() {
+
+                        closeModal();
+
+                    },
+                    700
+                );
+
+
+                return;
             }
 
 
-            // -----------------------------------------
-            // CREATE
-            // -----------------------------------------
+            // =================================================
+            // CREATE STAFF DOCUMENT
+            // =================================================
 
-            else {
-
-                const staffRef =
-                    doc(
-                        collection(
-                            db,
-                            "staff"
-                        )
-                    );
-
-
-                const staffId =
-                    await runTransaction(
+            const staffRef =
+                doc(
+                    collection(
                         db,
-                        async transaction => {
-
-                            const generatedStaffId =
-                                await generateStaffId(
-                                    transaction
-                                );
+                        "staff"
+                    )
+                );
 
 
-                            transaction.set(
-                                staffRef,
-                                {
-
-                                    staffId:
-                                        generatedStaffId,
-
-                                    name,
-
-                                    mobile,
-
-                                    email,
-
-                                    role,
-
-                                    joiningDate:
-                                        joining,
-
-                                    status,
-
-                                    address,
-
-                                    remarks,
-
-                                    // --------------------------------
-                                    // DOCUMENT RESPONSIBILITY
-                                    // --------------------------------
-
-                                    assignedDocuments:
-                                        [],
-
-                                    // --------------------------------
-                                    // META
-                                    // --------------------------------
-
-                                    createdAt:
-                                        serverTimestamp(),
-
-                                    updatedAt:
-                                        serverTimestamp(),
-
-                                    createdBy:
-                                        currentUser.uid
-
-                                }
-                            );
+            let generatedStaffId =
+                "";
 
 
-                            return generatedStaffId;
+            await runTransaction(
+                db,
+                async transaction => {
+
+                    generatedStaffId =
+                        await generateStaffId(
+                            transaction
+                        );
+
+
+                    transaction.set(
+                        staffRef,
+                        {
+
+                            staffId:
+                                generatedStaffId,
+
+                            name,
+
+                            mobile,
+
+                            email,
+
+                            role,
+
+                            joiningDate:
+                                joining,
+
+                            status,
+
+                            address,
+
+                            remarks,
+
+                            /*
+                             * Authentication
+                             *
+                             * authUid will be added
+                             * after Firebase Auth account
+                             * is successfully created.
+                             */
+
+                            authUid:
+                                null,
+
+                            authEmail:
+                                email,
+
+                            authProvisioned:
+                                false,
+
+                            passwordSetupSent:
+                                false,
+
+
+                            // --------------------------------
+                            // DOCUMENT RESPONSIBILITY
+                            // --------------------------------
+
+                            assignedDocuments:
+                                [],
+
+
+                            // --------------------------------
+                            // META
+                            // --------------------------------
+
+                            createdAt:
+                                serverTimestamp(),
+
+                            updatedAt:
+                                serverTimestamp(),
+
+                            createdBy:
+                                currentUser.uid
 
                         }
                     );
 
+                }
+            );
+
+
+            // =================================================
+            // CREATE FIREBASE AUTH ACCOUNT
+            // =================================================
+
+            let authUid =
+                null;
+
+
+            try {
+
+                authUid =
+                    await createStaffAuthAccount(
+                        email
+                    );
+
+
+            } catch (
+                authError
+            ) {
+
+                console.error(
+                    "Staff Auth creation error:",
+                    authError
+                );
+
+
+                /*
+                 * Roll back the staff document because
+                 * login account could not be provisioned.
+                 */
+
+                try {
+
+                    await deleteDoc(
+                        staffRef
+                    );
+
+                } catch (
+                    rollbackError
+                ) {
+
+                    console.error(
+                        "Staff rollback error:",
+                        rollbackError
+                    );
+                }
+
+
+                throw authError;
+            }
+
+
+            // =================================================
+            // LINK AUTH UID
+            // =================================================
+
+            await updateDoc(
+                staffRef,
+                {
+
+                    authUid:
+                        authUid,
+
+                    authEmail:
+                        email,
+
+                    authProvisioned:
+                        true,
+
+                    updatedAt:
+                        serverTimestamp(),
+
+                    updatedBy:
+                        currentUser.uid
+
+                }
+            );
+
+
+            // =================================================
+            // SEND PASSWORD SETUP EMAIL
+            // =================================================
+
+            let passwordEmailSent =
+                false;
+
+
+            try {
+
+                await sendStaffPasswordSetupEmail(
+                    email
+                );
+
+
+                passwordEmailSent =
+                    true;
+
+
+            } catch (
+                emailError
+            ) {
+
+                console.error(
+                    "Password setup email error:",
+                    emailError
+                );
+
+            }
+
+
+            // =================================================
+            // SAVE EMAIL STATUS
+            // =================================================
+
+            await updateDoc(
+                staffRef,
+                {
+
+                    passwordSetupSent:
+                        passwordEmailSent,
+
+                    passwordSetupSentAt:
+                        passwordEmailSent
+                            ? serverTimestamp()
+                            : null,
+
+                    updatedAt:
+                        serverTimestamp()
+
+                }
+            );
+
+
+            // =================================================
+            // SUCCESS MESSAGE
+            // =================================================
+
+            if (
+                passwordEmailSent
+            ) {
 
                 showMessage(
-                    `Staff ${staffId} added successfully.`,
+                    `Staff ${generatedStaffId} added successfully. Password setup email sent to ${email}.`,
+                    "success"
+                );
+
+            } else {
+
+                showMessage(
+                    `Staff ${generatedStaffId} added successfully, but the password setup email could not be sent. Use Forgot Password from Staff Login.`,
                     "success"
                 );
 
@@ -1265,11 +1739,13 @@ staffForm.addEventListener(
                     closeModal();
 
                 },
-                700
+                1800
             );
 
 
-        } catch (error) {
+        } catch (
+            error
+        ) {
 
             console.error(
                 "Staff save error:",
@@ -1278,8 +1754,10 @@ staffForm.addEventListener(
 
 
             showMessage(
+                error.message ||
                 "Unable to save staff. Please try again."
             );
+
 
         } finally {
 
@@ -1312,7 +1790,6 @@ onAuthStateChanged(
                 "login.html";
 
             return;
-
         }
 
 
