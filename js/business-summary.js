@@ -40,7 +40,7 @@ let allPayments = [];
 let allCustomers = [];
 
 let allStaff = [];
-
+let allDepositRequests = [];
 let customerMap = new Map();
 
 let staffMap = new Map();
@@ -1525,12 +1525,13 @@ async function loadData() {
         );
 
 
-        const [
-            loansSnapshot,
-            paymentsSnapshot,
-            customersSnapshot,
-            staffSnapshot
-        ] = await Promise.all([
+     const [
+    loansSnapshot,
+    paymentsSnapshot,
+    customersSnapshot,
+    staffSnapshot,
+    depositRequestsSnapshot
+] = await Promise.all([
 
             getDocs(
                 collection(
@@ -1559,9 +1560,14 @@ async function loadData() {
                     "staff"
                 )
             )
+         getDocs(
+    collection(
+        db,
+        "depositRequests"
+    )
+)
 
         ]);
-
 
         // ====================================================
         // CUSTOMERS
@@ -1684,6 +1690,27 @@ async function loadData() {
 
             }
         );
+        
+                // ====================================================
+        // DEPOSIT REQUESTS
+        // ====================================================
+
+        allDepositRequests = [];
+
+        depositRequestsSnapshot.forEach(
+            docSnap => {
+
+                allDepositRequests.push({
+
+                    id:
+                        docSnap.id,
+
+                    ...docSnap.data()
+
+                });
+
+            }
+        );
 
 
         // ====================================================
@@ -1774,7 +1801,9 @@ async function loadData() {
                     allCustomers.length,
 
                 staff:
-                    allStaff.length
+                    allStaff.length,
+                depositRequests:
+    allDepositRequests.length
             }
         );
 
@@ -3812,7 +3841,11 @@ function renderCurrentView() {
             renderLoanWiseView();
 
             break;
+        case "staff":
 
+            renderStaffWiseView();
+
+            break;
 
         default:
 
@@ -3945,6 +3978,567 @@ viewButtons.forEach(
                 currentView =
                     this.dataset.view ||
                     "overall";
+                // ============================================================
+// STAFF WISE VIEW
+// ============================================================
+
+function renderStaffWiseView() {
+
+    const head =
+        document.getElementById(
+            "reportHead"
+        );
+
+    const body =
+        document.getElementById(
+            "reportBody"
+        );
+
+
+    setText(
+        "tableTitle",
+        "Staff Wise Business Summary"
+    );
+
+
+    head.innerHTML = `
+        <tr>
+
+            <th>Staff</th>
+
+            <th>Customers</th>
+
+            <th>Loans</th>
+
+            <th>Principal</th>
+
+            <th>Interest</th>
+
+            <th>Total Payable</th>
+
+            <th>Principal Collected</th>
+
+            <th>Interest Collected</th>
+
+            <th>Total Collected</th>
+
+            <th>Principal Pending</th>
+
+            <th>Interest Pending</th>
+
+            <th>Deposit Pending</th>
+
+            <th>Deposit Accepted</th>
+
+            <th>Balance With Staff</th>
+
+        </tr>
+    `;
+
+
+    const groups =
+        new Map();
+
+
+    // ========================================================
+    // GROUP LOANS BY STAFF
+    // ========================================================
+
+    filteredLoans.forEach(
+        loan => {
+
+            const staffId =
+                getLoanStaffId(
+                    loan
+                );
+
+
+            const staffName =
+                getStaffName(
+                    loan
+                );
+
+
+            const groupKey =
+                staffId ||
+                staffName ||
+                "unassigned";
+
+
+            if (
+                !groups.has(
+                    groupKey
+                )
+            ) {
+
+                groups.set(
+                    groupKey,
+                    {
+
+                        staffId:
+                            staffId,
+
+                        staffName:
+                            staffName,
+
+                        customerIds:
+                            new Set(),
+
+                        loans:
+                            0,
+
+                        principal:
+                            0,
+
+                        interest:
+                            0,
+
+                        totalPayable:
+                            0,
+
+                        principalPaid:
+                            0,
+
+                        interestPaid:
+                            0,
+
+                        totalCollected:
+                            0,
+
+                        principalPending:
+                            0,
+
+                        interestPending:
+                            0,
+
+                        depositPending:
+                            0,
+
+                        depositAccepted:
+                            0
+
+                    }
+                );
+
+            }
+
+
+            const item =
+                groups.get(
+                    groupKey
+                );
+
+
+            const customerId =
+                getLoanCustomerId(
+                    loan
+                );
+
+
+            if (
+                customerId
+            ) {
+
+                item.customerIds.add(
+                    String(
+                        customerId
+                    )
+                );
+
+            }
+
+
+            item.loans +=
+                1;
+
+
+            const data =
+                getLoanFinancialData(
+                    loan
+                );
+
+
+            item.principal +=
+                data.principal;
+
+
+            item.interest +=
+                data.interest;
+
+
+            item.totalPayable +=
+                data.totalPayable;
+
+
+            item.principalPaid +=
+                data.principalPaid;
+
+
+            item.interestPaid +=
+                data.interestPaid;
+
+
+            item.totalCollected +=
+                data.totalPaid;
+
+
+            item.principalPending +=
+                data.principalPending;
+
+
+            item.interestPending +=
+                data.interestPending;
+
+        }
+    );
+
+
+    // ========================================================
+    // DEPOSIT REQUESTS
+    // ========================================================
+
+    allDepositRequests.forEach(
+        request => {
+
+            const status =
+                String(
+                    request.status ||
+                    "pending"
+                ).toLowerCase();
+
+
+            const amount =
+                numberValue(
+                    request.amount,
+                    request.depositAmount
+                );
+
+
+            if (
+                amount <= 0
+            ) {
+
+                return;
+
+            }
+
+
+            const staffId =
+                String(
+                    firstValue(
+                        request,
+                        [
+                            "staffId",
+                            "staffDocumentId",
+                            "staffCode",
+                            "employeeId"
+                        ],
+                        ""
+                    )
+                );
+
+
+            const staffName =
+                firstValue(
+                    request,
+                    [
+                        "staffName",
+                        "collectorName"
+                    ],
+                    ""
+                );
+
+
+            const groupKey =
+                staffId ||
+                staffName ||
+                "unassigned";
+
+
+            if (
+                !groups.has(
+                    groupKey
+                )
+            ) {
+
+                groups.set(
+                    groupKey,
+                    {
+
+                        staffId:
+                            staffId,
+
+                        staffName:
+                            staffName ||
+                            "Staff",
+
+                        customerIds:
+                            new Set(),
+
+                        loans:
+                            0,
+
+                        principal:
+                            0,
+
+                        interest:
+                            0,
+
+                        totalPayable:
+                            0,
+
+                        principalPaid:
+                            0,
+
+                        interestPaid:
+                            0,
+
+                        totalCollected:
+                            0,
+
+                        principalPending:
+                            0,
+
+                        interestPending:
+                            0,
+
+                        depositPending:
+                            0,
+
+                        depositAccepted:
+                            0
+
+                    }
+                );
+
+            }
+
+
+            const item =
+                groups.get(
+                    groupKey
+                );
+
+
+            if (
+                status ===
+                "pending"
+            ) {
+
+                item.depositPending +=
+                    amount;
+
+            }
+
+
+            else if (
+                status ===
+                "accepted"
+            ) {
+
+                item.depositAccepted +=
+                    amount;
+
+            }
+
+        }
+    );
+
+
+    const rows =
+        [
+            ...groups.values()
+        ]
+            .sort(
+                (
+                    a,
+                    b
+                ) => {
+
+                    return String(
+                        a.staffName
+                    ).localeCompare(
+                        String(
+                            b.staffName
+                        )
+                    );
+
+                }
+            );
+
+
+    if (
+        !rows.length
+    ) {
+
+        body.innerHTML = `
+            <tr>
+
+                <td
+                    colspan="14"
+                    class="empty"
+                >
+                    No staff data found.
+                </td>
+
+            </tr>
+        `;
+
+        return;
+
+    }
+
+
+    body.innerHTML =
+        rows
+            .map(
+                item => {
+
+                    const balanceWithStaff =
+                        Math.max(
+                            item.totalCollected -
+                            item.depositAccepted -
+                            item.depositPending,
+                            0
+                        );
+
+
+                    return `
+
+                        <tr>
+
+                            <td>
+
+                                <strong>
+                                    ${escapeHTML(
+                                        item.staffName ||
+                                        "Unassigned"
+                                    )}
+                                </strong>
+
+                            </td>
+
+
+                            <td>
+                                ${
+                                    item.customerIds
+                                        .size
+                                }
+                            </td>
+
+
+                            <td>
+                                ${item.loans}
+                            </td>
+
+
+                            <td class="money">
+
+                                ${formatCurrency(
+                                    item.principal
+                                )}
+
+                            </td>
+
+
+                            <td class="money green">
+
+                                ${formatCurrency(
+                                    item.interest
+                                )}
+
+                            </td>
+
+
+                            <td class="money">
+
+                                ${formatCurrency(
+                                    item.totalPayable
+                                )}
+
+                            </td>
+
+
+                            <td class="money">
+
+                                ${formatCurrency(
+                                    item.principalPaid
+                                )}
+
+                            </td>
+
+
+                            <td class="money green">
+
+                                ${formatCurrency(
+                                    item.interestPaid
+                                )}
+
+                            </td>
+
+
+                            <td class="money green">
+
+                                ${formatCurrency(
+                                    item.totalCollected
+                                )}
+
+                            </td>
+
+
+                            <td class="money red">
+
+                                ${formatCurrency(
+                                    item.principalPending
+                                )}
+
+                            </td>
+
+
+                            <td class="money orange">
+
+                                ${formatCurrency(
+                                    item.interestPending
+                                )}
+
+                            </td>
+
+
+                            <td class="money orange">
+
+                                ${formatCurrency(
+                                    item.depositPending
+                                )}
+
+                            </td>
+
+
+                            <td class="money green">
+
+                                ${formatCurrency(
+                                    item.depositAccepted
+                                )}
+
+                            </td>
+
+
+                            <td class="money">
+
+                                ${formatCurrency(
+                                    balanceWithStaff
+                                )}
+
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
 
 
                 renderCurrentView();
