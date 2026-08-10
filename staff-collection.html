@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Collect Payment - SR Auto Finance
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #0f172a;
+
+        }
+
+
+        /* =====================================================
+           TOPBAR
+        ====================================================== */
+
+        .topbar {
+
+            height: 68px;
+
+            background: #ffffff;
+
+            border-bottom:
+                1px solid #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 20;
+
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .logo {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 11px;
+
+            background: #2563eb;
+
+            color: #ffffff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-title {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-subtitle {
+
+            margin-top: 2px;
+
+            font-size: 11px;
+
+            color: #64748b;
+
+        }
+
+
+        .top-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+        .back-btn,
+        .logout-btn {
+
+            border: 0;
+
+            padding:
+                9px 13px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .back-btn {
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .logout-btn {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =====================================================
+           PAGE
+        ====================================================== */
+
+        .page {
+
+            width: 100%;
+
+            max-width: 900px;
+
+            margin: 0 auto;
+
+            padding: 24px;
+
+        }
+
+
+        .page-title {
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .page-title h1 {
+
+            margin: 0;
+
+            font-size: 24px;
+
+        }
+
+
+        .page-title p {
+
+            margin:
+                6px 0 0;
+
+            font-size: 13px;
+
+            color: #64748b;
+
+        }
+
+
+        /* =====================================================
+           CUSTOMER / LOAN HEADER
+        ====================================================== */
+
+        .customer-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 20px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .customer-top {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            gap: 15px;
+
+        }
+
+
+        .customer-name {
+
+            margin: 0;
+
+            font-size: 20px;
+
+            font-weight: 800;
+
+        }
+
+
+        .customer-meta {
+
+            margin-top: 7px;
+
+            font-size: 12px;
+
+            color: #64748b;
+
+            line-height: 1.6;
+
+        }
+
+
+        .loan-badge {
+
+            padding:
+                7px 10px;
+
+            border-radius: 7px;
+
+            background: #dbeafe;
+
+            color: #1d4ed8;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            white-space: nowrap;
+
+        }
+
+
+        /* =====================================================
+           DUE SUMMARY
+        ====================================================== */
+
+        .due-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 10px;
+
+            margin-top: 18px;
+
+        }
+
+
+        .due-box {
+
+            background: #f8fafc;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 9px;
+
+            padding: 13px;
+
+        }
+
+
+        .due-label {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .due-value {
+
+            margin-top: 6px;
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .due-value.orange {
+
+            color: #c2410c;
+
+        }
+
+
+        .due-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        .due-value.green {
+
+            color: #15803d;
+
+        }
+
+
+        /* =====================================================
+           COLLECTION FORM
+        ====================================================== */
+
+        .form-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 20px;
+
+        }
+
+
+        .section-title {
+
+            margin: 0 0 18px;
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .form-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 16px;
+
+        }
+
+
+        .form-group {
+
+            display: flex;
+
+            flex-direction: column;
+
+        }
+
+
+        .form-group.full {
+
+            grid-column:
+                1 / -1;
+
+        }
+
+
+        label {
+
+            margin-bottom: 7px;
+
+            font-size: 11px;
+
+            color: #334155;
+
+            font-weight: 700;
+
+        }
+
+
+        input,
+        select,
+        textarea {
+
+            width: 100%;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            font-family: inherit;
+
+            font-size: 13px;
+
+            background: #ffffff;
+
+        }
+
+
+        input,
+        select {
+
+            height: 44px;
+
+            padding:
+                0 12px;
+
+        }
+
+
+        textarea {
+
+            min-height: 80px;
+
+            padding: 11px 12px;
+
+            resize: vertical;
+
+        }
+
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+
+            border-color:
+                #2563eb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.10
+                );
+
+        }
+
+
+        input[readonly] {
+
+            background: #f8fafc;
+
+            color: #475569;
+
+        }
+
+
+        /* =====================================================
+           PAYMENT PREVIEW
+        ====================================================== */
+
+        .preview-card {
+
+            margin-top: 20px;
+
+            border:
+                1px solid #bfdbfe;
+
+            background: #eff6ff;
+
+            border-radius: 12px;
+
+            padding: 17px;
+
+        }
+
+
+        .preview-title {
+
+            margin-bottom: 13px;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            color: #1e3a8a;
+
+        }
+
+
+        .preview-row {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding:
+                7px 0;
+
+            border-bottom:
+                1px solid
+                rgba(
+                    147,
+                    197,
+                    253,
+                    0.45
+                );
+
+            font-size: 12px;
+
+        }
+
+
+        .preview-row:last-child {
+
+            border-bottom: 0;
+
+        }
+
+
+        .preview-label {
+
+            color: #475569;
+
+        }
+
+
+        .preview-value {
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .preview-total {
+
+            font-size: 16px;
+
+            color: #15803d;
+
+        }
+
+
+        .preview-pending {
+
+            color: #dc2626;
+
+        }
+
+
+        /* =====================================================
+           WARNING
+        ====================================================== */
+
+        .warning {
+
+            display: none;
+
+            margin-top: 15px;
+
+            padding: 11px 13px;
+
+            border-radius: 8px;
+
+            background: #fef2f2;
+
+            border:
+                1px solid #fecaca;
+
+            color: #b91c1c;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+
+        }
+
+
+        .warning.show {
+
+            display: block;
+
+        }
+
+
+        /* =====================================================
+           BUTTONS
+        ====================================================== */
+
+        .form-actions {
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 10px;
+
+            margin-top: 22px;
+
+        }
+
+
+        .cancel-btn {
+
+            height: 46px;
+
+            padding:
+                0 18px;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #334155;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .save-btn {
+
+            height: 46px;
+
+            padding:
+                0 24px;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            background: #16a34a;
+
+            color: #ffffff;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .save-btn:hover {
+
+            background: #15803d;
+
+        }
+
+
+        .save-btn:disabled {
+
+            opacity: 0.55;
+
+            cursor: not-allowed;
+
+        }
+
+
+        /* =====================================================
+           MESSAGE
+        ====================================================== */
+
+        .message {
+
+            display: none;
+
+            margin-bottom: 16px;
+
+            padding:
+                11px 13px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+        }
+
+
+        .message.error {
+
+            display: block;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border:
+                1px solid #fecaca;
+
+        }
+
+
+        .message.success {
+
+            display: block;
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            border:
+                1px solid #bbf7d0;
+
+        }
+
+
+        /* =====================================================
+           LOADING
+        ====================================================== */
+
+        .loading {
+
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.25
+                );
+
+            align-items: center;
+
+            justify-content: center;
+
+            z-index: 100;
+
+        }
+
+
+        .loading-box {
+
+            background: #ffffff;
+
+            padding:
+                20px 26px;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            box-shadow:
+                0 15px 40px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.2
+                );
+
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ====================================================== */
+
+        @media (
+            max-width: 700px
+        ) {
+
+            .topbar {
+
+                padding:
+                    0 12px;
+
+            }
+
+
+            .page {
+
+                padding:
+                    14px;
+
+            }
+
+
+            .brand-subtitle {
+
+                display: none;
+
+            }
+
+
+            .due-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .form-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .form-group.full {
+
+                grid-column:
+                    auto;
+
+            }
+
+
+            .customer-top {
+
+                display: block;
+
+            }
+
+
+            .loan-badge {
+
+                display: inline-block;
+
+                margin-top: 10px;
+
+            }
+
+
+            .form-actions {
+
+                flex-direction:
+                    column-reverse;
+
+            }
+
+
+            .cancel-btn,
+            .save-btn {
+
+                width: 100%;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         TOPBAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+
+        <div class="brand">
+
+            <div class="logo">
+                SR
+            </div>
+
+
+            <div>
+
+                <div class="brand-title">
+                    SR Auto Finance
+                </div>
+
+                <div class="brand-subtitle">
+                    Staff Collection
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+
+            <button
+                type="button"
+                class="back-btn"
+                id="backBtn"
+            >
+                ← Back
+            </button>
+
+
+            <button
+                type="button"
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                Logout
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- =====================================================
+         PAGE
+    ====================================================== -->
+
+    <main class="page">
+
+
+        <div class="page-title">
+
+            <h1>
+                Collect Payment
+            </h1>
+
+            <p>
+                Enter the amount received from the customer.
+                Remaining calculations will be handled automatically.
+            </p>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MESSAGE
+        ================================================== -->
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+
+
+        <!-- =================================================
+             CUSTOMER / LOAN
+        ================================================== -->
+
+        <section class="customer-card">
+
+
+            <div class="customer-top">
+
+
+                <div>
+
+                    <h2
+                        class="customer-name"
+                        id="customerName"
+                    >
+                        Loading...
+                    </h2>
+
+
+                    <div
+                        class="customer-meta"
+                        id="customerMeta"
+                    >
+                        Loading customer details...
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="loan-badge"
+                    id="loanBadge"
+                >
+                    LOAN
+                </div>
+
+
+            </div>
+
+
+
+            <div class="due-grid">
+
+
+                <div class="due-box">
+
+                    <div class="due-label">
+                        Due Date
+                    </div>
+
+                    <div
+                        class="due-value"
+                        id="dueDate"
+                    >
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="due-box">
+
+                    <div class="due-label">
+                        Due Amount
+                    </div>
+
+                    <div
+                        class="due-value orange"
+                        id="dueAmount"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="due-box">
+
+                    <div class="due-label">
+                        Previous Pending
+                    </div>
+
+                    <div
+                        class="due-value red"
+                        id="previousPending"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+                <div class="due-box">
+
+                    <div class="due-label">
+                        Total Due
+                    </div>
+
+                    <div
+                        class="due-value orange"
+                        id="totalDue"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             COLLECTION FORM
+        ================================================== -->
+
+        <section class="form-card">
+
+
+            <h2 class="section-title">
+                Payment Entry
+            </h2>
+
+
+            <form
+                id="collectionForm"
+            >
+
+
+                <div class="form-grid">
+
+
+                    <!-- =====================================
+                         AMOUNT RECEIVED
+                    ====================================== -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="amountReceived"
+                        >
+                            Amount Received *
+                        </label>
+
+
+                        <input
+                            type="number"
+                            id="amountReceived"
+                            min="0"
+                            step="0.01"
+                            placeholder="Enter amount received"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         PAYMENT DATE
+                    ====================================== -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="paymentDate"
+                        >
+                            Payment Date *
+                        </label>
+
+
+                        <input
+                            type="date"
+                            id="paymentDate"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         PAYMENT MODE
+                    ====================================== -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="paymentMode"
+                        >
+                            Payment Mode *
+                        </label>
+
+
+                        <select
+                            id="paymentMode"
+                            required
+                        >
+
+                            <option value="">
+                                Select Payment Mode
+                            </option>
+
+                            <option value="Cash">
+                                Cash
+                            </option>
+
+                            <option value="UPI">
+                                UPI
+                            </option>
+
+                            <option value="Bank Transfer">
+                                Bank Transfer
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         PENALTY
+                    ====================================== -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="penalty"
+                        >
+                            Penalty
+                        </label>
+
+
+                        <input
+                            type="number"
+                            id="penalty"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            placeholder="Penalty"
+                        >
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         REMARKS
+                    ====================================== -->
+
+                    <div class="form-group full">
+
+                        <label
+                            for="remarks"
+                        >
+                            Remarks
+                        </label>
+
+
+                        <textarea
+                            id="remarks"
+                            placeholder="Optional remarks"
+                        ></textarea>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =========================================
+                     WARNING
+                ========================================== -->
+
+                <div
+                    id="warning"
+                    class="warning"
+                ></div>
+
+
+
+                <!-- =========================================
+                     PREVIEW
+                ========================================== -->
+
+                <div class="preview-card">
+
+
+                    <div class="preview-title">
+                        Collection Summary
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Due Amount
+                        </span>
+
+                        <span
+                            class="preview-value"
+                            id="previewDue"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Previous Pending
+                        </span>
+
+                        <span
+                            class="preview-value"
+                            id="previewPreviousPending"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Penalty
+                        </span>
+
+                        <span
+                            class="preview-value"
+                            id="previewPenalty"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Amount Received
+                        </span>
+
+                        <span
+                            class="preview-value preview-total"
+                            id="previewReceived"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Remaining Pending
+                        </span>
+
+                        <span
+                            class="preview-value preview-pending"
+                            id="previewRemaining"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =========================================
+                     ACTIONS
+                ========================================== -->
+
+                <div class="form-actions">
+
+
+                    <button
+                        type="button"
+                        class="cancel-btn"
+                        id="cancelBtn"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="save-btn"
+                        id="saveBtn"
+                    >
+                        Save Collection
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         LOADING
+    ====================================================== -->
+
+    <div
+        class="loading"
+        id="loadingOverlay"
+    >
+
+        <div class="loading-box">
+            Processing collection...
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script
+        type="module"
+        src="js/staff-collection.js"
+    ></script>
+
+
+</body>
+
+</html>
