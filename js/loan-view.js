@@ -961,16 +961,16 @@ async function loadDocuments() {
         );
 
     if (!container) {
+
         return;
+
     }
 
-    container.innerHTML =
-        `
+    container.innerHTML = `
         <div class="empty">
             Loading documents...
         </div>
-        `;
-
+    `;
 
     try {
 
@@ -989,7 +989,6 @@ async function loadDocuments() {
 
         loanDocuments = [];
 
-
         snapshot.forEach(
             documentSnap => {
 
@@ -1005,9 +1004,7 @@ async function loadDocuments() {
             }
         );
 
-
         renderDocuments();
-
 
     } catch (error) {
 
@@ -1016,18 +1013,15 @@ async function loadDocuments() {
             error
         );
 
-        container.innerHTML =
-            `
+        container.innerHTML = `
             <div class="empty">
                 Unable to load documents.
             </div>
-            `;
+        `;
 
     }
 
 }
-
-
 // =====================================================
 // RENDER DOCUMENTS
 // =====================================================
@@ -1156,76 +1150,6 @@ function renderDocuments() {
             .join("");
 
 }
-
-
-// =====================================================
-// DOCUMENT TOGGLE
-// =====================================================
-
-function setupDocumentToggle() {
-
-    const button =
-        getElement(
-            "toggleDocumentsBtn"
-        );
-
-    const container =
-        getElement(
-            "loanDocuments"
-        );
-
-    if (
-        !button ||
-        !container
-    ) {
-        return;
-    }
-
-
-    container.style.display =
-        "none";
-
-
-    button.addEventListener(
-        "click",
-        async () => {
-
-            const isHidden =
-                container.style.display ===
-                "none";
-
-
-            if (isHidden) {
-
-                container.style.display =
-                    "block";
-
-                button.textContent =
-                    "Hide Loan Documents";
-
-                if (
-                    !loanDocuments.length
-                ) {
-
-                    await loadDocuments();
-
-                }
-
-            } else {
-
-                container.style.display =
-                    "none";
-
-                button.textContent =
-                    "View Loan Documents";
-
-            }
-
-        }
-    );
-
-}
-
 
 // =====================================================
 // DOCUMENT ISSUE / RETURN
@@ -1640,7 +1564,6 @@ async function loadRepaymentSchedule() {
 
     }
 
-
     body.innerHTML = `
         <tr>
             <td colspan="9">
@@ -1651,7 +1574,6 @@ async function loadRepaymentSchedule() {
         </tr>
     `;
 
-
     try {
 
         const paymentsRef =
@@ -1660,17 +1582,16 @@ async function loadRepaymentSchedule() {
                 "payments"
             );
 
+        const paymentMap =
+            new Map();
 
-        let snapshot;
-
-
-        // -------------------------------------------------
-        // FIRST: loanDocumentId
-        // -------------------------------------------------
+        // =========================================
+        // LOAN DOCUMENT ID
+        // =========================================
 
         try {
 
-            snapshot =
+            const snapshot =
                 await getDocs(
                     query(
                         paymentsRef,
@@ -1682,6 +1603,23 @@ async function loadRepaymentSchedule() {
                     )
                 );
 
+            snapshot.forEach(
+                paymentSnap => {
+
+                    paymentMap.set(
+                        paymentSnap.id,
+                        {
+                            id:
+                                paymentSnap.id,
+
+                            ...paymentSnap.data()
+
+                        }
+                    );
+
+                }
+            );
+
         } catch (error) {
 
             console.warn(
@@ -1689,84 +1627,84 @@ async function loadRepaymentSchedule() {
                 error
             );
 
-            snapshot =
-                null;
-
         }
 
 
-        // -------------------------------------------------
-        // SECOND: loanId
-        // -------------------------------------------------
+        // =========================================
+        // LOAN ID / LOAN NUMBER
+        // =========================================
+
+        const loanNumber =
+            firstValue(
+                currentLoan,
+                [
+                    "loanId",
+                    "loanNumber",
+                    "loanCode"
+                ]
+            );
+
 
         if (
-            !snapshot ||
-            snapshot.empty
+            loanNumber
         ) {
 
-            const loanNumber =
-                firstValue(
-                    currentLoan,
-                    [
-                        "loanId",
-                        "loanNumber",
-                        "loanCode"
-                    ]
-                );
+            try {
 
-
-            if (loanNumber) {
-
-                try {
-
-                    snapshot =
-                        await getDocs(
-                            query(
-                                paymentsRef,
-                                where(
-                                    "loanId",
-                                    "==",
-                                    loanNumber
-                                )
+                const snapshot =
+                    await getDocs(
+                        query(
+                            paymentsRef,
+                            where(
+                                "loanId",
+                                "==",
+                                loanNumber
                             )
-                        );
-
-                } catch (error) {
-
-                    console.warn(
-                        "loanId query failed.",
-                        error
+                        )
                     );
 
-                }
+                snapshot.forEach(
+                    paymentSnap => {
+
+                        paymentMap.set(
+                            paymentSnap.id,
+                            {
+                                id:
+                                    paymentSnap.id,
+
+                                ...paymentSnap.data()
+
+                            }
+                        );
+
+                    }
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "loanId query failed.",
+                    error
+                );
 
             }
 
         }
 
 
-        repaymentPayments = [];
+        // =========================================
+        // FINAL PAYMENT LIST
+        // =========================================
 
-
-        if (snapshot) {
-
-            snapshot.forEach(
-                paymentSnap => {
-
-                    repaymentPayments.push({
-
-                        id:
-                            paymentSnap.id,
-
-                        ...paymentSnap.data()
-
-                    });
-
-                }
+        repaymentPayments =
+            Array.from(
+                paymentMap.values()
             );
 
-        }
 
+        // =========================================
+        // BUILD
+        // =========================================
 
         repaymentSchedule =
             buildRepaymentSchedule();
@@ -1782,21 +1720,16 @@ async function loadRepaymentSchedule() {
             error
         );
 
-
         repaymentPayments = [];
-
 
         repaymentSchedule =
             buildRepaymentSchedule();
-
 
         renderRepaymentSchedule();
 
     }
 
 }
-
-
 // =====================================================
 // BUILD REPAYMENT SCHEDULE
 // =====================================================
@@ -1822,19 +1755,49 @@ function buildRepaymentSchedule() {
 
     const schedule = [];
 
-
     const today =
         toScheduleDate(
             new Date()
         );
 
 
+    // =========================================
+    // PAYMENT ALLOCATION
+    // =========================================
+
+    const usedPayments =
+        new Set();
+
+
+    // Payments which already contain EMI number
+    const directPayments =
+        repaymentPayments.filter(
+            payment =>
+                getPaymentInstallmentNo(
+                    payment
+                ) > 0
+        );
+
+
+    // Payments without EMI number
+    const unassignedPayments =
+        repaymentPayments.filter(
+            payment =>
+                getPaymentInstallmentNo(
+                    payment
+                ) <= 0
+        );
+
+
+    // =========================================
+    // CREATE EMI ROWS
+    // =========================================
+
     for (
         let installmentNo = 1;
         installmentNo <= tenure;
         installmentNo++
     ) {
-
 
         const dueDate =
             getScheduleDueDate(
@@ -1848,69 +1811,142 @@ function buildRepaymentSchedule() {
             );
 
 
-        // -------------------------------------------------
-        // FIND PAYMENTS FOR THIS EMI
-        // -------------------------------------------------
-
-        const matchingPayments =
-            repaymentPayments.filter(
-                payment => {
+        let matchingPayments = [];
 
 
-                    const paymentInstallmentNo =
-                        getPaymentInstallmentNo(
-                            payment
-                        );
+        // =========================================
+        // 1. EMI NUMBER MATCH
+        // =========================================
+
+        directPayments.forEach(
+            payment => {
+
+                const paymentEMI =
+                    getPaymentInstallmentNo(
+                        payment
+                    );
 
 
-                    // New payment records
-                    // with installment number
-                    if (
-                        paymentInstallmentNo > 0
-                    ) {
+                if (
+                    paymentEMI ===
+                    installmentNo
+                ) {
 
-                        return (
-                            paymentInstallmentNo ===
-                            installmentNo
-                        );
+                    matchingPayments.push(
+                        payment
+                    );
 
-                    }
-
-
-                    // -------------------------------------------------
-                    // OLD PAYMENT RECORDS
-                    // Match using due date
-                    // -------------------------------------------------
-
-                    const paymentDueDate =
-                        payment.dueDate ||
-                        payment.installmentDueDate ||
-                        payment.emiDueDate;
-
-
-                    if (
-                        paymentDueDate
-                    ) {
-
-                        return (
-                            scheduleDateKey(
-                                paymentDueDate
-                            ) ===
-                            dueDateKey
-                        );
-
-                    }
-
-
-                    return false;
+                    usedPayments.add(
+                        payment.id
+                    );
 
                 }
-            );
+
+            }
+        );
 
 
-        // -------------------------------------------------
-        // CALCULATE PAYMENT VALUES
-        // -------------------------------------------------
+        // =========================================
+        // 2. DUE DATE MATCH
+        // =========================================
+
+        repaymentPayments.forEach(
+            payment => {
+
+                if (
+                    usedPayments.has(
+                        payment.id
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const paymentEMI =
+                    getPaymentInstallmentNo(
+                        payment
+                    );
+
+
+                if (
+                    paymentEMI > 0
+                ) {
+
+                    return;
+
+                }
+
+
+                const paymentDueDate =
+                    payment.dueDate ||
+                    payment.installmentDueDate ||
+                    payment.emiDueDate;
+
+
+                if (
+                    paymentDueDate &&
+                    scheduleDateKey(
+                        paymentDueDate
+                    ) ===
+                    dueDateKey
+                ) {
+
+                    matchingPayments.push(
+                        payment
+                    );
+
+                    usedPayments.add(
+                        payment.id
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =========================================
+        // 3. OLD PAYMENT RECORD
+        // WITHOUT EMI / DUE DATE
+        //
+        // Allocate sequentially to EMI
+        // =========================================
+
+        if (
+            matchingPayments.length === 0
+        ) {
+
+            const nextPayment =
+                unassignedPayments.find(
+                    payment =>
+                        !usedPayments.has(
+                            payment.id
+                        )
+                );
+
+
+            if (
+                nextPayment
+            ) {
+
+                matchingPayments.push(
+                    nextPayment
+                );
+
+                usedPayments.add(
+                    nextPayment.id
+                );
+
+            }
+
+        }
+
+
+        // =========================================
+        // CALCULATE
+        // =========================================
 
         let paidAmount = 0;
 
@@ -1923,7 +1959,6 @@ function buildRepaymentSchedule() {
 
         matchingPayments.forEach(
             payment => {
-
 
                 paidAmount +=
                     getPaymentAmount(
@@ -1967,9 +2002,9 @@ function buildRepaymentSchedule() {
         );
 
 
-        // -------------------------------------------------
-        // PAID AMOUNT CANNOT EXCEED EMI
-        // -------------------------------------------------
+        // =========================================
+        // NEVER SHOW MORE THAN EMI
+        // =========================================
 
         paidAmount =
             Math.min(
@@ -1977,10 +2012,6 @@ function buildRepaymentSchedule() {
                 emi
             );
 
-
-        // -------------------------------------------------
-        // PENDING
-        // -------------------------------------------------
 
         const pendingAmount =
             Math.max(
@@ -1990,9 +2021,9 @@ function buildRepaymentSchedule() {
             );
 
 
-        // -------------------------------------------------
+        // =========================================
         // STATUS
-        // -------------------------------------------------
+        // =========================================
 
         let status =
             "Upcoming";
@@ -2082,7 +2113,6 @@ function buildRepaymentSchedule() {
     return schedule;
 
 }
-
 
 // =====================================================
 // REPAYMENT STATUS CLASS
@@ -2925,7 +2955,7 @@ document.addEventListener(
     "DOMContentLoaded",
     () => {
 
-        setupDocumentToggle();
+        setupLoanDocumentsToggle();
 
         setupRepaymentToggle();
 
