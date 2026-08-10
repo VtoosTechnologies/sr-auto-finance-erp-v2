@@ -7,11 +7,15 @@ import {
 
 
 // =====================================================
-// SR AUTO FINANCE
+// SR AUTO FINANCE ERP
 // COLLECTION REPORT
+// Actual Firestore Collection:
+// collections
 // =====================================================
 
-const $ = (id) => document.getElementById(id);
+
+const $ = (id) =>
+    document.getElementById(id);
 
 
 // =====================================================
@@ -20,21 +24,36 @@ const $ = (id) => document.getElementById(id);
 
 const state = {
 
-    loans: [],
+    collections: [],
 
-    payments: [],
+    loans: [],
 
     rows: [],
 
     group: "date",
 
-    selectedPayment: null
+    selectedRow: null
 
 };
 
 
 // =====================================================
-// MONEY FORMAT
+// NUMBER
+// =====================================================
+
+function numberValue(value) {
+
+    const n = Number(value);
+
+    return Number.isFinite(n)
+        ? n
+        : 0;
+
+}
+
+
+// =====================================================
+// MONEY
 // =====================================================
 
 function money(value) {
@@ -46,29 +65,18 @@ function money(value) {
             currency: "INR",
             maximumFractionDigits: 0
         }
-    ).format(Number(value) || 0);
+    ).format(
+        numberValue(value)
+    );
 
 }
 
 
 // =====================================================
-// NUMBER
+// ESCAPE HTML
 // =====================================================
 
-function num(value) {
-
-    const n = Number(value);
-
-    return Number.isFinite(n) ? n : 0;
-
-}
-
-
-// =====================================================
-// HTML ESCAPE
-// =====================================================
-
-function esc(value) {
+function escapeHTML(value) {
 
     return String(value ?? "-")
         .replaceAll("&", "&amp;")
@@ -81,34 +89,80 @@ function esc(value) {
 
 
 // =====================================================
-// DATE ONLY
+// DATE VALUE
 // =====================================================
 
-function dateOnly(value) {
+function getDateValue(value) {
 
-    if (!value) return "";
+    if (!value) {
+
+        return null;
+
+    }
+
 
     if (
         typeof value === "object" &&
-        value?.toDate
+        typeof value.toDate === "function"
     ) {
 
-        return value
-            .toDate()
-            .toISOString()
-            .slice(0, 10);
+        return value.toDate();
 
     }
 
-    const str = String(value);
 
-    if (str.length >= 10) {
+    const date =
+        new Date(value);
 
-        return str.slice(0, 10);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
+        return null;
 
     }
 
-    return "";
+
+    return date;
+
+}
+
+
+// =====================================================
+// STORAGE DATE
+// =====================================================
+
+function storageDate(value) {
+
+    const date =
+        getDateValue(value);
+
+
+    if (!date) {
+
+        return "";
+
+    }
+
+
+    const year =
+        date.getFullYear();
+
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
+
+    const day =
+        String(
+            date.getDate()
+        ).padStart(2, "0");
+
+
+    return `${year}-${month}-${day}`;
 
 }
 
@@ -119,459 +173,200 @@ function dateOnly(value) {
 
 function displayDate(value) {
 
-    const date = dateOnly(value);
-
-    if (!date) return "-";
-
-    const parts = date.split("-");
-
-    return `${parts[2]}-${parts[1]}-${parts[0]}`;
-
-}
+    const date =
+        storageDate(value);
 
 
-// =====================================================
-// DATE OBJECT
-// =====================================================
+    if (!date) {
 
-function dateObject(value) {
-
-    const date = dateOnly(value);
-
-    if (!date) return null;
-
-    const obj = new Date(
-        `${date}T00:00:00`
-    );
-
-    if (Number.isNaN(obj.getTime())) {
-
-        return null;
+        return "-";
 
     }
 
-    return obj;
+
+    const [
+        year,
+        month,
+        day
+    ] = date.split("-");
+
+
+    return `${day}-${month}-${year}`;
 
 }
 
 
 // =====================================================
 // WEEK START
-// Monday = First Day
+// Monday
 // =====================================================
 
-function weekStart(date) {
+function getWeekStart(value) {
 
-    const d = new Date(date);
+    const date =
+        getDateValue(value);
 
-    const day = d.getDay();
 
-    const diff =
+    if (!date) {
+
+        return null;
+
+    }
+
+
+    const result =
+        new Date(date);
+
+
+    const day =
+        result.getDay();
+
+
+    const difference =
         day === 0
             ? -6
             : 1 - day;
 
-    d.setDate(
-        d.getDate() + diff
+
+    result.setDate(
+        result.getDate() +
+        difference
     );
 
-    d.setHours(
+
+    result.setHours(
         0,
         0,
         0,
         0
     );
 
-    return d;
+
+    return result;
 
 }
 
 
 // =====================================================
-// GROUP KEY
+// WEEK KEY
 // =====================================================
 
-function groupKey(
-    value,
-    group
-) {
+function getWeekKey(value) {
+
+    const start =
+        getWeekStart(value);
+
+
+    if (!start) {
+
+        return "";
+
+    }
+
+
+    return storageDate(start);
+
+}
+
+
+// =====================================================
+// WEEK LABEL
+// =====================================================
+
+function getWeekLabel(value) {
+
+    const start =
+        getWeekStart(value);
+
+
+    if (!start) {
+
+        return "-";
+
+    }
+
+
+    const end =
+        new Date(start);
+
+
+    end.setDate(
+        end.getDate() + 6
+    );
+
+
+    return `${displayDate(start)} - ${displayDate(end)}`;
+
+}
+
+
+// =====================================================
+// MONTH KEY
+// =====================================================
+
+function getMonthKey(value) {
 
     const date =
-        dateObject(value);
+        getDateValue(value);
+
 
     if (!date) {
 
-        return "Unknown";
+        return "";
 
     }
 
 
-    // DATE
+    const year =
+        date.getFullYear();
 
-    if (group === "date") {
-
-        return dateOnly(value);
-
-    }
-
-
-    // MONTH
-
-    if (group === "month") {
-
-        return dateOnly(value)
-            .slice(0, 7);
-
-    }
+    const month =
+        String(
+            date.getMonth() + 1
+        ).padStart(2, "0");
 
 
-    // WEEK
-
-    if (group === "week") {
-
-        const start =
-            weekStart(date);
-
-        return start
-            .toISOString()
-            .slice(0, 10);
-
-    }
-
-
-    return "all";
+    return `${year}-${month}`;
 
 }
 
 
 // =====================================================
-// GROUP LABEL
+// MONTH LABEL
 // =====================================================
 
-function groupLabel(
-    key,
-    group
-) {
+function getMonthLabel(key) {
 
-    if (group === "date") {
+    if (!key) {
 
-        return displayDate(key);
+        return "-";
 
     }
 
 
-    if (group === "month") {
-
-        const parts =
-            key.split("-");
-
-        const year =
-            Number(parts[0]);
-
-        const month =
-            Number(parts[1]) - 1;
-
-        return new Date(
-            year,
-            month,
-            1
-        ).toLocaleDateString(
-            "en-IN",
-            {
-                month: "long",
-                year: "numeric"
-            }
-        );
-
-    }
+    const [
+        year,
+        month
+    ] = key.split("-");
 
 
-    if (group === "week") {
-
-        const start =
-            dateObject(key);
-
-        if (!start) return key;
-
-        const end =
-            new Date(start);
-
-        end.setDate(
-            end.getDate() + 6
-        );
-
-        return (
-            displayDate(start) +
-            " - " +
-            displayDate(end)
-        );
-
-    }
-
-
-    return key;
-
-}
-
-
-// =====================================================
-// GET LOAN ID
-// =====================================================
-
-function getLoanId(payment) {
-
-    return String(
-
-        payment.loanId ??
-        payment.loanID ??
-        payment.loanNumber ??
-        payment.loanNo ??
-        ""
-
+    return new Date(
+        Number(year),
+        Number(month) - 1,
+        1
+    ).toLocaleDateString(
+        "en-IN",
+        {
+            month: "long",
+            year: "numeric"
+        }
     );
 
 }
 
 
 // =====================================================
-// GET CUSTOMER ID
-// =====================================================
-
-function getCustomerId(payment) {
-
-    return String(
-
-        payment.customerId ??
-        payment.customerID ??
-        ""
-
-    );
-
-}
-
-
-// =====================================================
-// GET CUSTOMER NAME
-// =====================================================
-
-function getCustomerName(
-    payment,
-    loan = {}
-) {
-
-    return String(
-
-        payment.customerName ??
-        payment.customer ??
-        payment.name ??
-        loan.customerName ??
-        "-"
-
-    );
-
-}
-
-
-// =====================================================
-// GET STAFF
-// =====================================================
-
-function getStaff(payment) {
-
-    return String(
-
-        payment.staffName ??
-        payment.collectedByName ??
-        payment.collectedBy ??
-        payment.staff ??
-        "-"
-
-    );
-
-}
-
-
-// =====================================================
-// GET DUE DATE
-// =====================================================
-
-function getDueDate(payment) {
-
-    return dateOnly(
-
-        payment.dueDate ??
-        payment.actualDueDate ??
-        payment.installmentDueDate
-
-    );
-
-}
-
-
-// =====================================================
-// GET PAID DATE
-// =====================================================
-
-function getPaidDate(payment) {
-
-    return dateOnly(
-
-        payment.paymentDate ??
-        payment.paidDate ??
-        payment.paidOn ??
-        payment.createdAt
-
-    );
-
-}
-
-
-// =====================================================
-// GET DUE AMOUNT
-// =====================================================
-
-function getDueAmount(
-    payment,
-    loan
-) {
-
-    const explicitAmount =
-
-        payment.dueAmount ??
-        payment.emiDue ??
-        payment.installmentDue ??
-        payment.scheduledAmount ??
-        payment.previousEmiDue;
-
-
-    if (
-        explicitAmount !== undefined &&
-        explicitAmount !== null &&
-        explicitAmount !== ""
-    ) {
-
-        return Math.max(
-            num(explicitAmount),
-            0
-        );
-
-    }
-
-
-    // Fallback from loan EMI
-
-    return Math.max(
-
-        num(
-
-            loan.installmentAmount ??
-            loan.emiAmount ??
-            loan.monthlyEmi
-
-        ),
-
-        0
-
-    );
-
-}
-
-
-// =====================================================
-// GET PAID AMOUNT
-// =====================================================
-
-function getPaidAmount(
-    payment
-) {
-
-    return Math.max(
-
-        num(
-
-            payment.emiPaid ??
-            payment.amountReceived ??
-            payment.paidAmount ??
-            payment.amount
-
-        ),
-
-        0
-
-    );
-
-}
-
-
-// =====================================================
-// GET PENALTY
-// =====================================================
-
-function getPenalty(
-    payment
-) {
-
-    return Math.max(
-
-        num(
-
-            payment.penaltyCollected ??
-            payment.penaltyAmount ??
-            payment.penalty
-
-        ),
-
-        0
-
-    );
-
-}
-
-
-// =====================================================
-// GET TOTAL COLLECTION
-// =====================================================
-
-function getTotalCollection(
-    payment
-) {
-
-    if (
-        payment.totalReceived !== undefined &&
-        payment.totalReceived !== null
-    ) {
-
-        return Math.max(
-            num(payment.totalReceived),
-            0
-        );
-
-    }
-
-
-    if (
-        payment.totalCollection !== undefined &&
-        payment.totalCollection !== null
-    ) {
-
-        return Math.max(
-            num(payment.totalCollection),
-            0
-        );
-
-    }
-
-
-    return (
-        getPaidAmount(payment) +
-        getPenalty(payment)
-    );
-
-}
-
-
-// =====================================================
-// CREATE LOAN MAP
+// LOAN MAP
 // =====================================================
 
 function createLoanMap() {
@@ -579,26 +374,48 @@ function createLoanMap() {
     const map =
         new Map();
 
+
     state.loans.forEach(
         loan => {
 
-            const id = String(
+            const documentId =
+                String(
+                    loan.id || ""
+                );
 
-                loan.id ??
-                loan.loanId ??
-                loan.loanNumber ??
-                loan.loanNo ??
-                ""
 
-            );
+            const loanNumber =
+                String(
 
-            map.set(
-                id,
-                loan
-            );
+                    loan.loanId ??
+                    loan.loanNumber ??
+                    ""
+
+                );
+
+
+            if (documentId) {
+
+                map.set(
+                    documentId,
+                    loan
+                );
+
+            }
+
+
+            if (loanNumber) {
+
+                map.set(
+                    loanNumber,
+                    loan
+                );
+
+            }
 
         }
     );
+
 
     return map;
 
@@ -606,7 +423,381 @@ function createLoanMap() {
 
 
 // =====================================================
-// BUILD REPORT ROWS
+// GET LOAN
+// =====================================================
+
+function getLoanForCollection(
+    payment,
+    loanMap
+) {
+
+    const loanDocumentId =
+        String(
+            payment.loanDocumentId ??
+            ""
+        );
+
+
+    const loanId =
+        String(
+            payment.loanId ??
+            ""
+        );
+
+
+    if (
+        loanDocumentId &&
+        loanMap.has(loanDocumentId)
+    ) {
+
+        return loanMap.get(
+            loanDocumentId
+        );
+
+    }
+
+
+    if (
+        loanId &&
+        loanMap.has(loanId)
+    ) {
+
+        return loanMap.get(
+            loanId
+        );
+
+    }
+
+
+    return {};
+
+}
+
+
+// =====================================================
+// BUILD REPORT ROW
+// =====================================================
+
+function buildRow(
+    payment,
+    loanMap
+) {
+
+    const loan =
+        getLoanForCollection(
+            payment,
+            loanMap
+        );
+
+
+    // ---------------------------------------------
+    // BASIC
+    // ---------------------------------------------
+
+    const loanId =
+        String(
+
+            payment.loanId ??
+            loan.loanId ??
+            loan.loanNumber ??
+            payment.loanDocumentId ??
+            "-"
+
+        );
+
+
+    const customerId =
+        String(
+
+            payment.customerId ??
+            loan.customerId ??
+            ""
+
+        );
+
+
+    const customerName =
+        String(
+
+            payment.customerName ??
+            loan.customerName ??
+            "-"
+
+        );
+
+
+    const staffName =
+        String(
+
+            payment.staffName ??
+            payment.collectedByName ??
+            "-"
+
+        );
+
+
+    // ---------------------------------------------
+    // DATES
+    // ---------------------------------------------
+
+    const dueDate =
+        storageDate(
+            payment.dueDate
+        );
+
+
+    const paidDate =
+        storageDate(
+
+            payment.paymentDate ??
+            payment.createdAt
+
+        );
+
+
+    // ---------------------------------------------
+    // EMI DUE
+    // ---------------------------------------------
+    //
+    // Priority:
+    //
+    // 1. explicit dueAmount
+    // 2. emiDue
+    // 3. installmentAmount from loan
+    //
+    // IMPORTANT:
+    // previousEmiBalance is NOT used as
+    // monthly due amount.
+    //
+    // ---------------------------------------------
+
+    const dueAmount =
+        Math.max(
+
+            numberValue(
+
+                payment.dueAmount ??
+                payment.emiDue ??
+                payment.installmentDue ??
+                loan.installmentAmount ??
+                loan.monthlyInstallment ??
+                loan.emi
+
+            ),
+
+            0
+
+        );
+
+
+    // ---------------------------------------------
+    // EMI PAID
+    // ---------------------------------------------
+
+    const emiPaid =
+        Math.max(
+
+            numberValue(
+
+                payment.emiPaid ??
+                payment.amountReceived ??
+                payment.paidAmount ??
+                0
+
+            ),
+
+            0
+
+        );
+
+
+    // ---------------------------------------------
+    // PENALTY
+    // ---------------------------------------------
+
+    const penalty =
+        Math.max(
+
+            numberValue(
+
+                payment.penaltyCollected ??
+                payment.penaltyAmount ??
+                0
+
+            ),
+
+            0
+
+        );
+
+
+    // ---------------------------------------------
+    // TOTAL RECEIVED
+    // ---------------------------------------------
+    //
+    // Current collection.js stores:
+    //
+    // emiPaid
+    // + interestPaid
+    // + penalty
+    //
+    // as totalReceived.
+    //
+    // We display Total Collection exactly
+    // from stored totalReceived.
+    //
+    // Interest is NOT shown as a separate
+    // report column.
+    //
+    // ---------------------------------------------
+
+    const totalReceived =
+        Math.max(
+
+            numberValue(
+
+                payment.totalReceived ??
+                payment.totalCollection ??
+                (
+                    emiPaid +
+                    penalty
+                )
+
+            ),
+
+            0
+
+        );
+
+
+    // ---------------------------------------------
+    // PENDING EMI
+    // ---------------------------------------------
+    //
+    // Current collection.js stores
+    // newEmiBalance.
+    //
+    // This is the correct EMI balance after
+    // this payment.
+    //
+    // ---------------------------------------------
+
+    let pending =
+        numberValue(
+            payment.newEmiBalance
+        );
+
+
+    if (
+        payment.newEmiBalance === undefined ||
+        payment.newEmiBalance === null
+    ) {
+
+        pending =
+            Math.max(
+
+                numberValue(
+
+                    payment.balanceAfterPayment ??
+                    0
+
+                ),
+
+                0
+
+            );
+
+    }
+
+
+    // ---------------------------------------------
+    // IF NO NEW BALANCE
+    // ---------------------------------------------
+
+    if (
+        pending === 0 &&
+        dueAmount > 0 &&
+        emiPaid > 0 &&
+        payment.newEmiBalance === undefined
+    ) {
+
+        pending =
+            Math.max(
+
+                dueAmount -
+                emiPaid,
+
+                0
+
+            );
+
+    }
+
+
+    return {
+
+        id:
+            payment.id,
+
+        raw:
+            payment,
+
+        loanId,
+
+        customerId,
+
+        customerName,
+
+        staffName,
+
+        dueDate,
+
+        paidDate,
+
+        dueAmount,
+
+        emiPaid,
+
+        pending,
+
+        penalty,
+
+        totalReceived,
+
+        paymentMode:
+            String(
+                payment.paymentMode ??
+                "-"
+            ),
+
+        receiptNumber:
+            String(
+
+                payment.receiptNumber ??
+                payment.paymentId ??
+                payment.id ??
+                "-"
+
+            ),
+
+        remarks:
+            String(
+                payment.remarks ??
+                "-"
+            ),
+
+        daysDelayed:
+            numberValue(
+                payment.daysDelayed
+            )
+
+    };
+
+}
+
+
+// =====================================================
+// BUILD ALL ROWS
 // =====================================================
 
 function buildRows() {
@@ -615,135 +806,12 @@ function buildRows() {
         createLoanMap();
 
 
-    return state.payments.map(
-        payment => {
-
-            const loan =
-                loanMap.get(
-                    getLoanId(payment)
-                ) || {};
-
-
-            const dueDate =
-                getDueDate(payment);
-
-            const paidDate =
-                getPaidDate(payment);
-
-
-            const dueAmount =
-                getDueAmount(
-                    payment,
-                    loan
-                );
-
-
-            const paidAmount =
-                getPaidAmount(
-                    payment
-                );
-
-
-            const penalty =
-                getPenalty(
-                    payment
-                );
-
-
-            const total =
-                getTotalCollection(
-                    payment
-                );
-
-
-            /*
-             * IMPORTANT
-             *
-             * Pending is only:
-             *
-             * Due Amount - Paid Amount
-             *
-             * Penalty is NOT added
-             * to pending.
-             */
-
-            const pending =
-                Math.max(
-                    dueAmount -
-                    paidAmount,
-                    0
-                );
-
-
-            return {
-
-                id: payment.id,
-
-                raw: payment,
-
-                loanId:
-                    getLoanId(payment) ||
-                    String(
-                        loan.id ?? ""
-                    ),
-
-                customerId:
-                    getCustomerId(payment) ||
-                    String(
-                        loan.customerId ?? ""
-                    ),
-
-                customerName:
-                    getCustomerName(
-                        payment,
-                        loan
-                    ),
-
-                staff:
-                    getStaff(payment),
-
-                dueDate,
-
-                paidDate,
-
-                dueAmount,
-
-                paidAmount,
-
-                pending,
-
-                penalty,
-
-                total,
-
-                mode:
-                    String(
-                        payment.paymentMode ??
-                        payment.mode ??
-                        "-"
-                    ),
-
-                remarks:
-                    String(
-                        payment.remarks ??
-                        payment.paymentRemarks ??
-                        "-"
-                    ),
-
-                receipt:
-                    String(
-
-                        payment.receiptNumber ??
-                        payment.receiptNo ??
-                        payment.receipt ??
-                        payment.id ??
-                        "-"
-
-                    )
-
-            };
-
-        }
+    return state.collections.map(
+        payment =>
+            buildRow(
+                payment,
+                loanMap
+            )
     );
 
 }
@@ -753,21 +821,26 @@ function buildRows() {
 // DATE FILTER
 // =====================================================
 
-function isInDateRange(row) {
+function isDateInRange(row) {
 
     const from =
-        $("fromDate").value;
+        $("fromDate")?.value || "";
+
 
     const to =
-        $("toDate").value;
+        $("toDate")?.value || "";
 
 
     /*
-     * For collection report,
-     * Paid Date is primary date.
+     * Report date = PAID DATE
      *
-     * If paid date unavailable,
-     * Due Date is used.
+     * This makes:
+     *
+     * Date Wise
+     * Week Wise
+     * Month Wise
+     *
+     * based on actual collection date.
      */
 
     const date =
@@ -814,60 +887,64 @@ function isInDateRange(row) {
 function getFilteredRows() {
 
     const staff =
-        $("staffFilter").value;
+        $("staffFilter")?.value || "";
+
 
     const customer =
-        $("customerFilter").value;
+        $("customerFilter")?.value || "";
+
 
     const loan =
-        $("loanFilter").value;
+        $("loanFilter")?.value || "";
 
 
     return buildRows()
-        .filter(row => {
+        .filter(
+            row => {
 
-            if (
-                !isInDateRange(row)
-            ) {
+                if (
+                    !isDateInRange(row)
+                ) {
 
-                return false;
+                    return false;
+
+                }
+
+
+                if (
+                    staff &&
+                    row.staffName !== staff
+                ) {
+
+                    return false;
+
+                }
+
+
+                if (
+                    customer &&
+                    row.customerId !== customer
+                ) {
+
+                    return false;
+
+                }
+
+
+                if (
+                    loan &&
+                    row.loanId !== loan
+                ) {
+
+                    return false;
+
+                }
+
+
+                return true;
 
             }
-
-
-            if (
-                staff &&
-                row.staff !== staff
-            ) {
-
-                return false;
-
-            }
-
-
-            if (
-                customer &&
-                row.customerId !== customer
-            ) {
-
-                return false;
-
-            }
-
-
-            if (
-                loan &&
-                row.loanId !== loan
-            ) {
-
-                return false;
-
-            }
-
-
-            return true;
-
-        });
+        );
 
 }
 
@@ -876,11 +953,16 @@ function getFilteredRows() {
 // SUMMARY
 // =====================================================
 
-function renderSummary(rows) {
+function renderSummary(
+    rows
+) {
 
     const due =
         rows.reduce(
-            (total, row) =>
+            (
+                total,
+                row
+            ) =>
                 total +
                 row.dueAmount,
             0
@@ -889,16 +971,22 @@ function renderSummary(rows) {
 
     const paid =
         rows.reduce(
-            (total, row) =>
+            (
+                total,
+                row
+            ) =>
                 total +
-                row.paidAmount,
+                row.emiPaid,
             0
         );
 
 
     const pending =
         rows.reduce(
-            (total, row) =>
+            (
+                total,
+                row
+            ) =>
                 total +
                 row.pending,
             0
@@ -907,18 +995,24 @@ function renderSummary(rows) {
 
     const penalty =
         rows.reduce(
-            (total, row) =>
+            (
+                total,
+                row
+            ) =>
                 total +
                 row.penalty,
             0
         );
 
 
-    const total =
+    const collection =
         rows.reduce(
-            (total, row) =>
+            (
+                total,
+                row
+            ) =>
                 total +
-                row.total,
+                row.totalReceived,
             0
         );
 
@@ -926,23 +1020,27 @@ function renderSummary(rows) {
     $("sumDue").textContent =
         money(due);
 
+
     $("sumPaid").textContent =
         money(paid);
+
 
     $("sumPending").textContent =
         money(pending);
 
+
     $("sumPenalty").textContent =
         money(penalty);
 
+
     $("sumTotal").textContent =
-        money(total);
+        money(collection);
 
 }
 
 
 // =====================================================
-// GROUP DATA
+// GROUP ROWS
 // =====================================================
 
 function groupRows(
@@ -957,17 +1055,57 @@ function groupRows(
     rows.forEach(
         row => {
 
-            let key;
+            let key = "";
+
+
+            const reportDate =
+                row.paidDate ||
+                row.dueDate;
 
 
             if (
+                group === "date"
+            ) {
+
+                key =
+                    reportDate;
+
+            }
+
+
+            else if (
+                group === "week"
+            ) {
+
+                key =
+                    getWeekKey(
+                        reportDate
+                    );
+
+            }
+
+
+            else if (
+                group === "month"
+            ) {
+
+                key =
+                    getMonthKey(
+                        reportDate
+                    );
+
+            }
+
+
+            else if (
                 group === "staff"
             ) {
 
                 key =
-                    row.staff;
+                    row.staffName;
 
             }
+
 
             else if (
                 group === "customer"
@@ -978,14 +1116,10 @@ function groupRows(
 
             }
 
-            else {
 
-                key =
-                    groupKey(
-                        row.paidDate ||
-                        row.dueDate,
-                        group
-                    );
+            if (!key) {
+
+                key = "Unknown";
 
             }
 
@@ -1022,13 +1156,13 @@ function groupRows(
                 map.get(key);
 
 
-            item.count++;
+            item.count += 1;
 
             item.due +=
                 row.dueAmount;
 
             item.paid +=
-                row.paidAmount;
+                row.emiPaid;
 
             item.pending +=
                 row.pending;
@@ -1037,29 +1171,60 @@ function groupRows(
                 row.penalty;
 
             item.total +=
-                row.total;
+                row.totalReceived;
 
         }
     );
 
 
-    return [...map.values()]
-        .sort(
-            (a,b) =>
-                String(
-                    a.key
-                ).localeCompare(
-                    String(
-                        b.key
-                    )
-                )
-        );
+    return [...map.values()];
 
 }
 
 
 // =====================================================
-// MAIN RENDER
+// GROUP LABEL
+// =====================================================
+
+function getGroupLabel(
+    key,
+    group
+) {
+
+    if (
+        group === "date"
+    ) {
+
+        return displayDate(key);
+
+    }
+
+
+    if (
+        group === "week"
+    ) {
+
+        return getWeekLabel(key);
+
+    }
+
+
+    if (
+        group === "month"
+    ) {
+
+        return getMonthLabel(key);
+
+    }
+
+
+    return key;
+
+}
+
+
+// =====================================================
+// RENDER REPORT
 // =====================================================
 
 function renderReport() {
@@ -1073,11 +1238,35 @@ function renderReport() {
     );
 
 
+    if (
+        state.group === "staff" ||
+        state.group === "customer"
+    ) {
+
+        renderStaffCustomer();
+
+    }
+
+    else {
+
+        renderDateWeekMonth();
+
+    }
+
+}
+
+
+// =====================================================
+// DATE / WEEK / MONTH
+// =====================================================
+
+function renderDateWeekMonth() {
+
     const group =
         state.group;
 
 
-    const titles = {
+    const titleMap = {
 
         date:
             "Date Wise Collection",
@@ -1086,71 +1275,55 @@ function renderReport() {
             "Week Wise Collection",
 
         month:
-            "Month Wise Collection",
-
-        staff:
-            "Staff Wise Collection",
-
-        customer:
-            "Customer Wise Collection"
+            "Month Wise Collection"
 
     };
 
 
     $("reportTitle")
         .textContent =
-        titles[group];
+        titleMap[group];
 
-
-    if (
-        group === "staff" ||
-        group === "customer"
-    ) {
-
-        renderStaffCustomer(
-            group
-        );
-
-    }
-
-    else {
-
-        renderPeriod(
-            group
-        );
-
-    }
-
-}
-
-
-// =====================================================
-// PERIOD REPORT
-// =====================================================
-
-function renderPeriod(
-    group
-) {
 
     $("head").innerHTML = `
 
         <tr>
 
-            <th>PERIOD</th>
+            <th>
+                ${group === "date"
+                    ? "DATE"
+                    : group === "week"
+                        ? "WEEK"
+                        : "MONTH"}
+            </th>
 
-            <th>TRANSACTIONS</th>
+            <th>
+                COLLECTIONS
+            </th>
 
-            <th>DUE AMOUNT</th>
+            <th>
+                DUE AMOUNT
+            </th>
 
-            <th>PAID AMOUNT</th>
+            <th>
+                EMI PAID
+            </th>
 
-            <th>PENDING</th>
+            <th>
+                EMI PENDING
+            </th>
 
-            <th>PENALTY</th>
+            <th>
+                PENALTY
+            </th>
 
-            <th>TOTAL COLLECTION</th>
+            <th>
+                TOTAL COLLECTION
+            </th>
 
-            <th>VIEW</th>
+            <th>
+                ACTION
+            </th>
 
         </tr>
 
@@ -1197,8 +1370,8 @@ function renderPeriod(
                 <tr>
 
                     <td>
-                        ${esc(
-                            groupLabel(
+                        ${escapeHTML(
+                            getGroupLabel(
                                 item.key,
                                 group
                             )
@@ -1233,7 +1406,7 @@ function renderPeriod(
 
                         <button
                             class="light"
-                            data-period-view="${esc(item.key)}"
+                            data-group-key="${escapeHTML(item.key)}"
                         >
                             View
                         </button>
@@ -1248,42 +1421,81 @@ function renderPeriod(
 
     document
         .querySelectorAll(
-            "[data-period-view]"
+            "[data-group-key]"
         )
         .forEach(
             button => {
 
-                button.onclick =
+                button.addEventListener(
+                    "click",
                     () => {
 
                         const key =
                             button.dataset
-                                .periodView;
+                                .groupKey;
 
 
                         const rows =
                             state.rows.filter(
-                                row =>
-                                    groupKey(
+                                row => {
+
+                                    const date =
                                         row.paidDate ||
-                                        row.dueDate,
-                                        group
-                                    ) === key
+                                        row.dueDate;
+
+
+                                    let currentKey;
+
+
+                                    if (
+                                        group === "date"
+                                    ) {
+
+                                        currentKey =
+                                            date;
+
+                                    }
+
+                                    else if (
+                                        group === "week"
+                                    ) {
+
+                                        currentKey =
+                                            getWeekKey(
+                                                date
+                                            );
+
+                                    }
+
+                                    else {
+
+                                        currentKey =
+                                            getMonthKey(
+                                                date
+                                            );
+
+                                    }
+
+
+                                    return (
+                                        currentKey ===
+                                        key
+                                    );
+
+                                }
                             );
 
 
                         showTransactionList(
-
-                            `${groupLabel(
+                            getGroupLabel(
                                 key,
                                 group
-                            )} - Transactions`,
-
+                            ),
                             rows
-
                         );
 
-                    };
+                    }
+                );
 
             }
         );
@@ -1292,15 +1504,20 @@ function renderPeriod(
 
 
 // =====================================================
-// STAFF / CUSTOMER REPORT
+// STAFF / CUSTOMER
 // =====================================================
 
-function renderStaffCustomer(
-    group
-) {
+function renderStaffCustomer() {
 
     const isStaff =
-        group === "staff";
+        state.group === "staff";
+
+
+    $("reportTitle")
+        .textContent =
+        isStaff
+            ? "Staff Wise Collection"
+            : "Customer Wise Collection";
 
 
     $("head").innerHTML = `
@@ -1320,7 +1537,7 @@ function renderStaffCustomer(
             </th>
 
             <th>
-                TRANSACTIONS
+                COLLECTIONS
             </th>
 
             <th>
@@ -1328,11 +1545,11 @@ function renderStaffCustomer(
             </th>
 
             <th>
-                PAID AMOUNT
+                EMI PAID
             </th>
 
             <th>
-                PENDING
+                EMI PENDING
             </th>
 
             <th>
@@ -1344,7 +1561,7 @@ function renderStaffCustomer(
             </th>
 
             <th>
-                OPEN
+                ACTION
             </th>
 
         </tr>
@@ -1355,7 +1572,7 @@ function renderStaffCustomer(
     const groups =
         groupRows(
             state.rows,
-            group
+            state.group
         );
 
 
@@ -1372,7 +1589,7 @@ function renderStaffCustomer(
                     class="empty"
                 >
 
-                    No records found.
+                    No collection records found.
 
                 </td>
 
@@ -1392,11 +1609,14 @@ function renderStaffCustomer(
                 const related =
                     state.rows.filter(
                         row =>
+
                             (
                                 isStaff
-                                    ? row.staff
+                                    ? row.staffName
                                     : row.customerName
+
                             ) === item.key
+
                     );
 
 
@@ -1405,9 +1625,11 @@ function renderStaffCustomer(
 
                         related.map(
                             row =>
+
                                 isStaff
                                     ? row.customerName
                                     : row.loanId
+
                         )
 
                     ).size;
@@ -1418,7 +1640,9 @@ function renderStaffCustomer(
                     <tr>
 
                         <td>
-                            ${esc(item.key)}
+                            ${escapeHTML(
+                                item.key
+                            )}
                         </td>
 
                         <td>
@@ -1453,7 +1677,7 @@ function renderStaffCustomer(
 
                             <button
                                 class="light"
-                                data-person="${esc(item.key)}"
+                                data-person="${escapeHTML(item.key)}"
                             >
                                 Open
                             </button>
@@ -1475,19 +1699,18 @@ function renderStaffCustomer(
         .forEach(
             button => {
 
-                button.onclick =
+                button.addEventListener(
+                    "click",
                     () => {
 
                         openPersonReport(
-
                             button.dataset
                                 .person,
-
                             isStaff
-
                         );
 
-                    };
+                    }
+                );
 
             }
         );
@@ -1496,7 +1719,7 @@ function renderStaffCustomer(
 
 
 // =====================================================
-// STAFF / CUSTOMER DRILL DOWN
+// PERSON REPORT
 // =====================================================
 
 function openPersonReport(
@@ -1510,8 +1733,9 @@ function openPersonReport(
 
                 (
                     isStaff
-                        ? row.staff
+                        ? row.staffName
                         : row.customerName
+
                 ) === name
 
         );
@@ -1520,60 +1744,69 @@ function openPersonReport(
     $("modalContent").innerHTML = `
 
         <h3>
-            ${esc(name)}
+            ${escapeHTML(name)}
         </h3>
 
-        <div class="modes">
+        <div
+            style="
+                margin-top:12px;
+                display:flex;
+                gap:8px;
+                flex-wrap:wrap;
+            "
+        >
 
             <button
                 class="mode active"
-                data-sub-group="date"
+                data-person-group="date"
             >
                 Date Wise
             </button>
 
             <button
                 class="mode"
-                data-sub-group="week"
+                data-person-group="week"
             >
                 Week Wise
             </button>
 
             <button
                 class="mode"
-                data-sub-group="month"
+                data-person-group="month"
             >
                 Month Wise
             </button>
 
         </div>
 
-        <div id="subReport"></div>
+        <div
+            id="personReport"
+            style="margin-top:15px"
+        >
+        </div>
 
     `;
 
 
     $("modal")
-        .classList.add("show");
+        .classList
+        .add("show");
 
 
-    function renderSubReport(
-        subGroup
+    function renderPerson(
+        group
     ) {
 
         const groups =
             groupRows(
                 rows,
-                subGroup
+                group
             );
 
 
         let html = `
 
-            <div
-                class="table-wrap"
-                style="margin-top:15px"
-            >
+            <div class="table-wrap">
 
                 <table class="table">
 
@@ -1586,7 +1819,7 @@ function openPersonReport(
                             </th>
 
                             <th>
-                                TRANSACTIONS
+                                COLLECTIONS
                             </th>
 
                             <th>
@@ -1594,7 +1827,7 @@ function openPersonReport(
                             </th>
 
                             <th>
-                                PAID
+                                EMI PAID
                             </th>
 
                             <th>
@@ -1607,10 +1840,6 @@ function openPersonReport(
 
                             <th>
                                 TOTAL
-                            </th>
-
-                            <th>
-                                VIEW
                             </th>
 
                         </tr>
@@ -1631,7 +1860,7 @@ function openPersonReport(
                 <tr>
 
                     <td
-                        colspan="8"
+                        colspan="7"
                         class="empty"
                     >
 
@@ -1655,14 +1884,12 @@ function openPersonReport(
                         <tr>
 
                             <td>
-
-                                ${esc(
-                                    groupLabel(
+                                ${escapeHTML(
+                                    getGroupLabel(
                                         item.key,
-                                        subGroup
+                                        group
                                     )
                                 )}
-
                             </td>
 
                             <td>
@@ -1689,17 +1916,6 @@ function openPersonReport(
                                 ${money(item.total)}
                             </td>
 
-                            <td>
-
-                                <button
-                                    class="light"
-                                    data-sub-view="${esc(item.key)}"
-                                >
-                                    View
-                                </button>
-
-                            </td>
-
                         </tr>
 
                     `;
@@ -1721,76 +1937,32 @@ function openPersonReport(
         `;
 
 
-        $("subReport")
+        $("personReport")
             .innerHTML =
             html;
-
-
-        document
-            .querySelectorAll(
-                "[data-sub-view]"
-            )
-            .forEach(
-                button => {
-
-                    button.onclick =
-                        () => {
-
-                            const key =
-                                button.dataset
-                                    .subView;
-
-
-                            const filtered =
-                                rows.filter(
-                                    row =>
-                                        groupKey(
-                                            row.paidDate ||
-                                            row.dueDate,
-                                            subGroup
-                                        ) === key
-                                );
-
-
-                            showTransactionList(
-
-                                `${esc(name)} - ${
-                                    groupLabel(
-                                        key,
-                                        subGroup
-                                    )
-                                }`,
-
-                                filtered
-
-                            );
-
-                        };
-
-                }
-            );
 
     }
 
 
-    renderSubReport(
+    renderPerson(
         "date"
     );
 
 
     document
         .querySelectorAll(
-            "[data-sub-group]"
+            "[data-person-group]"
         )
         .forEach(
             button => {
 
-                button.onclick =
+                button.addEventListener(
+                    "click",
                     () => {
 
                         document
                             .querySelectorAll(
-                                "[data-sub-group]"
+                                "[data-person-group]"
                             )
                             .forEach(
                                 item =>
@@ -1807,12 +1979,13 @@ function openPersonReport(
                             );
 
 
-                        renderSubReport(
+                        renderPerson(
                             button.dataset
-                                .subGroup
+                                .personGroup
                         );
 
-                    };
+                    }
+                );
 
             }
         );
@@ -1832,13 +2005,12 @@ function showTransactionList(
     $("modalContent").innerHTML = `
 
         <h3>
-            ${esc(title)}
+            ${escapeHTML(title)}
         </h3>
-
 
         <div
             class="table-wrap"
-            style="margin-top:12px"
+            style="margin-top:15px"
         >
 
             <table class="table">
@@ -1872,7 +2044,7 @@ function showTransactionList(
                         </th>
 
                         <th>
-                            PAID AMOUNT
+                            EMI PAID
                         </th>
 
                         <th>
@@ -1884,7 +2056,7 @@ function showTransactionList(
                         </th>
 
                         <th>
-                            TOTAL
+                            TOTAL COLLECTION
                         </th>
 
                         <th>
@@ -1892,7 +2064,7 @@ function showTransactionList(
                         </th>
 
                         <th>
-                            VIEW
+                            ACTION
                         </th>
 
                     </tr>
@@ -1911,7 +2083,7 @@ function showTransactionList(
         $("modalContent").innerHTML += `
 
             <div class="empty">
-                No transactions found.
+                No collection records found.
             </div>
 
         `;
@@ -1921,13 +2093,9 @@ function showTransactionList(
     }
 
 
-    let html = "";
-
-
-    rows.forEach(
-        (row,index) => {
-
-            html += `
+    const body =
+        rows.map(
+            (row,index) => `
 
                 <tr>
 
@@ -1944,20 +2112,20 @@ function showTransactionList(
                     </td>
 
                     <td>
-                        ${esc(
+                        ${escapeHTML(
                             row.customerName
                         )}
                     </td>
 
                     <td>
-                        ${esc(
+                        ${escapeHTML(
                             row.loanId
                         )}
                     </td>
 
                     <td>
-                        ${esc(
-                            row.staff
+                        ${escapeHTML(
+                            row.staffName
                         )}
                     </td>
 
@@ -1969,7 +2137,7 @@ function showTransactionList(
 
                     <td class="num green">
                         ${money(
-                            row.paidAmount
+                            row.emiPaid
                         )}
                     </td>
 
@@ -1987,13 +2155,13 @@ function showTransactionList(
 
                     <td class="num green">
                         ${money(
-                            row.total
+                            row.totalReceived
                         )}
                     </td>
 
                     <td>
-                        ${esc(
-                            row.mode
+                        ${escapeHTML(
+                            row.paymentMode
                         )}
                     </td>
 
@@ -2001,7 +2169,7 @@ function showTransactionList(
 
                         <button
                             class="light"
-                            data-transaction-index="${index}"
+                            data-transaction="${index}"
                         >
                             View
                         </button>
@@ -2010,15 +2178,16 @@ function showTransactionList(
 
                 </tr>
 
-            `;
+            `
+        )
+        .join("");
 
-        }
-    );
 
+    $("modalContent").innerHTML +=
 
-    $("modalContent").innerHTML += `
+        body +
 
-                ${html}
+        `
 
                 </tbody>
 
@@ -2026,23 +2195,24 @@ function showTransactionList(
 
         </div>
 
-    `;
+        `;
 
 
     document
         .querySelectorAll(
-            "[data-transaction-index]"
+            "[data-transaction]"
         )
         .forEach(
             button => {
 
-                button.onclick =
+                button.addEventListener(
+                    "click",
                     () => {
 
                         const index =
                             Number(
                                 button.dataset
-                                    .transactionIndex
+                                    .transaction
                             );
 
 
@@ -2050,7 +2220,8 @@ function showTransactionList(
                             rows[index]
                         );
 
-                    };
+                    }
+                );
 
             }
         );
@@ -2066,82 +2237,115 @@ function showPaymentDetails(
     row
 ) {
 
-    state.selectedPayment =
+    state.selectedRow =
         row;
 
 
     $("modalContent").innerHTML = `
 
         <h3>
-            Collection Transaction
+            Collection Details
         </h3>
 
-
-        <div class="detail">
+        <div
+            class="detail"
+            style="margin-top:15px"
+        >
 
             <div>
                 <b>Receipt No</b>
-                ${esc(row.receipt)}
+                ${escapeHTML(
+                    row.receiptNumber
+                )}
             </div>
 
             <div>
                 <b>Loan No</b>
-                ${esc(row.loanId)}
+                ${escapeHTML(
+                    row.loanId
+                )}
             </div>
 
             <div>
                 <b>Customer</b>
-                ${esc(row.customerName)}
+                ${escapeHTML(
+                    row.customerName
+                )}
             </div>
 
             <div>
                 <b>Staff</b>
-                ${esc(row.staff)}
+                ${escapeHTML(
+                    row.staffName
+                )}
             </div>
 
             <div>
                 <b>Due Date</b>
-                ${displayDate(row.dueDate)}
+                ${displayDate(
+                    row.dueDate
+                )}
             </div>
 
             <div>
                 <b>Paid Date</b>
-                ${displayDate(row.paidDate)}
+                ${displayDate(
+                    row.paidDate
+                )}
             </div>
 
             <div>
                 <b>Due Amount</b>
-                ${money(row.dueAmount)}
+                ${money(
+                    row.dueAmount
+                )}
             </div>
 
             <div>
-                <b>Paid Amount</b>
-                ${money(row.paidAmount)}
+                <b>EMI Paid</b>
+                ${money(
+                    row.emiPaid
+                )}
             </div>
 
             <div>
-                <b>Pending</b>
-                ${money(row.pending)}
+                <b>EMI Pending</b>
+                ${money(
+                    row.pending
+                )}
             </div>
 
             <div>
                 <b>Penalty</b>
-                ${money(row.penalty)}
+                ${money(
+                    row.penalty
+                )}
             </div>
 
             <div>
                 <b>Total Collection</b>
-                ${money(row.total)}
+                ${money(
+                    row.totalReceived
+                )}
             </div>
 
             <div>
                 <b>Payment Mode</b>
-                ${esc(row.mode)}
+                ${escapeHTML(
+                    row.paymentMode
+                )}
+            </div>
+
+            <div>
+                <b>Days Delayed</b>
+                ${row.daysDelayed}
             </div>
 
             <div>
                 <b>Remarks</b>
-                ${esc(row.remarks)}
+                ${escapeHTML(
+                    row.remarks
+                )}
             </div>
 
         </div>
@@ -2150,179 +2354,36 @@ function showPaymentDetails(
 
 
     $("modalPrint").onclick =
-        () => printReceipt(row);
+        () => {
+
+            printSingleCollection(
+                row
+            );
+
+        };
 
 
     $("modalDownload").onclick =
-        () => downloadReceipt(row);
+        () => {
+
+            downloadSingleCollection(
+                row
+            );
+
+        };
 
 }
 
 
 // =====================================================
-// RECEIPT HTML
+// PRINT SINGLE COLLECTION
 // =====================================================
 
-function receiptHTML(
+function printSingleCollection(
     row
 ) {
 
-    return `
-
-<!DOCTYPE html>
-
-<html>
-
-<head>
-
-<meta charset="UTF-8">
-
-<title>
-SR Auto Finance Collection
-</title>
-
-<style>
-
-body{
-    font-family:Arial;
-    max-width:800px;
-    margin:30px auto;
-    padding:20px;
-}
-
-h2,
-h3{
-    text-align:center;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-}
-
-td{
-    border:1px solid #ddd;
-    padding:10px;
-}
-
-td:first-child{
-    font-weight:bold;
-    width:35%;
-}
-
-.total{
-    font-size:18px;
-    font-weight:bold;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<h2>
-SR Auto Finance
-</h2>
-
-<h3>
-Collection Statement
-</h3>
-
-<table>
-
-<tr>
-<td>Receipt No</td>
-<td>${esc(row.receipt)}</td>
-</tr>
-
-<tr>
-<td>Loan No</td>
-<td>${esc(row.loanId)}</td>
-</tr>
-
-<tr>
-<td>Customer</td>
-<td>${esc(row.customerName)}</td>
-</tr>
-
-<tr>
-<td>Staff</td>
-<td>${esc(row.staff)}</td>
-</tr>
-
-<tr>
-<td>Due Date</td>
-<td>${displayDate(row.dueDate)}</td>
-</tr>
-
-<tr>
-<td>Paid Date</td>
-<td>${displayDate(row.paidDate)}</td>
-</tr>
-
-<tr>
-<td>Due Amount</td>
-<td>${money(row.dueAmount)}</td>
-</tr>
-
-<tr>
-<td>Paid Amount</td>
-<td>${money(row.paidAmount)}</td>
-</tr>
-
-<tr>
-<td>Pending</td>
-<td>${money(row.pending)}</td>
-</tr>
-
-<tr>
-<td>Penalty</td>
-<td>${money(row.penalty)}</td>
-</tr>
-
-<tr class="total">
-<td>Total Collection</td>
-<td>${money(row.total)}</td>
-</tr>
-
-<tr>
-<td>Payment Mode</td>
-<td>${esc(row.mode)}</td>
-</tr>
-
-<tr>
-<td>Remarks</td>
-<td>${esc(row.remarks)}</td>
-</tr>
-
-</table>
-
-<p style="text-align:center;margin-top:30px">
-
-Generated from SR Auto Finance ERP
-
-</p>
-
-</body>
-
-</html>
-
-`;
-
-}
-
-
-// =====================================================
-// PRINT RECEIPT
-// =====================================================
-
-function printReceipt(
-    row
-) {
-
-    const windowObject =
+    const printWindow =
         window.open(
             "",
             "_blank",
@@ -2330,10 +2391,10 @@ function printReceipt(
         );
 
 
-    if (!windowObject) {
+    if (!printWindow) {
 
         alert(
-            "Please allow pop-ups for printing."
+            "Please allow pop-ups."
         );
 
         return;
@@ -2341,19 +2402,147 @@ function printReceipt(
     }
 
 
-    windowObject.document.write(
-        receiptHTML(row)
-    );
+    printWindow.document.write(`
 
-    windowObject.document.close();
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+            <title>
+                SR Auto Finance Collection
+            </title>
+
+            <style>
+
+                body{
+                    font-family:Arial;
+                    max-width:800px;
+                    margin:30px auto;
+                    padding:20px;
+                }
+
+                h2,
+                h3{
+                    text-align:center;
+                }
+
+                table{
+                    width:100%;
+                    border-collapse:collapse;
+                    margin-top:20px;
+                }
+
+                td{
+                    border:1px solid #ddd;
+                    padding:10px;
+                }
+
+                td:first-child{
+                    font-weight:bold;
+                    width:35%;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <h2>
+                SR Auto Finance
+            </h2>
+
+            <h3>
+                Collection Receipt
+            </h3>
+
+            <table>
+
+                <tr>
+                    <td>Receipt No</td>
+                    <td>${escapeHTML(row.receiptNumber)}</td>
+                </tr>
+
+                <tr>
+                    <td>Loan No</td>
+                    <td>${escapeHTML(row.loanId)}</td>
+                </tr>
+
+                <tr>
+                    <td>Customer</td>
+                    <td>${escapeHTML(row.customerName)}</td>
+                </tr>
+
+                <tr>
+                    <td>Staff</td>
+                    <td>${escapeHTML(row.staffName)}</td>
+                </tr>
+
+                <tr>
+                    <td>Due Date</td>
+                    <td>${displayDate(row.dueDate)}</td>
+                </tr>
+
+                <tr>
+                    <td>Paid Date</td>
+                    <td>${displayDate(row.paidDate)}</td>
+                </tr>
+
+                <tr>
+                    <td>Due Amount</td>
+                    <td>${money(row.dueAmount)}</td>
+                </tr>
+
+                <tr>
+                    <td>EMI Paid</td>
+                    <td>${money(row.emiPaid)}</td>
+                </tr>
+
+                <tr>
+                    <td>EMI Pending</td>
+                    <td>${money(row.pending)}</td>
+                </tr>
+
+                <tr>
+                    <td>Penalty</td>
+                    <td>${money(row.penalty)}</td>
+                </tr>
+
+                <tr>
+                    <td>Total Collection</td>
+                    <td>${money(row.totalReceived)}</td>
+                </tr>
+
+                <tr>
+                    <td>Payment Mode</td>
+                    <td>${escapeHTML(row.paymentMode)}</td>
+                </tr>
+
+                <tr>
+                    <td>Remarks</td>
+                    <td>${escapeHTML(row.remarks)}</td>
+                </tr>
+
+            </table>
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    printWindow.document.close();
 
 
     setTimeout(
         () => {
 
-            windowObject.print();
+            printWindow.print();
 
-            windowObject.close();
+            printWindow.close();
 
         },
         300
@@ -2363,25 +2552,224 @@ function printReceipt(
 
 
 // =====================================================
-// DOWNLOAD RECEIPT
+// DOWNLOAD SINGLE COLLECTION
 // =====================================================
 
-function downloadReceipt(
+function downloadSingleCollection(
     row
+) {
+
+    const csv = [
+
+        [
+            "Receipt No",
+            "Loan No",
+            "Customer",
+            "Staff",
+            "Due Date",
+            "Paid Date",
+            "Due Amount",
+            "EMI Paid",
+            "EMI Pending",
+            "Penalty",
+            "Total Collection",
+            "Payment Mode",
+            "Remarks"
+        ].join(","),
+
+        [
+
+            row.receiptNumber,
+
+            row.loanId,
+
+            `"${String(
+                row.customerName
+            ).replaceAll(
+                '"',
+                '""'
+            )}"`,
+
+            `"${String(
+                row.staffName
+            ).replaceAll(
+                '"',
+                '""'
+            )}"`,
+
+            row.dueDate,
+
+            row.paidDate,
+
+            row.dueAmount,
+
+            row.emiPaid,
+
+            row.pending,
+
+            row.penalty,
+
+            row.totalReceived,
+
+            row.paymentMode,
+
+            `"${String(
+                row.remarks
+            ).replaceAll(
+                '"',
+                '""'
+            )}"`
+
+        ].join(",")
+
+    ].join("\n");
+
+
+    downloadTextFile(
+
+        csv,
+
+        `Collection-${row.receiptNumber}.csv`
+
+    );
+
+}
+
+
+// =====================================================
+// DOWNLOAD FULL REPORT
+// =====================================================
+
+function downloadFullReport() {
+
+    const rows =
+        state.rows;
+
+
+    if (
+        rows.length === 0
+    ) {
+
+        alert(
+            "No collection data available to download."
+        );
+
+        return;
+
+    }
+
+
+    const csv = [
+
+        [
+
+            "Due Date",
+            "Paid Date",
+            "Customer",
+            "Loan No",
+            "Staff",
+            "Due Amount",
+            "EMI Paid",
+            "EMI Pending",
+            "Penalty",
+            "Total Collection",
+            "Payment Mode",
+            "Receipt No",
+            "Days Delayed",
+            "Remarks"
+
+        ].join(",")
+
+    ];
+
+
+    rows.forEach(
+        row => {
+
+            csv.push(
+
+                [
+
+                    row.dueDate,
+
+                    row.paidDate,
+
+                    `"${String(
+                        row.customerName
+                    ).replaceAll(
+                        '"',
+                        '""'
+                    )}"`,
+
+                    row.loanId,
+
+                    `"${String(
+                        row.staffName
+                    ).replaceAll(
+                        '"',
+                        '""'
+                    )}"`,
+
+                    row.dueAmount,
+
+                    row.emiPaid,
+
+                    row.pending,
+
+                    row.penalty,
+
+                    row.totalReceived,
+
+                    row.paymentMode,
+
+                    row.receiptNumber,
+
+                    row.daysDelayed,
+
+                    `"${String(
+                        row.remarks
+                    ).replaceAll(
+                        '"',
+                        '""'
+                    )}"`
+
+                ].join(",")
+
+            );
+
+        }
+    );
+
+
+    downloadTextFile(
+
+        csv.join("\n"),
+
+        "SR-Auto-Finance-Collection-Report.csv"
+
+    );
+
+}
+
+
+// =====================================================
+// DOWNLOAD TEXT FILE
+// =====================================================
+
+function downloadTextFile(
+    text,
+    fileName
 ) {
 
     const blob =
         new Blob(
-
             [
-                receiptHTML(row)
+                text
             ],
-
             {
                 type:
-                    "text/html;charset=utf-8"
+                    "text/csv;charset=utf-8"
             }
-
         );
 
 
@@ -2402,7 +2790,7 @@ function downloadReceipt(
 
 
     link.download =
-        `SR-Auto-Finance-${row.loanId || "Receipt"}-${row.paidDate || "Payment"}.html`;
+        fileName;
 
 
     document.body.appendChild(
@@ -2449,12 +2837,12 @@ function populateFilters() {
         row => {
 
             if (
-                row.staff &&
-                row.staff !== "-"
+                row.staffName &&
+                row.staffName !== "-"
             ) {
 
                 staffSet.add(
-                    row.staff
+                    row.staffName
                 );
 
             }
@@ -2476,7 +2864,8 @@ function populateFilters() {
 
 
             if (
-                row.loanId
+                row.loanId &&
+                row.loanId !== "-"
             ) {
 
                 loanSet.add(
@@ -2499,12 +2888,12 @@ function populateFilters() {
             [...staffSet]
                 .sort()
                 .map(
-                    name =>
+                    staff =>
                         `
                         <option
-                            value="${esc(name)}"
+                            value="${escapeHTML(staff)}"
                         >
-                            ${esc(name)}
+                            ${escapeHTML(staff)}
                         </option>
                         `
                 )
@@ -2532,9 +2921,9 @@ function populateFilters() {
                     ([id,name]) =>
                         `
                         <option
-                            value="${esc(id)}"
+                            value="${escapeHTML(id)}"
                         >
-                            ${esc(name)}
+                            ${escapeHTML(name)}
                         </option>
                         `
                 )
@@ -2557,9 +2946,9 @@ function populateFilters() {
                     loan =>
                         `
                         <option
-                            value="${esc(loan)}"
+                            value="${escapeHTML(loan)}"
                         >
-                            ${esc(loan)}
+                            ${escapeHTML(loan)}
                         </option>
                         `
                 )
@@ -2572,41 +2961,73 @@ function populateFilters() {
 
 
 // =====================================================
-// LOAD FIREBASE DATA
+// LOAD FIRESTORE
 // =====================================================
 
 async function loadReportData() {
 
-    $("note").style.display =
-        "block";
+    const note =
+        $("note");
 
 
-    $("note").textContent =
-        "Loading collection data...";
+    if (note) {
+
+        note.style.display =
+            "block";
+
+
+        note.textContent =
+            "Loading collection data...";
+
+    }
 
 
     try {
 
+        /*
+         * IMPORTANT
+         *
+         * Actual collection data is stored
+         * inside Firestore:
+         *
+         * collections
+         *
+         * NOT payments.
+         */
+
         const [
-            loanSnapshot,
-            paymentSnapshot
+            collectionSnapshot,
+            loanSnapshot
         ] = await Promise.all([
 
             getDocs(
                 collection(
                     db,
-                    "loans"
+                    "collections"
                 )
             ),
 
             getDocs(
                 collection(
                     db,
-                    "payments"
+                    "loans"
                 )
             )
 
         ]);
+
+
+        state.collections =
+            collectionSnapshot.docs.map(
+                document => ({
+
+                    id:
+                        document.id,
+
+                    ...document.data()
+
+                })
+            );
 
 
         state.loans =
@@ -2622,24 +3043,15 @@ async function loadReportData() {
             );
 
 
-        state.payments =
-            paymentSnapshot.docs.map(
-                document => ({
-
-                    id:
-                        document.id,
-
-                    ...document.data()
-
-                })
-            );
-
-
         populateFilters();
 
 
-        $("note").style.display =
-            "none";
+        if (note) {
+
+            note.style.display =
+                "none";
+
+        }
 
 
         renderReport();
@@ -2649,18 +3061,22 @@ async function loadReportData() {
     catch(error) {
 
         console.error(
-            "Collection Report Error:",
+            "Collection report loading error:",
             error
         );
 
 
-        $("note").style.display =
-            "block";
+        if (note) {
+
+            note.style.display =
+                "block";
 
 
-        $("note").textContent =
-            "Unable to load collection report: " +
-            error.message;
+            note.textContent =
+                "Unable to load collection data: " +
+                error.message;
+
+        }
 
     }
 
@@ -2668,210 +3084,93 @@ async function loadReportData() {
 
 
 // =====================================================
-// DOWNLOAD FULL REPORT
+// SEARCH
 // =====================================================
 
-function downloadFullReport() {
+$("searchBtn")
+    ?.addEventListener(
+        "click",
+        () => {
 
-    const rows =
-        state.rows;
-
-
-    const headers = [
-
-        "Due Date",
-
-        "Paid Date",
-
-        "Customer",
-
-        "Loan No",
-
-        "Staff",
-
-        "Due Amount",
-
-        "Paid Amount",
-
-        "Pending",
-
-        "Penalty",
-
-        "Total Collection",
-
-        "Payment Mode"
-
-    ];
-
-
-    const csv = [
-
-        headers.join(",")
-
-    ];
-
-
-    rows.forEach(
-        row => {
-
-            csv.push(
-
-                [
-
-                    row.dueDate,
-
-                    row.paidDate,
-
-                    `"${String(
-                        row.customerName
-                    ).replaceAll(
-                        '"',
-                        '""'
-                    )}"`,
-
-                    row.loanId,
-
-                    `"${String(
-                        row.staff
-                    ).replaceAll(
-                        '"',
-                        '""'
-                    )}"`,
-
-                    row.dueAmount,
-
-                    row.paidAmount,
-
-                    row.pending,
-
-                    row.penalty,
-
-                    row.total,
-
-                    `"${String(
-                        row.mode
-                    ).replaceAll(
-                        '"',
-                        '""'
-                    )}"`
-
-                ].join(",")
-
-            );
+            renderReport();
 
         }
     );
 
 
-    const blob =
-        new Blob(
+// =====================================================
+// DOWNLOAD
+// =====================================================
 
-            [
-                csv.join("\n")
-            ],
+$("downloadBtn")
+    ?.addEventListener(
+        "click",
+        () => {
 
-            {
-                type:
-                    "text/csv;charset=utf-8"
+            downloadFullReport();
+
+        }
+    );
+
+
+// =====================================================
+// PRINT
+// =====================================================
+
+$("printBtn")
+    ?.addEventListener(
+        "click",
+        () => {
+
+            window.print();
+
+        }
+    );
+
+
+// =====================================================
+// CLOSE MODAL
+// =====================================================
+
+$("close")
+    ?.addEventListener(
+        "click",
+        () => {
+
+            $("modal")
+                ?.classList
+                .remove(
+                    "show"
+                );
+
+        }
+    );
+
+
+// =====================================================
+// CLOSE MODAL - OUTSIDE
+// =====================================================
+
+$("modal")
+    ?.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                $("modal")
+            ) {
+
+                $("modal")
+                    .classList
+                    .remove(
+                        "show"
+                    );
+
             }
 
-        );
-
-
-    const url =
-        URL.createObjectURL(
-            blob
-        );
-
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        url;
-
-
-    link.download =
-        "SR-Auto-Finance-Collection-Report.csv";
-
-
-    document.body.appendChild(
-        link
+        }
     );
-
-
-    link.click();
-
-
-    link.remove();
-
-
-    URL.revokeObjectURL(
-        url
-    );
-
-}
-
-
-// =====================================================
-// EVENT - SEARCH
-// =====================================================
-
-$("searchBtn").addEventListener(
-    "click",
-    () => {
-
-        renderReport();
-
-    }
-);
-
-
-// =====================================================
-// EVENT - DOWNLOAD
-// =====================================================
-
-$("downloadBtn").addEventListener(
-    "click",
-    () => {
-
-        downloadFullReport();
-
-    }
-);
-
-
-// =====================================================
-// EVENT - PRINT
-// =====================================================
-
-$("printBtn").addEventListener(
-    "click",
-    () => {
-
-        window.print();
-
-    }
-);
-
-
-// =====================================================
-// EVENT - CLOSE MODAL
-// =====================================================
-
-$("close").addEventListener(
-    "click",
-    () => {
-
-        $("modal")
-            .classList
-            .remove("show");
-
-    }
-);
 
 
 // =====================================================
@@ -2923,7 +3222,7 @@ document
 
 
 // =====================================================
-// DEFAULT DATES
+// DEFAULT DATE
 // Current Month
 // =====================================================
 
@@ -2943,20 +3242,32 @@ const firstDay =
     );
 
 
-$("fromDate").value =
-    firstDay
-        .toISOString()
-        .slice(0,10);
+if (
+    $("fromDate")
+) {
+
+    $("fromDate").value =
+        storageDate(
+            firstDay
+        );
+
+}
 
 
-$("toDate").value =
-    today
-        .toISOString()
-        .slice(0,10);
+if (
+    $("toDate")
+) {
+
+    $("toDate").value =
+        storageDate(
+            today
+        );
+
+}
 
 
 // =====================================================
-// START
+// START REPORT
 // =====================================================
 
 loadReportData();
