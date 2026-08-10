@@ -1763,52 +1763,43 @@ async function loadRepaymentSchedule() {
             }
 
         }
-
-
         // =================================================
-        // FINAL UNIQUE PAYMENT LIST
-        // =================================================
+// FINAL UNIQUE PAYMENT LIST
+// =================================================
 
-        repaymentPayments =
-            Array.from(
-                paymentMap.values()
-            );
+repaymentPayments = Array.from(
+    paymentMap.values()
+);
 
+console.log(
+    "Repayment payments found:",
+    repaymentPayments
+);
 
-        console.log(
-            "Repayment payments found:",
-            repaymentPayments
-        );
+// =================================================
+// BUILD EMI SCHEDULE
+// =================================================
 
-    }
-        // =================================================
-        // BUILD EMI SCHEDULE
-        // =================================================
+repaymentSchedule = buildRepaymentSchedule();
 
-        repaymentSchedule =
-            buildRepaymentSchedule();
+renderRepaymentSchedule();
 
+} catch (error) {
 
-        renderRepaymentSchedule();
+    console.error(
+        "Repayment schedule loading error:",
+        error
+    );
 
+    repaymentPayments = [];
 
-    } catch (error) {
+    repaymentSchedule = buildRepaymentSchedule();
 
-        console.error(
-            "Repayment schedule loading error:",
-            error
-        );
-
-        repaymentPayments = [];
-
-        repaymentSchedule =
-            buildRepaymentSchedule();
-
-        renderRepaymentSchedule();
-
-    }
+    renderRepaymentSchedule();
 
 }
+
+
 // =====================================================
 // BUILD REPAYMENT SCHEDULE
 // =====================================================
