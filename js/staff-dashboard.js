@@ -11,6 +11,8 @@ import {
 
 import {
     collection,
+    doc,
+    getDoc,
     getDocs
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
@@ -1633,56 +1635,452 @@ function showLoading(
 
 }
 
+// ============================================================
+// AUTH CHECK - STAFF ONLY
+// ============================================================
+
+async function verifyStaffAccess(
+    user
+) {
+
+    const session =
+        getStaffSession();
+
+
+    // --------------------------------------------------------
+    // 1. SESSION CHECK
+    // --------------------------------------------------------
+
+    if (
+        !session ||
+        String(
+            session.role || ""
+        ).toLowerCase() !== "staff"
+    ) {
+
+        window.location.href =
+            "staff-login.html";
+
+        return false;
+
+    }
+
+
+    // --------------------------------------------------------
+    // 2. FIREBASE LOGIN CHECK
+    // --------------------------------------------------------
+
+    if (
+        !user
+    ) {
+
+        sessionStorage.removeItem(
+            "srStaffSession"
+        );
+
+        sessionStorage.removeItem(
+            "srStaffUid"
+        );
+
+        window.location.href =
+            "staff-login.html";
+
+        return false;
+
+    }
+
+
+    // --------------------------------------------------------
+    // 3. SESSION UID CHECK
+    // --------------------------------------------------------
+
+    if (
+        session.authUid &&
+        session.authUid !== user.uid
+    ) {
+
+        console.error(
+            "Staff UID mismatch."
+        );
+
+
+        await signOut(
+            auth
+        );
+
+
+        sessionStorage.removeItem(
+            "srStaffSession"
+        );
+
+        sessionStorage.removeItem(
+            "srStaffUid"
+        );
+
+
+        window.location.href =
+            "staff-login.html";
+
+        return false;
+
+    }
+
+
+    // --------------------------------------------------------
+    // 4. STAFF DOCUMENT ID
+    // --------------------------------------------------------
+
+    const staffDocumentId =
+        session.staffDocumentId;
+
+
+    if (
+        !staffDocumentId
+    ) {
+
+        console.error(
+            "Staff document ID missing."
+        );
+
+
+        await signOut(
+            auth
+        );
+
+
+        sessionStorage.clear();
+
+
+        window.location.href =
+            "staff-login.html";
+
+        return false;
+
+    }
+
+
+    // --------------------------------------------------------
+    // 5. LOAD STAFF DOCUMENT
+    // --------------------------------------------------------
+
+    try {
+
+        const staffRef =
+            doc(
+                db,
+                "staff",
+                staffDocumentId
+            );
+
+
+        const staffSnapshot =
+            await getDoc(
+                staffRef
+            );
+
+
+        if (
+            !staffSnapshot.exists()
+        ) {
+
+            console.error(
+                "Staff document not found."
+            );
+
+
+            await signOut(
+                auth
+            );
+
+
+            sessionStorage.clear();
+
+
+            window.location.href =
+                "staff-login.html";
+
+            return false;
+
+        }
+
+
+        const staffData =
+            staffSnapshot.data();
+
+
+        // ----------------------------------------------------
+        // 6. CHECK AUTH UID
+        // ----------------------------------------------------
+
+        if (
+            staffData.authUid &&
+            staffData.authUid !== user.uid
+        ) {
+
+            console.error(
+                "Firebase UID does not match staff record."
+            );
+
+
+            await signOut(
+                auth
+            );
+
+
+            sessionStorage.clear();
+
+
+            window.location.href =
+                "staff-login.html";
+
+            return false;
+
+        }
+
+
+        // ----------------------------------------------------
+        // 7. CHECK STAFF EMAIL
+        // ----------------------------------------------------
+
+        const staffEmail =
+            String(
+                staffData.email ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        const loginEmail =
+            String(
+                user.email ||
+                ""
+            )
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            staffEmail &&
+            loginEmail &&
+            staffEmail !== loginEmail
+        ) {
+
+            console.error(
+                "Staff email mismatch."
+            );
+
+
+            await signOut(
+                auth
+            );
+
+
+            sessionStorage.clear();
+
+
+            window.location.href =
+                "staff-login.html";
+
+            return false;
+
+        }
+
+
+        // ----------------------------------------------------
+        // 8. ACTIVE STATUS CHECK
+        // ----------------------------------------------------
+
+        const status =
+            String(
+                staffData.status ||
+                "active"
+            )
+                .trim()
+                .toLowerCase();
+
+
+        const inactiveStatuses = [
+
+            "inactive",
+            "disabled",
+            "blocked",
+            "deleted"
+
+        ];
+
+
+        if (
+            inactiveStatuses.includes(
+                status
+            )
+        ) {
+
+            alert(
+                "Your staff account is inactive. Please contact the owner."
+            );
+
+
+            await signOut(
+                auth
+            );
+
+
+            sessionStorage.clear();
+
+
+            window.location.href =
+                "staff-login.html";
+
+            return false;
+
+        }
+
+
+        // ----------------------------------------------------
+        // 9. CREATE TRUSTED STAFF OBJECT
+        // ----------------------------------------------------
+
+        currentStaff = {
+
+            id:
+                staffSnapshot.id,
+
+            ...staffData,
+
+            staffDocumentId:
+                staffSnapshot.id,
+
+            authUid:
+                user.uid,
+
+            email:
+                staffData.email ||
+                user.email ||
+                "",
+
+            role:
+                "staff"
+
+        };
+
+
+        // ----------------------------------------------------
+        // 10. UPDATE SESSION
+        // ----------------------------------------------------
+
+        const updatedSession = {
+
+            ...session,
+
+            staffDocumentId:
+                staffSnapshot.id,
+
+            staffId:
+                staffData.staffId ||
+                staffData.staffCode ||
+                staffData.employeeId ||
+                session.staffId ||
+                "",
+
+            staffName:
+                staffData.staffName ||
+                staffData.name ||
+                staffData.fullName ||
+                session.staffName ||
+                "Staff",
+
+            email:
+                staffData.email ||
+                user.email ||
+                "",
+
+            authUid:
+                user.uid,
+
+            role:
+                "staff"
+
+        };
+
+
+        sessionStorage.setItem(
+            "srStaffSession",
+            JSON.stringify(
+                updatedSession
+            )
+        );
+
+
+        // ----------------------------------------------------
+        // 11. RENDER STAFF INFO
+        // ----------------------------------------------------
+
+        renderStaffInfo();
+
+
+        // ----------------------------------------------------
+        // 12. LOAD DASHBOARD
+        // ----------------------------------------------------
+
+        await loadDashboardData();
+
+
+        return true;
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Staff authorization error:",
+            error
+        );
+
+
+        try {
+
+            await signOut(
+                auth
+            );
+
+        } catch (
+            signOutError
+        ) {
+
+            console.error(
+                "Sign out error:",
+                signOutError
+            );
+
+        }
+
+
+        sessionStorage.clear();
+
+
+        window.location.href =
+            "staff-login.html";
+
+
+        return false;
+
+    }
+
+}
+
 
 // ============================================================
-// AUTH CHECK
+// FIREBASE AUTH STATE
 // ============================================================
 
 onAuthStateChanged(
     auth,
     async user => {
 
-        const session =
-            getStaffSession();
-
-
-        if (
-            !session ||
-            String(
-                session.role ||
-                ""
-            ).toLowerCase() !==
-            "staff"
-        ) {
-
-            window.location.href =
-                "staff-login.html";
-
-            return;
-
-        }
-
-
-        if (
-            !user
-        ) {
-
-            window.location.href =
-                "staff-login.html";
-
-            return;
-
-        }
-
-
-        currentStaff =
-            session;
-
-
-        renderStaffInfo();
-
-
-        await loadDashboardData();
+        await verifyStaffAccess(
+            user
+        );
 
     }
 );
