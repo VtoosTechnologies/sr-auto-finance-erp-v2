@@ -1173,161 +1173,264 @@ function createPasswordResetModal() {
         document.getElementById(
             "srSendResetBtn"
         );
+    
+sendButton.addEventListener(
+    "click",
+    async () => {
+
+        const value =
+            resetInput
+                .value
+                .trim();
+
+        const resetMessage =
+            document.getElementById(
+                "srResetMessage"
+            );
 
 
-    sendButton.addEventListener(
-        "click",
-        async () => {
+        if (!value) {
 
-            const value =
-                resetInput
-                    .value
+            resetMessage.textContent =
+                "Please enter Staff ID or Email.";
+
+            resetMessage.style.color =
+                "#dc2626";
+
+            return;
+        }
+
+
+        sendButton.disabled =
+            true;
+
+        sendButton.textContent =
+            "Checking...";
+
+
+        try {
+
+            let email = "";
+
+
+            // =================================================
+            // IF EMAIL ENTERED
+            // =================================================
+
+            if (
+                value.includes("@")
+            ) {
+
+                const staff =
+                    await findStaffByEmail(
+                        value
+                    );
+
+
+                if (!staff) {
+
+                    throw new Error(
+                        "STAFF_NOT_FOUND"
+                    );
+
+                }
+
+
+                if (
+                    !isStaffActive(
+                        staff
+                    )
+                ) {
+
+                    throw new Error(
+                        "STAFF_INACTIVE"
+                    );
+
+                }
+
+
+                email =
+                    String(
+                        staff.email ||
+                        staff.loginEmail ||
+                        value
+                    )
+                    .trim();
+
+            }
+
+
+            // =================================================
+            // IF STAFF ID ENTERED
+            // =================================================
+
+            else {
+
+                const staff =
+                    await findStaff(
+                        value
+                    );
+
+
+                if (!staff) {
+
+                    throw new Error(
+                        "STAFF_NOT_FOUND"
+                    );
+
+                }
+
+
+                if (
+                    !isStaffActive(
+                        staff
+                    )
+                ) {
+
+                    throw new Error(
+                        "STAFF_INACTIVE"
+                    );
+
+                }
+
+
+                email =
+                    String(
+                        staff.email ||
+                        staff.loginEmail ||
+                        ""
+                    )
                     .trim();
 
 
-            if (!value) {
+                if (!email) {
 
-                document.getElementById(
-                    "srResetMessage"
-                ).textContent =
-                    "Please enter Staff ID or Email.";
+                    throw new Error(
+                        "NO_EMAIL"
+                    );
 
-                return;
+                }
+
             }
+
+
+            // =================================================
+            // SEND FIREBASE PASSWORD RESET
+            // =================================================
+
+            await sendPasswordResetEmail(
+                auth,
+                email
+            );
+
+
+            resetMessage.textContent =
+                `Password reset link sent to ${email}. Check your email.`;
+
+            resetMessage.style.color =
+                "#15803d";
 
 
             sendButton.disabled =
                 true;
 
             sendButton.textContent =
-                "Sending...";
+                "Link Sent";
 
-
-            try {
-
-                const oldValue =
-                    staffIdInput.value;
-
-
-                staffIdInput.value =
-                    value;
-
-
-                clearMessage();
-
-
-                const email =
-                    await getResetEmail();
-
-
-                staffIdInput.value =
-                    oldValue;
-
-
-                if (!email) {
-
-                    return;
-                }
-
-
-                await sendPasswordResetEmail(
-                    auth,
-                    email
-                );
-
-
-                document.getElementById(
-                    "srResetMessage"
-                ).textContent =
-                    `Reset link sent to ${email}. Check your email.`;
-
-
-                document.getElementById(
-                    "srResetMessage"
-                ).style.color =
-                    "#15803d";
-
-
-                sendButton.textContent =
-                    "Link Sent";
-
-
-            }
-            catch (error) {
-
-                console.error(
-                    "Reset email error:",
-                    error
-                );
-
-
-                const resetMessage =
-                    document.getElementById(
-                        "srResetMessage"
-                    );
-
-
-                resetMessage.style.color =
-                    "#dc2626";
-
-
-                if (
-                    error.code ===
-                    "auth/invalid-email"
-                ) {
-
-                    resetMessage.textContent =
-                        "Invalid email address.";
-
-                }
-                else if (
-                    error.code ===
-                    "auth/user-not-found"
-                ) {
-
-                    resetMessage.textContent =
-                        "Firebase Authentication user not found.";
-
-                }
-                else if (
-                    error.code ===
-                    "auth/too-many-requests"
-                ) {
-
-                    resetMessage.textContent =
-                        "Too many requests. Try again later.";
-
-                }
-                else {
-
-                    resetMessage.textContent =
-                        "Unable to send reset link.";
-
-                }
-
-            }
-            finally {
-
-                if (
-                    sendButton.textContent !==
-                    "Link Sent"
-                ) {
-
-                    sendButton.disabled =
-                        false;
-
-                    sendButton.textContent =
-                        "Send Password Link";
-
-                }
-
-            }
 
         }
-    );
+        catch (error) {
+
+            console.error(
+                "Reset email error:",
+                error
+            );
 
 
-    // ========================================================
+            resetMessage.style.color =
+                "#dc2626";
+
+
+            if (
+                error.message ===
+                "STAFF_NOT_FOUND"
+            ) {
+
+                resetMessage.textContent =
+                    "Staff ID / Email not found.";
+
+            }
+
+            else if (
+                error.message ===
+                "STAFF_INACTIVE"
+            ) {
+
+                resetMessage.textContent =
+                    "This staff account is inactive.";
+
+            }
+
+            else if (
+                error.message ===
+                "NO_EMAIL"
+            ) {
+
+                resetMessage.textContent =
+                    "Email is not configured for this staff.";
+
+            }
+
+            else if (
+                error.code ===
+                "auth/user-not-found"
+            ) {
+
+                resetMessage.textContent =
+                    "Firebase Authentication account not found for this email.";
+
+            }
+
+            else if (
+                error.code ===
+                "auth/invalid-email"
+            ) {
+
+                resetMessage.textContent =
+                    "Invalid email address.";
+
+            }
+
+            else if (
+                error.code ===
+                "auth/too-many-requests"
+            ) {
+
+                resetMessage.textContent =
+                    "Too many requests. Please try again later.";
+
+            }
+
+            else {
+
+                resetMessage.textContent =
+                    "Unable to send reset link. Please try again.";
+
+            }
+
+
+            sendButton.disabled =
+                false;
+
+            sendButton.textContent =
+                "Send Password Link";
+
+        }
+
+    }
+);
+
+       // ========================================================
     // CLOSE BUTTON
     // ========================================================
 
