@@ -426,7 +426,10 @@ async function loadCollections() {
 
 window.openReport =
     function(type) {
-
+if (type === "collection") {
+    window.location.href = "collection-report.html";
+    return;
+}
         switch (type) {
 
             case "collection":
