@@ -475,7 +475,7 @@ if (type === "collection") {
             case "summary":
 
                 window.location.href =
-                    "dashboard.html";
+                    "business-summary.html";
 
                 break;
 
