@@ -6,23 +6,16 @@
 
 import {
     signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    sendPasswordResetEmail,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-
 import {
     collection,
-    doc,
-    getDocs,
     query,
     where,
-    limit,
-    updateDoc,
-    serverTimestamp
+    getDocs,
+    limit
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
 
 import {
     auth,
@@ -35,45 +28,19 @@ import {
 // ============================================================
 
 const loginForm =
-    document.getElementById(
-        "staffLoginForm"
-    );
-
+    document.getElementById("staffLoginForm");
 
 const emailInput =
-    document.getElementById(
-        "email"
-    );
-
+    document.getElementById("email");
 
 const passwordInput =
-    document.getElementById(
-        "password"
-    );
-
+    document.getElementById("password");
 
 const loginBtn =
-    document.getElementById(
-        "loginBtn"
-    );
-
-
-const createPasswordBtn =
-    document.getElementById(
-        "createPasswordBtn"
-    );
-
-
-const forgotPasswordBtn =
-    document.getElementById(
-        "forgotPasswordBtn"
-    );
-
+    document.getElementById("loginBtn");
 
 const messageElement =
-    document.getElementById(
-        "message"
-    );
+    document.getElementById("message");
 
 
 // ============================================================
@@ -85,85 +52,38 @@ function showMessage(
     type = "error"
 ) {
 
-    if (
-        !messageElement
-    ) {
-
+    if (!messageElement) {
         return;
-
     }
-
 
     messageElement.textContent =
         text;
 
-
     messageElement.className =
         `message ${type}`;
-
 }
 
 
 function clearMessage() {
 
-    if (
-        !messageElement
-    ) {
-
+    if (!messageElement) {
         return;
-
     }
-
 
     messageElement.textContent =
         "";
 
-
     messageElement.className =
         "message";
-
 }
 
 
 // ============================================================
-// NORMALIZE EMAIL
+// FIND STAFF AFTER AUTH
 // ============================================================
 
-function normalizeEmail(
-    value
-) {
-
-    return String(
-        value || ""
-    )
-        .trim()
-        .toLowerCase();
-
-}
-
-
-// ============================================================
-// VALIDATE EMAIL
-// ============================================================
-
-function isValidEmail(
-    email
-) {
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        .test(
-            email
-        );
-
-}
-
-
-// ============================================================
-// FIND STAFF BY EMAIL
-// ============================================================
-
-async function findStaffByEmail(
-    email
+async function findStaffByAuthUid(
+    uid
 ) {
 
     const staffRef =
@@ -173,20 +93,20 @@ async function findStaffByEmail(
         );
 
 
-    const snapshot =
-        await getDocs(
-            query(
-                staffRef,
-
-                where(
-                    "email",
-                    "==",
-                    email
-                ),
-
-                limit(1)
-            )
+    const q =
+        query(
+            staffRef,
+            where(
+                "authUid",
+                "==",
+                uid
+            ),
+            limit(1)
         );
+
+
+    const snapshot =
+        await getDocs(q);
 
 
     if (
@@ -194,7 +114,6 @@ async function findStaffByEmail(
     ) {
 
         return null;
-
     }
 
 
@@ -210,12 +129,11 @@ async function findStaffByEmail(
         ...staffDoc.data()
 
     };
-
 }
 
 
 // ============================================================
-// STAFF ACTIVE CHECK
+// STAFF STATUS
 // ============================================================
 
 function isStaffActive(
@@ -226,22 +144,17 @@ function isStaffActive(
         String(
             staff?.status ||
             "active"
-        )
-            .trim()
-            .toLowerCase();
+        ).toLowerCase();
 
 
     return ![
-
         "inactive",
         "disabled",
         "blocked",
         "deleted"
-
     ].includes(
         status
     );
-
 }
 
 
@@ -272,17 +185,23 @@ function saveStaffSession(
             "",
 
         email:
+            firebaseUser.email ||
             staff.email ||
-            firebaseUser?.email ||
+            "",
+
+        mobile:
+            staff.mobile ||
+            "",
+
+        designation:
+            staff.role ||
             "",
 
         role:
             "staff",
 
-        authUid:
-            firebaseUser?.uid ||
-            staff.authUid ||
-            "",
+        uid:
+            firebaseUser.uid,
 
         loginTime:
             new Date().toISOString()
@@ -298,46 +217,10 @@ function saveStaffSession(
     );
 
 
-    if (
-        firebaseUser?.uid
-    ) {
-
-        sessionStorage.setItem(
-            "srStaffUid",
-            firebaseUser.uid
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// LOGIN BUTTON STATE
-// ============================================================
-
-function setLoginLoading(
-    loading
-) {
-
-    if (
-        !loginBtn
-    ) {
-
-        return;
-
-    }
-
-
-    loginBtn.disabled =
-        loading;
-
-
-    loginBtn.textContent =
-        loading
-            ? "Checking..."
-            : "Login";
-
+    sessionStorage.setItem(
+        "srStaffUid",
+        firebaseUser.uid
+    );
 }
 
 
@@ -351,125 +234,51 @@ async function loginStaff() {
 
 
     const email =
-        normalizeEmail(
-            emailInput?.value
-        );
+        emailInput.value
+            .trim()
+            .toLowerCase();
 
 
     const password =
-        passwordInput?.value ||
-        "";
+        passwordInput.value;
 
 
-    if (
-        !email
-    ) {
+    if (!email) {
 
         showMessage(
-            "Please enter your email."
+            "Please enter your email address."
         );
 
-
-        emailInput?.focus();
-
+        emailInput.focus();
 
         return;
-
     }
 
 
-    if (
-        !isValidEmail(
-            email
-        )
-    ) {
-
-        showMessage(
-            "Please enter a valid email address."
-        );
-
-
-        emailInput?.focus();
-
-
-        return;
-
-    }
-
-
-    if (
-        !password
-    ) {
+    if (!password) {
 
         showMessage(
             "Please enter your password."
         );
 
-
-        passwordInput?.focus();
-
+        passwordInput.focus();
 
         return;
-
     }
 
 
-    setLoginLoading(
-        true
-    );
+    loginBtn.disabled =
+        true;
+
+    loginBtn.textContent =
+        "Logging in...";
 
 
     try {
 
         // ====================================================
         // STEP 1
-        // FIND STAFF
-        // ====================================================
-
-        const staff =
-            await findStaffByEmail(
-                email
-            );
-
-
-        if (
-            !staff
-        ) {
-
-            showMessage(
-                "This email is not registered as a staff account."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // STEP 2
-        // ACTIVE CHECK
-        // ====================================================
-
-        if (
-            !isStaffActive(
-                staff
-            )
-        ) {
-
-            showMessage(
-                "Your staff account is inactive. Please contact the owner."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // STEP 3
-        // FIREBASE LOGIN
+        // FIREBASE AUTHENTICATION
         // ====================================================
 
         const credential =
@@ -480,15 +289,45 @@ async function loginStaff() {
             );
 
 
+        const firebaseUser =
+            credential.user;
+
+
         // ====================================================
-        // STEP 4
-        // AUTH UID CHECK
+        // STEP 2
+        // FIND STAFF USING AUTH UID
+        // ====================================================
+
+        const staff =
+            await findStaffByAuthUid(
+                firebaseUser.uid
+            );
+
+
+        if (!staff) {
+
+            await signOut(
+                auth
+            );
+
+
+            showMessage(
+                "Staff profile is not linked with this login. Please contact owner."
+            );
+
+            return;
+        }
+
+
+        // ====================================================
+        // STEP 3
+        // STATUS
         // ====================================================
 
         if (
-            staff.authUid &&
-            staff.authUid !==
-                credential.user.uid
+            !isStaffActive(
+                staff
+            )
         ) {
 
             await signOut(
@@ -497,66 +336,26 @@ async function loginStaff() {
 
 
             showMessage(
-                "This login account is not linked with this staff record."
+                "This staff account is inactive."
             );
-
 
             return;
-
         }
 
 
         // ====================================================
-        // STEP 5
-        // LINK UID IF NOT ALREADY SAVED
-        // ====================================================
-
-        if (
-            !staff.authUid
-        ) {
-
-            const staffRef =
-                doc(
-                    db,
-                    "staff",
-                    staff.id
-                );
-
-
-            await updateDoc(
-                staffRef,
-                {
-
-                    authUid:
-                        credential.user.uid,
-
-                    authEmail:
-                        email,
-
-                    authLinkedAt:
-                        serverTimestamp(),
-
-                    updatedAt:
-                        serverTimestamp()
-
-                }
-            );
-
-        }
-
-
-        // ====================================================
-        // STEP 6
+        // STEP 4
         // SAVE SESSION
         // ====================================================
 
         saveStaffSession(
             staff,
-            credential.user
+            firebaseUser
         );
 
 
         // ====================================================
+        // STEP 5
         // SUCCESS
         // ====================================================
 
@@ -567,13 +366,13 @@ async function loginStaff() {
 
 
         setTimeout(
-            () => {
+            function() {
 
                 window.location.href =
                     "staff-dashboard.html";
 
             },
-            500
+            600
         );
 
 
@@ -587,7 +386,7 @@ async function loginStaff() {
         );
 
 
-        let message =
+        let errorMessage =
             "Unable to login. Please try again.";
 
 
@@ -596,28 +395,8 @@ async function loginStaff() {
             "auth/invalid-credential"
         ) {
 
-            message =
+            errorMessage =
                 "Invalid email or password.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/user-not-found"
-        ) {
-
-            message =
-                "No login account found for this email. Please use Create Password first.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/wrong-password"
-        ) {
-
-            message =
-                "Incorrect password.";
 
         }
 
@@ -626,7 +405,7 @@ async function loginStaff() {
             "auth/invalid-email"
         ) {
 
-            message =
+            errorMessage =
                 "Please enter a valid email address.";
 
         }
@@ -636,7 +415,7 @@ async function loginStaff() {
             "auth/user-disabled"
         ) {
 
-            message =
+            errorMessage =
                 "This login account has been disabled.";
 
         }
@@ -646,534 +425,38 @@ async function loginStaff() {
             "auth/too-many-requests"
         ) {
 
-            message =
+            errorMessage =
                 "Too many login attempts. Please try again later.";
 
         }
 
+        else if (
+            error.code ===
+            "permission-denied" ||
+            error.code ===
+            "firestore/permission-denied"
+        ) {
+
+            errorMessage =
+                "Staff profile permission denied. Please check Firebase Rules.";
+
+        }
+
 
         showMessage(
-            message
+            errorMessage
         );
+
 
     } finally {
 
-        setLoginLoading(
-            false
-        );
+        loginBtn.disabled =
+            false;
+
+        loginBtn.textContent =
+            "Login";
 
     }
-
-}
-
-
-// ============================================================
-// CREATE PASSWORD
-// ============================================================
-
-async function createStaffPassword() {
-
-    clearMessage();
-
-
-    const email =
-        normalizeEmail(
-            emailInput?.value
-        );
-
-
-    if (
-        !email
-    ) {
-
-        showMessage(
-            "Please enter your staff email first."
-        );
-
-
-        emailInput?.focus();
-
-
-        return;
-
-    }
-
-
-    if (
-        !isValidEmail(
-            email
-        )
-    ) {
-
-        showMessage(
-            "Please enter a valid email address."
-        );
-
-
-        emailInput?.focus();
-
-
-        return;
-
-    }
-
-
-    const newPassword =
-        prompt(
-            "Create your staff password.\n\nMinimum 6 characters."
-        );
-
-
-    if (
-        newPassword ===
-        null
-    ) {
-
-        return;
-
-    }
-
-
-    if (
-        newPassword.length <
-        6
-    ) {
-
-        showMessage(
-            "Password must contain at least 6 characters."
-        );
-
-
-        return;
-
-    }
-
-
-    const confirmPassword =
-        prompt(
-            "Confirm your password."
-        );
-
-
-    if (
-        confirmPassword ===
-        null
-    ) {
-
-        return;
-
-    }
-
-
-    if (
-        newPassword !==
-        confirmPassword
-    ) {
-
-        showMessage(
-            "Passwords do not match."
-        );
-
-
-        return;
-
-    }
-
-
-    if (
-        createPasswordBtn
-    ) {
-
-        createPasswordBtn.disabled =
-            true;
-
-    }
-
-
-    try {
-
-        // ====================================================
-        // STEP 1
-        // FIND STAFF
-        // ====================================================
-
-        const staff =
-            await findStaffByEmail(
-                email
-            );
-
-
-        if (
-            !staff
-        ) {
-
-            showMessage(
-                "This email is not registered in Staff Management."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // STEP 2
-        // ACTIVE CHECK
-        // ====================================================
-
-        if (
-            !isStaffActive(
-                staff
-            )
-        ) {
-
-            showMessage(
-                "This staff account is inactive. Please contact the owner."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // STEP 3
-        // CHECK EXISTING AUTH LINK
-        // ====================================================
-
-        if (
-            staff.authUid
-        ) {
-
-            showMessage(
-                "Password is already configured. Please use normal Login."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // STEP 4
-        // CREATE FIREBASE ACCOUNT
-        // ====================================================
-
-        const credential =
-            await createUserWithEmailAndPassword(
-                auth,
-                email,
-                newPassword
-            );
-
-
-        // ====================================================
-        // STEP 5
-        // LINK AUTH UID
-        // ====================================================
-
-        const staffRef =
-            doc(
-                db,
-                "staff",
-                staff.id
-            );
-
-
-        await updateDoc(
-            staffRef,
-            {
-
-                authUid:
-                    credential.user.uid,
-
-                authEmail:
-                    email,
-
-                authLinkedAt:
-                    serverTimestamp(),
-
-                updatedAt:
-                    serverTimestamp()
-
-            }
-        );
-
-
-        // ====================================================
-        // STEP 6
-        // SAVE SESSION
-        // ====================================================
-
-        saveStaffSession(
-            staff,
-            credential.user
-        );
-
-
-        showMessage(
-            "Password created successfully. Opening dashboard...",
-            "success"
-        );
-
-
-        setTimeout(
-            () => {
-
-                window.location.href =
-                    "staff-dashboard.html";
-
-            },
-            700
-        );
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "Create password error:",
-            error
-        );
-
-
-        let message =
-            "Unable to create password.";
-
-
-        if (
-            error.code ===
-            "auth/email-already-in-use"
-        ) {
-
-            message =
-                "This email already has a login account. Please use Forgot Password or Login.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/invalid-email"
-        ) {
-
-            message =
-                "Please enter a valid email address.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/weak-password"
-        ) {
-
-            message =
-                "Password is too weak. Please use at least 6 characters.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/operation-not-allowed"
-        ) {
-
-            message =
-                "Email/password login is not enabled in Firebase Authentication.";
-
-        }
-
-
-        showMessage(
-            message
-        );
-
-    } finally {
-
-        if (
-            createPasswordBtn
-        ) {
-
-            createPasswordBtn.disabled =
-                false;
-
-        }
-
-    }
-
-}
-
-
-// ============================================================
-// FORGOT PASSWORD
-// ============================================================
-
-async function forgotPassword() {
-
-    clearMessage();
-
-
-    const email =
-        normalizeEmail(
-            emailInput?.value
-        );
-
-
-    if (
-        !email
-    ) {
-
-        showMessage(
-            "Please enter your email first."
-        );
-
-
-        emailInput?.focus();
-
-
-        return;
-
-    }
-
-
-    if (
-        !isValidEmail(
-            email
-        )
-    ) {
-
-        showMessage(
-            "Please enter a valid email address."
-        );
-
-
-        return;
-
-    }
-
-
-    if (
-        forgotPasswordBtn
-    ) {
-
-        forgotPasswordBtn.disabled =
-            true;
-
-    }
-
-
-    try {
-
-        // ====================================================
-        // CHECK STAFF RECORD FIRST
-        // ====================================================
-
-        const staff =
-            await findStaffByEmail(
-                email
-            );
-
-
-        if (
-            !staff
-        ) {
-
-            showMessage(
-                "This email is not registered as a staff account."
-            );
-
-
-            return;
-
-        }
-
-
-        if (
-            !isStaffActive(
-                staff
-            )
-        ) {
-
-            showMessage(
-                "This staff account is inactive. Please contact the owner."
-            );
-
-
-            return;
-
-        }
-
-
-        // ====================================================
-        // SEND RESET EMAIL
-        // ====================================================
-
-        await sendPasswordResetEmail(
-            auth,
-            email
-        );
-
-
-        showMessage(
-            "Password reset link has been sent to your email.",
-            "success"
-        );
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "Forgot password error:",
-            error
-        );
-
-
-        let message =
-            "Unable to send password reset email.";
-
-
-        if (
-            error.code ===
-            "auth/user-not-found"
-        ) {
-
-            message =
-                "No login account exists for this email. Please use Create Password first.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/invalid-email"
-        ) {
-
-            message =
-                "Please enter a valid email address.";
-
-        }
-
-
-        showMessage(
-            message
-        );
-
-    } finally {
-
-        if (
-            forgotPasswordBtn
-        ) {
-
-            forgotPasswordBtn.disabled =
-                false;
-
-        }
-
-    }
-
 }
 
 
@@ -1181,141 +464,17 @@ async function forgotPassword() {
 // FORM SUBMIT
 // ============================================================
 
-if (
-    loginForm
-) {
+if (loginForm) {
 
     loginForm.addEventListener(
         "submit",
-        event => {
+        function(event) {
 
             event.preventDefault();
-
 
             loginStaff();
 
         }
     );
-
-}
-
-
-// ============================================================
-// CREATE PASSWORD BUTTON
-// ============================================================
-
-if (
-    createPasswordBtn
-) {
-
-    createPasswordBtn.addEventListener(
-        "click",
-        function() {
-
-            createStaffPassword();
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// FORGOT PASSWORD BUTTON
-// ============================================================
-
-if (
-    forgotPasswordBtn
-) {
-
-    forgotPasswordBtn.addEventListener(
-        "click",
-        function() {
-
-            forgotPassword();
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// ENTER KEY SUPPORT
-// ============================================================
-
-if (
-    emailInput
-) {
-
-    emailInput.addEventListener(
-        "input",
-        function() {
-
-            clearMessage();
-
-        }
-    );
-
-}
-
-
-if (
-    passwordInput
-) {
-
-    passwordInput.addEventListener(
-        "input",
-        function() {
-
-            clearMessage();
-
-        }
-    );
-
-}
-
-
-// ============================================================
-// EXISTING STAFF SESSION
-// ============================================================
-
-const existingSession =
-    sessionStorage.getItem(
-        "srStaffSession"
-    );
-
-
-if (
-    existingSession
-) {
-
-    try {
-
-        const session =
-            JSON.parse(
-                existingSession
-            );
-
-
-        if (
-            session?.role ===
-            "staff"
-        ) {
-
-            console.log(
-                "Existing staff session:",
-                session
-            );
-
-        }
-
-    } catch {
-
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
-
-    }
 
 }
