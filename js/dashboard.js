@@ -13,10 +13,7 @@ import {
     collection,
     doc,
     getDoc,
-    getDocs,
-    query,
-    orderBy,
-    limit
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -98,14 +95,17 @@ function formatDate(value) {
 
         if (
             value &&
-            typeof value.toDate === "function"
+            typeof value.toDate ===
+            "function"
         ) {
 
-            date = value.toDate();
+            date =
+                value.toDate();
 
         } else {
 
-            date = new Date(value);
+            date =
+                new Date(value);
 
         }
 
@@ -118,7 +118,9 @@ function formatDate(value) {
 
     if (
         !date ||
-        isNaN(date.getTime())
+        isNaN(
+            date.getTime()
+        )
     ) {
 
         return "-";
@@ -132,66 +134,6 @@ function formatDate(value) {
             day: "2-digit",
             month: "short",
             year: "numeric"
-        }
-    );
-
-}
-
-
-// =====================================================
-// FORMAT DATE + TIME
-// =====================================================
-
-function formatDateTime(value) {
-
-    if (!value) {
-        return "-";
-    }
-
-
-    let date;
-
-
-    try {
-
-        if (
-            value &&
-            typeof value.toDate === "function"
-        ) {
-
-            date = value.toDate();
-
-        } else {
-
-            date = new Date(value);
-
-        }
-
-    } catch {
-
-        return "-";
-
-    }
-
-
-    if (
-        !date ||
-        isNaN(date.getTime())
-    ) {
-
-        return "-";
-
-    }
-
-
-    return date.toLocaleString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
         }
     );
 
@@ -230,7 +172,9 @@ function getTodayKey() {
         );
 
 
-    return `${year}-${month}-${day}`;
+    return (
+        `${year}-${month}-${day}`
+    );
 
 }
 
@@ -253,14 +197,17 @@ function getDateKey(value) {
 
         if (
             value &&
-            typeof value.toDate === "function"
+            typeof value.toDate ===
+            "function"
         ) {
 
-            date = value.toDate();
+            date =
+                value.toDate();
 
         } else {
 
-            date = new Date(value);
+            date =
+                new Date(value);
 
         }
 
@@ -273,7 +220,9 @@ function getDateKey(value) {
 
     if (
         !date ||
-        isNaN(date.getTime())
+        isNaN(
+            date.getTime()
+        )
     ) {
 
         return "";
@@ -303,7 +252,9 @@ function getDateKey(value) {
         );
 
 
-    return `${year}-${month}-${day}`;
+    return (
+        `${year}-${month}-${day}`
+    );
 
 }
 
@@ -312,28 +263,38 @@ function getDateKey(value) {
 // GET LOAN TOTAL
 // =====================================================
 
-function getLoanTotal(loan) {
+function getLoanTotal(
+    loan
+) {
 
     if (
-        loan.totalPayable !== undefined &&
-        loan.totalPayable !== null
+        loan.totalPayable !==
+        undefined &&
+        loan.totalPayable !==
+        null
     ) {
 
-        return Number(
-            loan.totalPayable
-        ) || 0;
+        return (
+            Number(
+                loan.totalPayable
+            ) || 0
+        );
 
     }
 
 
     if (
-        loan.totalAmount !== undefined &&
-        loan.totalAmount !== null
+        loan.totalAmount !==
+        undefined &&
+        loan.totalAmount !==
+        null
     ) {
 
-        return Number(
-            loan.totalAmount
-        ) || 0;
+        return (
+            Number(
+                loan.totalAmount
+            ) || 0
+        );
 
     }
 
@@ -354,7 +315,10 @@ function getLoanTotal(loan) {
         );
 
 
-    return principal + interest;
+    return (
+        principal +
+        interest
+    );
 
 }
 
@@ -363,14 +327,14 @@ function getLoanTotal(loan) {
 // GET LOAN PAID
 // =====================================================
 
-function getLoanPaid(loan) {
+function getLoanPaid(
+    loan
+) {
 
     return Number(
 
         loan.amountPaid ??
-
         loan.paidAmount ??
-
         0
 
     );
@@ -382,11 +346,15 @@ function getLoanPaid(loan) {
 // GET OUTSTANDING
 // =====================================================
 
-function getOutstanding(loan) {
+function getOutstanding(
+    loan
+) {
 
     if (
-        loan.outstandingAmount !== undefined &&
-        loan.outstandingAmount !== null
+        loan.outstandingAmount !==
+        undefined &&
+        loan.outstandingAmount !==
+        null
     ) {
 
         return Math.max(
@@ -400,8 +368,10 @@ function getOutstanding(loan) {
 
 
     if (
-        loan.balanceAmount !== undefined &&
-        loan.balanceAmount !== null
+        loan.balanceAmount !==
+        undefined &&
+        loan.balanceAmount !==
+        null
     ) {
 
         return Math.max(
@@ -415,8 +385,10 @@ function getOutstanding(loan) {
 
 
     if (
-        loan.pendingAmount !== undefined &&
-        loan.pendingAmount !== null
+        loan.pendingAmount !==
+        undefined &&
+        loan.pendingAmount !==
+        null
     ) {
 
         return Math.max(
@@ -431,8 +403,13 @@ function getOutstanding(loan) {
 
     return Math.max(
 
-        getLoanTotal(loan) -
-        getLoanPaid(loan),
+        getLoanTotal(
+            loan
+        ) -
+
+        getLoanPaid(
+            loan
+        ),
 
         0
 
@@ -442,10 +419,107 @@ function getOutstanding(loan) {
 
 
 // =====================================================
+// GET PAYMENT AMOUNT
+// =====================================================
+
+function getPaymentAmount(
+    payment
+) {
+
+    return Number(
+
+        payment.amountReceived ??
+        payment.totalCollection ??
+        payment.amountCollected ??
+        payment.paymentAmount ??
+        payment.paidAmount ??
+        payment.emiPaid ??
+        payment.amount ??
+        0
+
+    ) || 0;
+
+}
+
+
+// =====================================================
+// GET PAYMENT DATE
+// =====================================================
+
+function getPaymentDate(
+    payment
+) {
+
+    return (
+        payment.paymentDate ||
+        payment.paidDate ||
+        payment.collectionDate ||
+        payment.date ||
+        payment.createdAt
+    );
+
+}
+
+
+// =====================================================
+// CHECK INVALID PAYMENT
+// =====================================================
+
+function isInvalidPaymentStatus(
+    status
+) {
+
+    const value =
+        String(
+            status ||
+            "Success"
+        ).toLowerCase();
+
+
+    return [
+
+        "cancelled",
+        "canceled",
+        "reversed",
+        "deleted"
+
+    ].includes(
+        value
+    );
+
+}
+
+
+// =====================================================
+// CHECK STAFF PAYMENT
+// =====================================================
+
+function isStaffPayment(
+    payment
+) {
+
+    const staffId =
+        payment.staffId ||
+        payment.assignedStaffId ||
+        payment.collectorStaffId ||
+        payment.collectedByStaffId ||
+        payment.staffDocumentId ||
+        payment.staffCode ||
+        payment.employeeId;
+
+
+    return !!staffId;
+
+}
+
+
+// =====================================================
 // LOAD USER PROFILE
 // =====================================================
 
-async function loadUserProfile(user) {
+async function loadUserProfile(
+    user
+) {
 
     try {
 
@@ -471,10 +545,15 @@ async function loadUserProfile(user) {
                 "User profile not found."
             );
 
-            await signOut(auth);
+
+            await signOut(
+                auth
+            );
+
 
             window.location.href =
                 "login.html";
+
 
             return false;
 
@@ -486,7 +565,8 @@ async function loadUserProfile(user) {
 
 
         const active =
-            userData.active === true;
+            userData.active ===
+            true;
 
 
         const status =
@@ -498,13 +578,18 @@ async function loadUserProfile(user) {
 
         if (
             !active ||
-            status !== "active"
+            status !==
+            "active"
         ) {
 
-            await signOut(auth);
+            await signOut(
+                auth
+            );
+
 
             window.location.href =
                 "login.html";
+
 
             return false;
 
@@ -554,12 +639,16 @@ async function loadUserProfile(user) {
 
         return true;
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             "User profile error:",
             error
         );
+
 
         return false;
 
@@ -660,6 +749,7 @@ async function loadCompanySettings() {
                         ${companyName}
                     </div>
 
+
                     ${
                         ownerName
                             ? `
@@ -671,6 +761,7 @@ async function loadCompanySettings() {
                             : ""
                     }
 
+
                     ${
                         mobile
                             ? `
@@ -681,6 +772,7 @@ async function loadCompanySettings() {
                               `
                             : ""
                     }
+
 
                     ${
                         address
@@ -698,7 +790,10 @@ async function loadCompanySettings() {
 
         }
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             "Company settings error:",
@@ -737,7 +832,9 @@ async function loadCustomers() {
         }
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Customer loading error:",
@@ -804,15 +901,16 @@ async function loadLoans() {
                     );
 
 
-                const isClosed =
+                const isClosed = [
 
-                    status === "closed" ||
+                    "closed",
+                    "cancelled",
+                    "canceled",
+                    "completed"
 
-                    status === "cancelled" ||
-
-                    status === "canceled" ||
-
-                    status === "completed";
+                ].includes(
+                    status
+                );
 
 
                 if (
@@ -860,7 +958,9 @@ async function loadLoans() {
         }
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Loan loading error:",
@@ -883,7 +983,9 @@ async function loadLoans() {
         ) {
 
             outstandingElement.textContent =
-                formatCurrency(0);
+                formatCurrency(
+                    0
+                );
 
         }
 
@@ -894,20 +996,18 @@ async function loadLoans() {
 
 // =====================================================
 // LOAD TODAY'S COLLECTION
+//
+// OWNER COLLECTION
+// +
+// STAFF COLLECTION
+//
+// Staff payment is already customer collection.
+// Deposit acceptance is NOT added here again.
 // =====================================================
 
 async function loadTodayCollection() {
 
     try {
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "collections"
-                )
-            );
-
 
         const todayKey =
             getTodayKey();
@@ -917,28 +1017,34 @@ async function loadTodayCollection() {
             0;
 
 
-        snapshot.forEach(
+        const countedIds =
+            new Set();
+
+
+        // =================================================
+        // OWNER DIRECT COLLECTIONS
+        // =================================================
+
+        const collectionsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "collections"
+                )
+            );
+
+
+        collectionsSnapshot.forEach(
             collectionDoc => {
 
                 const data =
                     collectionDoc.data();
 
 
-                const status =
-                    String(
-                        data.status ||
-                        "Success"
-                    ).toLowerCase();
-
-
                 if (
-
-                    status === "cancelled" ||
-
-                    status === "canceled" ||
-
-                    status === "reversed"
-
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
                 ) {
 
                     return;
@@ -947,24 +1053,16 @@ async function loadTodayCollection() {
 
 
                 const paymentDate =
-
                     data.paymentDate ||
-
                     data.collectionDate ||
-
                     data.date ||
-
                     data.createdAt;
 
 
-                const paymentKey =
+                if (
                     getDateKey(
                         paymentDate
-                    );
-
-
-                if (
-                    paymentKey !==
+                    ) !==
                     todayKey
                 ) {
 
@@ -977,22 +1075,126 @@ async function loadTodayCollection() {
                     Number(
 
                         data.amount ??
-
                         data.paidAmount ??
-
                         data.paymentAmount ??
-
+                        data.amountReceived ??
                         0
 
-                    );
+                    ) || 0;
 
 
                 todayAmount +=
                     amount;
 
+
+                countedIds.add(
+                    `collections_${collectionDoc.id}`
+                );
+
             }
         );
 
+
+        // =================================================
+        // STAFF COLLECTION
+        // =================================================
+
+        const paymentsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "payments"
+                )
+            );
+
+
+        paymentsSnapshot.forEach(
+            paymentDoc => {
+
+                const data =
+                    paymentDoc.data();
+
+
+                if (
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                /*
+                 * Only staff-linked payment
+                 * records are added.
+                 *
+                 * This prevents normal owner
+                 * payments from duplicate counting.
+                 */
+
+                if (
+                    !isStaffPayment(
+                        data
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const paymentDate =
+                    getPaymentDate(
+                        data
+                    );
+
+
+                if (
+                    getDateKey(
+                        paymentDate
+                    ) !==
+                    todayKey
+                ) {
+
+                    return;
+
+                }
+
+
+                const uniqueId =
+                    `payments_${paymentDoc.id}`;
+
+
+                if (
+                    countedIds.has(
+                        uniqueId
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                countedIds.add(
+                    uniqueId
+                );
+
+
+                todayAmount +=
+                    getPaymentAmount(
+                        data
+                    );
+
+            }
+        );
+
+
+        // =================================================
+        // UPDATE
+        // =================================================
 
         if (
             todayCollectionElement
@@ -1005,7 +1207,10 @@ async function loadTodayCollection() {
 
         }
 
-    } catch (error) {
+
+    } catch (
+        error
+    ) {
 
         console.error(
             "Today's collection error:",
@@ -1018,7 +1223,9 @@ async function loadTodayCollection() {
         ) {
 
             todayCollectionElement.textContent =
-                formatCurrency(0);
+                formatCurrency(
+                    0
+                );
 
         }
 
@@ -1029,6 +1236,10 @@ async function loadTodayCollection() {
 
 // =====================================================
 // LOAD RECENT COLLECTIONS
+//
+// OWNER COLLECTIONS
+// +
+// STAFF PAYMENTS
 // =====================================================
 
 async function loadRecentCollections() {
@@ -1041,8 +1252,12 @@ async function loadRecentCollections() {
             );
 
 
-        if (!panel) {
+        if (
+            !panel
+        ) {
+
             return;
+
         }
 
 
@@ -1052,80 +1267,33 @@ async function loadRecentCollections() {
             );
 
 
-        const collectionsRef =
-            collection(
-                db,
-                "collections"
-            );
-
-
-        let snapshot;
-
-
-        try {
-
-            const recentQuery =
-                query(
-                    collectionsRef,
-                    orderBy(
-                        "createdAt",
-                        "desc"
-                    ),
-                    limit(5)
-                );
-
-
-            snapshot =
-                await getDocs(
-                    recentQuery
-                );
-
-        } catch (indexError) {
-
-            /*
-             * If Firestore index is not available,
-             * fallback to normal collection read.
-             */
-
-            console.warn(
-                "Recent collection query fallback:",
-                indexError
-            );
-
-
-            snapshot =
-                await getDocs(
-                    collectionsRef
-                );
-
-        }
-
-
         const records = [];
 
 
-        snapshot.forEach(
+        // =================================================
+        // OWNER COLLECTIONS
+        // =================================================
+
+        const collectionsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "collections"
+                )
+            );
+
+
+        collectionsSnapshot.forEach(
             collectionDoc => {
 
                 const data =
                     collectionDoc.data();
 
 
-                const status =
-                    String(
-                        data.status ||
-                        "Success"
-                    ).toLowerCase();
-
-
                 if (
-
-                    status === "cancelled" ||
-
-                    status === "canceled" ||
-
-                    status === "reversed"
-
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
                 ) {
 
                     return;
@@ -1138,6 +1306,9 @@ async function loadRecentCollections() {
                     id:
                         collectionDoc.id,
 
+                    source:
+                        "owner",
+
                     ...data
 
                 });
@@ -1146,13 +1317,73 @@ async function loadRecentCollections() {
         );
 
 
-        /*
-         * If fallback query returned all records,
-         * sort manually and keep latest five.
-         */
+        // =================================================
+        // STAFF PAYMENTS
+        // =================================================
+
+        const paymentsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "payments"
+                )
+            );
+
+
+        paymentsSnapshot.forEach(
+            paymentDoc => {
+
+                const data =
+                    paymentDoc.data();
+
+
+                if (
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    !isStaffPayment(
+                        data
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                records.push({
+
+                    id:
+                        paymentDoc.id,
+
+                    source:
+                        "staff",
+
+                    ...data
+
+                });
+
+            }
+        );
+
+
+        // =================================================
+        // SORT LATEST
+        // =================================================
 
         records.sort(
-            (a, b) => {
+            (
+                a,
+                b
+            ) => {
 
                 const dateA =
                     a.createdAt &&
@@ -1160,9 +1391,11 @@ async function loadRecentCollections() {
                     "function"
 
                         ? a.createdAt.toDate()
+
                         : new Date(
                             a.paymentDate ||
                             a.collectionDate ||
+                            a.date ||
                             0
                         );
 
@@ -1173,9 +1406,11 @@ async function loadRecentCollections() {
                     "function"
 
                         ? b.createdAt.toDate()
+
                         : new Date(
                             b.paymentDate ||
                             b.collectionDate ||
+                            b.date ||
                             0
                         );
 
@@ -1196,9 +1431,19 @@ async function loadRecentCollections() {
             );
 
 
-        if (!latest.length) {
+        // Remove old generated list
 
-            return;
+        const oldList =
+            panel.querySelector(
+                ".dashboard-recent-list"
+            );
+
+
+        if (
+            oldList
+        ) {
+
+            oldList.remove();
 
         }
 
@@ -1212,10 +1457,42 @@ async function loadRecentCollections() {
         }
 
 
+        if (
+            !latest.length
+        ) {
+
+            const empty =
+                document.createElement(
+                    "div"
+                );
+
+
+            empty.className =
+                "empty-state";
+
+
+            empty.textContent =
+                "No collections yet.";
+
+
+            panel.appendChild(
+                empty
+            );
+
+
+            return;
+
+        }
+
+
         const list =
             document.createElement(
                 "div"
             );
+
+
+        list.className =
+            "dashboard-recent-list";
 
 
         list.style.display =
@@ -1227,6 +1504,10 @@ async function loadRecentCollections() {
         list.style.gap =
             "10px";
 
+
+        // =================================================
+        // ROWS
+        // =================================================
 
         latest.forEach(
             payment => {
@@ -1242,15 +1523,15 @@ async function loadRecentCollections() {
                     "Customer";
 
 
+                const staffName =
+                    payment.staffName ||
+                    payment.collectorName ||
+                    "Staff";
+
+
                 const amount =
-                    Number(
-
-                        payment.amount ??
-
-                        payment.paidAmount ??
-
-                        0
-
+                    getPaymentAmount(
+                        payment
                     );
 
 
@@ -1261,9 +1542,18 @@ async function loadRecentCollections() {
 
 
                 const paymentDate =
-                    payment.paymentDate ||
-                    payment.collectionDate ||
-                    payment.createdAt;
+                    getPaymentDate(
+                        payment
+                    );
+
+
+                const sourceLabel =
+                    payment.source ===
+                    "staff"
+
+                        ? `Staff: ${staffName}`
+
+                        : "Owner";
 
 
                 const row =
@@ -1322,6 +1612,7 @@ async function loadRecentCollections() {
                             ${customerName}
                         </div>
 
+
                         <div
                             style="
                                 font-size:10px;
@@ -1329,12 +1620,17 @@ async function loadRecentCollections() {
                                 margin-top:3px;
                             "
                         >
+
                             ${receiptNo}
+
                             ${
                                 paymentMode
                                     ? ` • ${paymentMode}`
                                     : ""
                             }
+
+                            • ${sourceLabel}
+
                         </div>
 
                     </div>
@@ -1359,6 +1655,7 @@ async function loadRecentCollections() {
                             )}
                         </div>
 
+
                         <div
                             style="
                                 font-size:9px;
@@ -1380,10 +1677,33 @@ async function loadRecentCollections() {
                     "click",
                     function() {
 
-                        window.location.href =
-                            `collection-view.html?id=${encodeURIComponent(
-                                payment.id
-                            )}`;
+                        if (
+                            payment.source ===
+                            "staff"
+                        ) {
+
+                            /*
+                             * Staff collection
+                             * view page.
+                             *
+                             * If this page is not
+                             * created yet, change
+                             * this path later.
+                             */
+
+                            window.location.href =
+                                `staff-collection-view.html?id=${encodeURIComponent(
+                                    payment.id
+                                )}`;
+
+                        } else {
+
+                            window.location.href =
+                                `collection-view.html?id=${encodeURIComponent(
+                                    payment.id
+                                )}`;
+
+                        }
 
                     }
                 );
@@ -1402,7 +1722,9 @@ async function loadRecentCollections() {
         );
 
 
-    } catch (error) {
+    } catch (
+        error
+    ) {
 
         console.error(
             "Recent collections error:",
@@ -1418,7 +1740,9 @@ async function loadRecentCollections() {
 // LOGOUT
 // =====================================================
 
-if (logoutBtn) {
+if (
+    logoutBtn
+) {
 
     logoutBtn.addEventListener(
         "click",
@@ -1428,6 +1752,7 @@ if (logoutBtn) {
 
                 logoutBtn.disabled =
                     true;
+
 
                 logoutBtn.textContent =
                     "Logging out...";
@@ -1445,7 +1770,9 @@ if (logoutBtn) {
                     "login.html";
 
 
-            } catch (error) {
+            } catch (
+                error
+            ) {
 
                 console.error(
                     "Logout error:",
@@ -1455,6 +1782,7 @@ if (logoutBtn) {
 
                 logoutBtn.disabled =
                     false;
+
 
                 logoutBtn.textContent =
                     "Logout";
@@ -1475,7 +1803,9 @@ onAuthStateChanged(
     auth,
     async function(user) {
 
-        if (!user) {
+        if (
+            !user
+        ) {
 
             window.location.href =
                 "login.html";
@@ -1491,15 +1821,20 @@ onAuthStateChanged(
             );
 
 
-        if (!validUser) {
+        if (
+            !validUser
+        ) {
+
             return;
+
         }
 
 
         /*
-         * Load dashboard data
-         * independently so one failure
-         * does not break the complete dashboard.
+         * Load independently.
+         *
+         * One module failure should not
+         * stop the complete dashboard.
          */
 
         await Promise.all([
