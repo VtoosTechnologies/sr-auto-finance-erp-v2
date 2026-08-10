@@ -1537,12 +1537,22 @@
         <section class="card full">
 
 
-            <div class="card-title">
-                Loan Documents
-            </div>
+         <div class="card-title">
+    <span>Loan Documents</span>
+
+    <button
+        id="toggleDocumentsBtn"
+        class="section-toggle-btn"
+        type="button">
+        View Loan Documents
+    </button>
+</div>
 
 
-            <div class="document-table-wrapper">
+           <div
+    id="loanDocuments"
+    class="document-table-wrapper"
+    style="display:none;">
 
 
                 <table class="document-table">
@@ -1627,25 +1637,27 @@
             <div class="schedule-header">
 
                 <div>
-                    <div class="card-title" style="margin-bottom:4px;">
-                        Repayment Schedule
-                    </div>
+                   <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+
+    <span>Repayment Schedule</span>
+
+    <button
+        id="toggleRepaymentBtn"
+        type="button"
+        class="section-toggle-btn">
+        View Repayment Schedule
+    </button>
+
+</div>
 
                     <div class="schedule-note" style="margin-top:0;">
                         Complete installment-wise due, paid, pending and penalty details.
                     </div>
                 </div>
 
-                <button
-                    type="button"
-                    class="schedule-download-all"
-                    id="downloadScheduleBtn"
-                >
-                    ↓ Download Schedule
-                </button>
-
             </div>
 
+            <div id="repaymentScheduleSection" style="display:none;">
             <div class="schedule-summary">
 
                 <div class="schedule-summary-card">
