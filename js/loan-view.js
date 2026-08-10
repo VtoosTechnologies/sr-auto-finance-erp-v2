@@ -1798,7 +1798,7 @@ renderRepaymentSchedule();
     renderRepaymentSchedule();
 
 }
-
+}
 
 // =====================================================
 // BUILD REPAYMENT SCHEDULE
