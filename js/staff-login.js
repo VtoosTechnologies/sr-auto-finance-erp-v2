@@ -1425,6 +1425,51 @@ if (
     }
 
 }
+const existingSession =
+    sessionStorage.getItem(
+        "srStaffSession"
+    );
+
+if (
+    existingSession
+) {
+
+    try {
+
+        const session =
+            JSON.parse(
+                existingSession
+            );
+
+        if (
+            session?.role ===
+            "staff"
+        ) {
+
+            console.log(
+                "Existing staff session:",
+                session
+            );
+
+        }
+
+    }
+    catch {
+
+        sessionStorage.removeItem(
+            "srStaffSession"
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// BIND CREATE PASSWORD / FORGOT PASSWORD
+// ============================================================
+
+bindPasswordLinks();
 
 
 // ============================================================
