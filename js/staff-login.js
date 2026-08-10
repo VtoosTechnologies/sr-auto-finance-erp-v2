@@ -6,7 +6,6 @@
 
 import {
     signInWithEmailAndPassword,
-    signOut,
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
@@ -29,19 +28,29 @@ import {
 // ============================================================
 
 const loginForm =
-    document.getElementById("staffLoginForm");
+    document.getElementById(
+        "staffLoginForm"
+    );
 
 const staffIdInput =
-    document.getElementById("staffId");
+    document.getElementById(
+        "staffId"
+    );
 
 const passwordInput =
-    document.getElementById("password");
+    document.getElementById(
+        "password"
+    );
 
 const loginBtn =
-    document.getElementById("loginBtn");
+    document.getElementById(
+        "loginBtn"
+    );
 
 const messageElement =
-    document.getElementById("message");
+    document.getElementById(
+        "message"
+    );
 
 
 // ============================================================
@@ -97,13 +106,11 @@ async function findStaff(
             "staff"
         );
 
-
     const possibleFields = [
         "staffId",
         "staffCode",
         "employeeId"
     ];
-
 
     for (
         const field
@@ -133,32 +140,23 @@ async function findStaff(
                 const staffDoc =
                     snapshot.docs[0];
 
-
                 return {
-
                     id:
                         staffDoc.id,
 
                     ...staffDoc.data()
-
                 };
-
             }
 
         }
-        catch (
-            error
-        ) {
+        catch (error) {
 
             console.warn(
                 `Staff lookup failed for ${field}:`,
                 error
             );
-
         }
-
     }
-
 
     return null;
 }
@@ -178,12 +176,10 @@ async function findStaffByEmail(
             "staff"
         );
 
-
     const possibleFields = [
         "email",
         "loginEmail"
     ];
-
 
     for (
         const field
@@ -213,30 +209,82 @@ async function findStaffByEmail(
                 const staffDoc =
                     snapshot.docs[0];
 
-
                 return {
-
                     id:
                         staffDoc.id,
 
                     ...staffDoc.data()
-
                 };
-
             }
 
         }
-        catch (
-            error
-        ) {
+        catch (error) {
 
             console.warn(
                 `Email lookup failed for ${field}:`,
                 error
             );
-
         }
+    }
 
+    return null;
+}
+
+
+// ============================================================
+// FIND STAFF FOR PASSWORD RESET
+// ============================================================
+// User can enter:
+// 1. Staff ID
+// 2. Staff Code
+// 3. Employee ID
+// 4. Email
+// ============================================================
+
+async function findStaffForPasswordReset(
+    value
+) {
+
+    const input =
+        String(
+            value || ""
+        ).trim();
+
+    if (!input) {
+        return null;
+    }
+
+
+    // --------------------------------------------------------
+    // FIRST TRY STAFF ID
+    // --------------------------------------------------------
+
+    const staff =
+        await findStaff(
+            input
+        );
+
+    if (staff) {
+        return staff;
+    }
+
+
+    // --------------------------------------------------------
+    // THEN TRY EMAIL
+    // --------------------------------------------------------
+
+    if (
+        input.includes("@")
+    ) {
+
+        const staffByEmail =
+            await findStaffByEmail(
+                input
+            );
+
+        if (staffByEmail) {
+            return staffByEmail;
+        }
     }
 
 
@@ -267,7 +315,22 @@ function isStaffActive(
     ].includes(
         status
     );
+}
 
+
+// ============================================================
+// GET STAFF LOGIN EMAIL
+// ============================================================
+
+function getStaffLoginEmail(
+    staff
+) {
+
+    return String(
+        staff?.email ||
+        staff?.loginEmail ||
+        ""
+    ).trim();
 }
 
 
@@ -296,12 +359,16 @@ function saveStaffSession(
             staff.fullName ||
             "",
 
+        email:
+            staff.email ||
+            staff.loginEmail ||
+            "",
+
         role:
             "staff",
 
         loginTime:
             new Date().toISOString()
-
     };
 
 
@@ -311,12 +378,11 @@ function saveStaffSession(
             session
         )
     );
-
 }
 
 
 // ============================================================
-// STAFF LOGIN
+// LOGIN
 // ============================================================
 
 async function loginStaff() {
@@ -325,19 +391,17 @@ async function loginStaff() {
 
 
     const staffId =
-        staffIdInput?.value
-            ?.trim() ||
-        "";
+        staffIdInput.value
+            .trim();
 
 
     const password =
-        passwordInput?.value ||
-        "";
+        passwordInput.value;
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // VALIDATION
-    // ========================================================
+    // --------------------------------------------------------
 
     if (!staffId) {
 
@@ -345,7 +409,7 @@ async function loginStaff() {
             "Please enter Staff ID."
         );
 
-        staffIdInput?.focus();
+        staffIdInput.focus();
 
         return;
     }
@@ -357,7 +421,7 @@ async function loginStaff() {
             "Please enter password."
         );
 
-        passwordInput?.focus();
+        passwordInput.focus();
 
         return;
     }
@@ -373,6 +437,7 @@ async function loginStaff() {
     try {
 
         // ====================================================
+        // STEP 1
         // FIND STAFF
         // ====================================================
 
@@ -393,6 +458,7 @@ async function loginStaff() {
 
 
         // ====================================================
+        // STEP 2
         // CHECK STATUS
         // ====================================================
 
@@ -411,17 +477,14 @@ async function loginStaff() {
 
 
         // ====================================================
-        // LOGIN EMAIL
+        // STEP 3
+        // GET LOGIN EMAIL
         // ====================================================
 
         const loginEmail =
-            String(
-                staff.email ||
-                staff.loginEmail ||
-                ""
-            )
-            .trim()
-            .toLowerCase();
+            getStaffLoginEmail(
+                staff
+            );
 
 
         if (!loginEmail) {
@@ -435,7 +498,8 @@ async function loginStaff() {
 
 
         // ====================================================
-        // FIREBASE AUTH
+        // STEP 4
+        // FIREBASE AUTH LOGIN
         // ====================================================
 
         const credential =
@@ -447,6 +511,7 @@ async function loginStaff() {
 
 
         // ====================================================
+        // STEP 5
         // SAVE SESSION
         // ====================================================
 
@@ -454,6 +519,10 @@ async function loginStaff() {
             staff
         );
 
+
+        // ====================================================
+        // SAVE FIREBASE UID
+        // ====================================================
 
         sessionStorage.setItem(
             "srStaffUid",
@@ -471,6 +540,10 @@ async function loginStaff() {
         );
 
 
+        // ====================================================
+        // REDIRECT
+        // ====================================================
+
         setTimeout(
             () => {
 
@@ -482,9 +555,7 @@ async function loginStaff() {
         );
 
     }
-    catch (
-        error
-    ) {
+    catch (error) {
 
         console.error(
             "Staff login error:",
@@ -503,7 +574,6 @@ async function loginStaff() {
 
             message =
                 "Invalid Staff ID or password.";
-
         }
 
         else if (
@@ -513,7 +583,6 @@ async function loginStaff() {
 
             message =
                 "Staff login email is invalid.";
-
         }
 
         else if (
@@ -523,7 +592,6 @@ async function loginStaff() {
 
             message =
                 "This login account has been disabled.";
-
         }
 
         else if (
@@ -533,7 +601,6 @@ async function loginStaff() {
 
             message =
                 "Too many attempts. Please try again later.";
-
         }
 
         else if (
@@ -543,7 +610,6 @@ async function loginStaff() {
 
             message =
                 "Network error. Please check your internet connection.";
-
         }
 
 
@@ -559,9 +625,7 @@ async function loginStaff() {
 
         loginBtn.textContent =
             "Login";
-
     }
-
 }
 
 
@@ -572,24 +636,21 @@ async function loginStaff() {
 function createPasswordResetModal() {
 
     // --------------------------------------------------------
-    // Don't create twice
+    // Already created?
     // --------------------------------------------------------
 
-    const existing =
+    if (
         document.getElementById(
             "srPasswordResetModal"
-        );
-
-
-    if (existing) {
+        )
+    ) {
 
         return;
-
     }
 
 
     // --------------------------------------------------------
-    // MODAL
+    // MODAL HTML
     // --------------------------------------------------------
 
     const modal =
@@ -616,39 +677,45 @@ function createPasswordResetModal() {
                     Create / Reset Password
                 </h2>
 
-                <p>
+                <p class="sr-reset-description">
                     Password create panna
-                    registered Staff ID or Email use pannunga.
+                    registered Staff ID or Email
+                    use pannunga.
                 </p>
+
 
                 <label>
                     Staff ID / Email
                 </label>
 
+
                 <input
                     type="text"
-                    id="srResetInput"
+                    id="srResetStaffInput"
                     placeholder="Enter Staff ID or Email"
-                    autocomplete="username"
+                    autocomplete="email"
                 >
+
 
                 <div
                     id="srResetMessage"
                     class="sr-reset-message"
                 ></div>
 
+
                 <button
                     type="button"
                     id="srSendResetBtn"
-                    class="sr-reset-primary"
+                    class="sr-send-reset-btn"
                 >
                     Send Password Link
                 </button>
 
+
                 <button
                     type="button"
-                    id="srCloseResetBtn"
-                    class="sr-reset-secondary"
+                    id="srCancelResetBtn"
+                    class="sr-cancel-reset-btn"
                 >
                     Cancel
                 </button>
@@ -656,7 +723,6 @@ function createPasswordResetModal() {
             </div>
 
         </div>
-
     `;
 
 
@@ -665,9 +731,9 @@ function createPasswordResetModal() {
     );
 
 
-    // ========================================================
-    // MODAL STYLE
-    // ========================================================
+    // --------------------------------------------------------
+    // MODAL CSS
+    // --------------------------------------------------------
 
     const style =
         document.createElement(
@@ -681,33 +747,26 @@ function createPasswordResetModal() {
 
     style.textContent = `
 
-        .sr-reset-overlay {
-
+        #srPasswordResetModal {
             position: fixed;
-
             inset: 0;
-
-            background:
-                rgba(5, 15, 35, 0.72);
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
             z-index: 99999;
-
-            padding: 20px;
-
         }
 
+        .sr-reset-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 20px;
+        }
 
         .sr-reset-card {
-
-            width: 100%;
-
-            max-width: 420px;
+            width: min(430px, 100%);
 
             background: #ffffff;
 
@@ -717,220 +776,170 @@ function createPasswordResetModal() {
 
             box-shadow:
                 0 25px 70px
-                rgba(0,0,0,0.25);
+                rgba(0,0,0,0.30);
 
             font-family:
                 Arial,
                 Helvetica,
                 sans-serif;
-
         }
-
 
         .sr-reset-icon {
-
-            width: 55px;
-
-            height: 55px;
+            width: 54px;
+            height: 54px;
 
             display: flex;
-
             align-items: center;
-
             justify-content: center;
 
-            background: #eef5ff;
+            background: #eef4ff;
 
-            border-radius: 15px;
+            border-radius: 14px;
 
-            font-size: 27px;
+            font-size: 28px;
 
-            margin-bottom: 15px;
-
+            margin-bottom: 14px;
         }
-
 
         .sr-reset-card h2 {
+            margin: 0 0 8px;
 
-            margin:
-                0 0 8px;
+            color: #0f172a;
 
-            color:
-                #0f172a;
-
-            font-size:
-                23px;
-
+            font-size: 24px;
         }
 
+        .sr-reset-description {
+            margin: 0 0 22px;
 
-        .sr-reset-card p {
+            color: #64748b;
 
-            margin:
-                0 0 20px;
+            font-size: 14px;
 
-            color:
-                #64748b;
-
-            font-size:
-                14px;
-
-            line-height:
-                1.6;
-
+            line-height: 1.5;
         }
-
 
         .sr-reset-card label {
-
             display: block;
 
             margin-bottom: 7px;
 
-            color:
-                #334155;
+            color: #334155;
 
-            font-size:
-                13px;
+            font-size: 13px;
 
-            font-weight:
-                700;
-
+            font-weight: 700;
         }
 
-
         .sr-reset-card input {
-
             width: 100%;
 
-            box-sizing:
-                border-box;
+            box-sizing: border-box;
 
-            padding:
-                13px 14px;
+            padding: 13px 14px;
 
             border:
                 1px solid #cbd5e1;
 
-            border-radius:
-                10px;
+            border-radius: 10px;
+
+            font-size: 15px;
 
             outline: none;
 
-            font-size:
-                15px;
-
-            margin-bottom:
-                12px;
-
+            margin-bottom: 10px;
         }
 
-
         .sr-reset-card input:focus {
-
-            border-color:
-                #2563eb;
+            border-color: #2563eb;
 
             box-shadow:
                 0 0 0 3px
-                rgba(37,99,235,0.12);
-
+                rgba(37,99,235,0.10);
         }
-
 
         .sr-reset-message {
+            min-height: 20px;
 
-            min-height:
-                20px;
+            margin: 4px 0 12px;
 
-            margin:
-                5px 0 12px;
+            font-size: 13px;
 
-            font-size:
-                13px;
-
-            line-height:
-                1.5;
-
+            line-height: 1.4;
         }
 
+        .sr-reset-message.error {
+            color: #dc2626;
+        }
 
-        .sr-reset-primary {
+        .sr-reset-message.success {
+            color: #15803d;
+        }
 
+        .sr-send-reset-btn {
             width: 100%;
 
-            border: none;
+            border: 0;
 
-            border-radius:
-                10px;
+            border-radius: 10px;
 
-            padding:
-                13px;
+            padding: 13px;
 
-            background:
-                #2563eb;
+            background: #2563eb;
 
-            color:
-                #ffffff;
+            color: #ffffff;
 
-            font-size:
-                15px;
+            font-size: 15px;
 
-            font-weight:
-                700;
+            font-weight: 700;
 
             cursor: pointer;
-
-            margin-bottom:
-                9px;
-
         }
 
-
-        .sr-reset-primary:hover {
-
-            background:
-                #1d4ed8;
-
+        .sr-send-reset-btn:hover {
+            background: #1d4ed8;
         }
 
+        .sr-send-reset-btn:disabled {
+            opacity: 0.65;
 
-        .sr-reset-primary:disabled {
-
-            opacity:
-                0.7;
-
-            cursor:
-                not-allowed;
-
+            cursor: not-allowed;
         }
 
-
-        .sr-reset-secondary {
-
+        .sr-cancel-reset-btn {
             width: 100%;
+
+            margin-top: 10px;
+
+            padding: 12px;
 
             border:
                 1px solid #cbd5e1;
 
-            border-radius:
-                10px;
+            border-radius: 10px;
 
-            padding:
-                12px;
+            background: #ffffff;
 
-            background:
-                #ffffff;
+            color: #475569;
 
-            color:
-                #334155;
+            font-size: 14px;
 
-            font-size:
-                14px;
+            cursor: pointer;
+        }
 
-            cursor:
-                pointer;
+        .sr-cancel-reset-btn:hover {
+            background: #f8fafc;
+        }
 
+        @media (max-width: 480px) {
+
+            .sr-reset-card {
+                padding: 22px;
+            }
+
+            .sr-reset-card h2 {
+                font-size: 21px;
+            }
         }
 
     `;
@@ -941,25 +950,13 @@ function createPasswordResetModal() {
     );
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // ELEMENTS
-    // ========================================================
+    // --------------------------------------------------------
 
     const resetInput =
         document.getElementById(
-            "srResetInput"
-        );
-
-
-    const sendButton =
-        document.getElementById(
-            "srSendResetBtn"
-        );
-
-
-    const closeButton =
-        document.getElementById(
-            "srCloseResetBtn"
+            "srResetStaffInput"
         );
 
 
@@ -969,28 +966,54 @@ function createPasswordResetModal() {
         );
 
 
-    // ========================================================
-    // AUTO FILL CURRENT STAFF ID / EMAIL
-    // ========================================================
-
-    if (
-        staffIdInput &&
-        staffIdInput.value.trim()
-    ) {
-
-        resetInput.value =
-            staffIdInput.value.trim();
-
-    }
+    const sendBtn =
+        document.getElementById(
+            "srSendResetBtn"
+        );
 
 
-    // ========================================================
+    const cancelBtn =
+        document.getElementById(
+            "srCancelResetBtn"
+        );
+
+
+    // --------------------------------------------------------
+    // CLOSE MODAL
+    // --------------------------------------------------------
+
+    cancelBtn.addEventListener(
+        "click",
+        () => {
+
+            modal.remove();
+
+            const styleElement =
+                document.getElementById(
+                    "srPasswordResetStyle"
+                );
+
+            if (styleElement) {
+                styleElement.remove();
+            }
+        }
+    );
+
+
+    // --------------------------------------------------------
     // SEND RESET LINK
-    // ========================================================
+    // --------------------------------------------------------
 
-    sendButton.addEventListener(
+    sendBtn.addEventListener(
         "click",
         async () => {
+
+            resetMessage.textContent =
+                "";
+
+            resetMessage.className =
+                "sr-reset-message";
+
 
             const value =
                 resetInput.value.trim();
@@ -999,114 +1022,97 @@ function createPasswordResetModal() {
             if (!value) {
 
                 resetMessage.textContent =
-                    "Please enter Staff ID or Email.";
+                    "Staff ID / Email enter pannunga.";
 
-                resetMessage.style.color =
-                    "#dc2626";
+                resetMessage.className =
+                    "sr-reset-message error";
+
+                resetInput.focus();
 
                 return;
             }
 
 
-            sendButton.disabled =
+            sendBtn.disabled =
                 true;
 
-            sendButton.textContent =
+            sendBtn.textContent =
                 "Checking...";
 
 
             try {
 
-                let email =
-                    "";
+                // ====================================================
+                // FIND STAFF
+                // ====================================================
+
+                const staff =
+                    await findStaffForPasswordReset(
+                        value
+                    );
 
 
-                // =================================================
-                // CASE 1
-                // EMAIL ENTERED
-                // =================================================
+                if (!staff) {
+
+                    resetMessage.textContent =
+                        "Staff ID / Email not found.";
+
+                    resetMessage.className =
+                        "sr-reset-message error";
+
+                    return;
+                }
+
+
+                // ====================================================
+                // CHECK STAFF STATUS
+                // ====================================================
 
                 if (
-                    value.includes("@")
+                    !isStaffActive(
+                        staff
+                    )
                 ) {
 
-                    /*
-                     * IMPORTANT:
-                     *
-                     * Email entered directly.
-                     * No Firestore lookup required.
-                     *
-                     * Firebase Authentication will
-                     * handle the registered email.
-                     */
+                    resetMessage.textContent =
+                        "This staff account is inactive.";
 
-                    email =
-                        value
-                            .trim()
-                            .toLowerCase();
+                    resetMessage.className =
+                        "sr-reset-message error";
 
+                    return;
                 }
 
 
-                // =================================================
-                // CASE 2
-                // STAFF ID ENTERED
-                // =================================================
+                // ====================================================
+                // GET EMAIL
+                // ====================================================
 
-                else {
-
-                    const staff =
-                        await findStaff(
-                            value
-                        );
+                const email =
+                    getStaffLoginEmail(
+                        staff
+                    );
 
 
-                    if (!staff) {
+                if (!email) {
 
-                        throw new Error(
-                            "STAFF_NOT_FOUND"
-                        );
+                    resetMessage.textContent =
+                        "Staff email is not configured.";
 
-                    }
+                    resetMessage.className =
+                        "sr-reset-message error";
 
-
-                    if (
-                        !isStaffActive(
-                            staff
-                        )
-                    ) {
-
-                        throw new Error(
-                            "STAFF_INACTIVE"
-                        );
-
-                    }
-
-
-                    email =
-                        String(
-                            staff.email ||
-                            staff.loginEmail ||
-                            ""
-                        )
-                        .trim()
-                        .toLowerCase();
-
-
-                    if (!email) {
-
-                        throw new Error(
-                            "NO_EMAIL"
-                        );
-
-                    }
-
+                    return;
                 }
 
 
-                // =================================================
-                // FIREBASE PASSWORD RESET
-                // =================================================
+                // ====================================================
+                // SEND FIREBASE RESET EMAIL
+                // ====================================================
+
+                sendBtn.textContent =
+                    "Sending...";
+
 
                 await sendPasswordResetEmail(
                     auth,
@@ -1114,85 +1120,45 @@ function createPasswordResetModal() {
                 );
 
 
-                // =================================================
+                // ====================================================
                 // SUCCESS
-                // =================================================
+                // ====================================================
 
                 resetMessage.textContent =
-                    `Password reset link sent to ${email}. Check your email.`;
+                    `Password reset link sent to ${email}`;
 
-                resetMessage.style.color =
-                    "#15803d";
+                resetMessage.className =
+                    "sr-reset-message success";
 
 
-                sendButton.disabled =
-                    true;
+                resetInput.value =
+                    "";
 
-                sendButton.textContent =
+
+                sendBtn.textContent =
                     "Link Sent";
 
+
             }
-            catch (
-                error
-            ) {
+            catch (error) {
 
                 console.error(
-                    "Reset email error:",
+                    "Password reset error:",
                     error
                 );
 
 
-                resetMessage.style.color =
-                    "#dc2626";
+                let message =
+                    "Unable to send reset link.";
 
-
-                // =================================================
-                // STAFF ID ERRORS
-                // =================================================
 
                 if (
-                    error.message ===
-                    "STAFF_NOT_FOUND"
-                ) {
-
-                    resetMessage.textContent =
-                        "Staff ID not found.";
-
-                }
-
-                else if (
-                    error.message ===
-                    "STAFF_INACTIVE"
-                ) {
-
-                    resetMessage.textContent =
-                        "This staff account is inactive.";
-
-                }
-
-                else if (
-                    error.message ===
-                    "NO_EMAIL"
-                ) {
-
-                    resetMessage.textContent =
-                        "Email is not configured for this staff.";
-
-                }
-
-
-                // =================================================
-                // FIREBASE AUTH ERRORS
-                // =================================================
-
-                else if (
                     error.code ===
                     "auth/user-not-found"
                 ) {
 
-                    resetMessage.textContent =
+                    message =
                         "This email is not registered in Firebase Authentication.";
-
                 }
 
                 else if (
@@ -1200,19 +1166,8 @@ function createPasswordResetModal() {
                     "auth/invalid-email"
                 ) {
 
-                    resetMessage.textContent =
+                    message =
                         "Invalid email address.";
-
-                }
-
-                else if (
-                    error.code ===
-                    "auth/too-many-requests"
-                ) {
-
-                    resetMessage.textContent =
-                        "Too many requests. Please try again later.";
-
                 }
 
                 else if (
@@ -1220,48 +1175,51 @@ function createPasswordResetModal() {
                     "auth/network-request-failed"
                 ) {
 
-                    resetMessage.textContent =
-                        "Network error. Please check your internet connection.";
-
+                    message =
+                        "Network error. Check your internet connection.";
                 }
 
-                else {
+                else if (
+                    error.code ===
+                    "auth/too-many-requests"
+                ) {
 
-                    resetMessage.textContent =
-                        "Unable to send reset link. Please try again.";
-
+                    message =
+                        "Too many requests. Please try again later.";
                 }
 
 
-                sendButton.disabled =
-                    false;
+                resetMessage.textContent =
+                    message;
 
-                sendButton.textContent =
-                    "Send Password Link";
+                resetMessage.className =
+                    "sr-reset-message error";
 
             }
+            finally {
 
+                sendBtn.disabled =
+                    false;
+
+
+                if (
+                    sendBtn.textContent ===
+                    "Checking..." ||
+                    sendBtn.textContent ===
+                    "Sending..."
+                ) {
+
+                    sendBtn.textContent =
+                        "Send Password Link";
+                }
+            }
         }
     );
 
 
-    // ========================================================
-    // CLOSE
-    // ========================================================
-
-    closeButton.addEventListener(
-        "click",
-        () => {
-
-            modal.remove();
-
-        }
-    );
-
-
-    // ========================================================
+    // --------------------------------------------------------
     // ENTER KEY
-    // ========================================================
+    // --------------------------------------------------------
 
     resetInput.addEventListener(
         "keydown",
@@ -1272,18 +1230,47 @@ function createPasswordResetModal() {
                 "Enter"
             ) {
 
-                sendButton.click();
+                event.preventDefault();
 
+                sendBtn.click();
             }
-
         }
     );
+
+
+    // --------------------------------------------------------
+    // FOCUS
+    // --------------------------------------------------------
+
+    setTimeout(
+        () => {
+
+            resetInput.focus();
+
+        },
+        100
+    );
+}
+
+
+// ============================================================
+// OPEN PASSWORD RESET
+// ============================================================
+
+function openPasswordReset() {
+
+    createPasswordResetModal();
 
 }
 
 
 // ============================================================
-// BIND CREATE PASSWORD / FORGOT PASSWORD
+// BIND PASSWORD RESET LINKS
+// ============================================================
+//
+// HTML-la exact ID irundhaalum work aagum.
+// ID illana text based-a Create Password / Forgot Password
+// link-ai automatically detect pannum.
 // ============================================================
 
 function bindPasswordLinks() {
@@ -1298,7 +1285,7 @@ function bindPasswordLinks() {
         element => {
 
             const text =
-                (
+                String(
                     element.textContent ||
                     ""
                 )
@@ -1306,39 +1293,39 @@ function bindPasswordLinks() {
                 .toLowerCase();
 
 
-            // =================================================
-            // CREATE PASSWORD
-            // =================================================
-
-            if (
+            const isCreatePassword =
                 text.includes(
                     "create password"
-                )
-            ) {
-
-                element.addEventListener(
-                    "click",
-                    event => {
-
-                        event.preventDefault();
-
-                        createPasswordResetModal();
-
-                    }
                 );
 
-            }
 
-
-            // =================================================
-            // FORGOT PASSWORD
-            // =================================================
-
-            if (
+            const isForgotPassword =
                 text.includes(
                     "forgot password"
-                )
+                );
+
+
+            if (
+                isCreatePassword ||
+                isForgotPassword
             ) {
+
+                // Prevent duplicate binding
+
+                if (
+                    element.dataset
+                        .srPasswordBound ===
+                    "true"
+                ) {
+
+                    return;
+                }
+
+
+                element.dataset
+                    .srPasswordBound =
+                    "true";
+
 
                 element.addEventListener(
                     "click",
@@ -1346,21 +1333,77 @@ function bindPasswordLinks() {
 
                         event.preventDefault();
 
-                        createPasswordResetModal();
+                        openPasswordReset();
 
                     }
                 );
-
             }
 
         }
     );
 
+
+    // --------------------------------------------------------
+    // ALSO SUPPORT COMMON IDS
+    // --------------------------------------------------------
+
+    const possibleIds = [
+        "createPasswordBtn",
+        "createPasswordLink",
+        "forgotPasswordBtn",
+        "forgotPasswordLink",
+        "resetPasswordBtn",
+        "resetPasswordLink"
+    ];
+
+
+    possibleIds.forEach(
+        id => {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (!element) {
+                return;
+            }
+
+
+            if (
+                element.dataset
+                    .srPasswordBound ===
+                "true"
+            ) {
+
+                return;
+            }
+
+
+            element.dataset
+                .srPasswordBound =
+                "true";
+
+
+            element.addEventListener(
+                "click",
+                event => {
+
+                    event.preventDefault();
+
+                    openPasswordReset();
+
+                }
+            );
+
+        }
+    );
 }
 
 
 // ============================================================
-// LOGIN FORM
+// FORM SUBMIT
 // ============================================================
 
 if (
@@ -1377,8 +1420,31 @@ if (
 
         }
     );
-
 }
+
+
+// ============================================================
+// PAGE LOAD
+// ============================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        bindPasswordLinks();
+
+    }
+);
+
+
+// ============================================================
+// ALSO RUN IMMEDIATELY
+// ============================================================
+// Module script usually runs after HTML is parsed.
+// This makes it safe in both cases.
+// ============================================================
+
+bindPasswordLinks();
 
 
 // ============================================================
@@ -1423,55 +1489,4 @@ if (
         );
 
     }
-
 }
-const existingSession =
-    sessionStorage.getItem(
-        "srStaffSession"
-    );
-
-if (
-    existingSession
-) {
-
-    try {
-
-        const session =
-            JSON.parse(
-                existingSession
-            );
-
-        if (
-            session?.role ===
-            "staff"
-        ) {
-
-            console.log(
-                "Existing staff session:",
-                session
-            );
-
-        }
-
-    }
-    catch {
-
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// BIND CREATE PASSWORD / FORGOT PASSWORD
-// ============================================================
-
-bindPasswordLinks();
-
-
-// ============================================================
-// END
-// ============================================================
