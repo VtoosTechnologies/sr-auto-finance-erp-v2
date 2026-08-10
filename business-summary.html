@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Business Summary - SR Auto Finance
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        .header {
+            height: 74px;
+            background: #0f172a;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+
+            border-radius: 12px;
+
+            background: #1683e8;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 19px;
+        }
+
+        .brand p {
+            margin: 3px 0 0;
+            font-size: 11px;
+            color: #cbd5e1;
+        }
+
+        .back-btn {
+            border: 1px solid #475569;
+            background: transparent;
+            color: white;
+
+            padding: 9px 15px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+        }
+
+        /* =========================================
+           MAIN
+        ========================================= */
+
+        .main {
+            max-width: 1450px;
+            margin: auto;
+            padding: 28px 22px 50px;
+        }
+
+        .page-title {
+            margin-bottom: 20px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 27px;
+        }
+
+        .page-title p {
+            margin: 5px 0 0;
+            color: #64748b;
+        }
+
+        /* =========================================
+           FILTERS
+        ========================================= */
+
+        .filter-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+
+            padding: 18px;
+
+            margin-bottom: 20px;
+        }
+
+        .filter-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(5, 1fr);
+
+            gap: 12px;
+        }
+
+        .field label {
+            display: block;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            color: #475569;
+
+            margin-bottom: 6px;
+        }
+
+        .field select,
+        .field input {
+
+            width: 100%;
+
+            height: 42px;
+
+            border:
+                1px solid
+                #cbd5e1;
+
+            border-radius: 8px;
+
+            padding: 0 10px;
+
+            background: white;
+        }
+
+        .search-btn {
+
+            margin-top: 20px;
+
+            height: 42px;
+
+            padding: 0 22px;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-weight: 700;
+
+            cursor: pointer;
+        }
+
+        /* =========================================
+           VIEW BUTTONS
+        ========================================= */
+
+        .view-buttons {
+            display: flex;
+            gap: 8px;
+
+            margin-top: 15px;
+
+            flex-wrap: wrap;
+        }
+
+        .view-btn {
+
+            border: 0;
+
+            background: #e2e8f0;
+
+            padding: 9px 15px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-weight: 700;
+        }
+
+        .view-btn.active {
+            background: #1d4ed8;
+            color: white;
+        }
+
+        /* =========================================
+           SUMMARY CARDS
+        ========================================= */
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 18px;
+        }
+
+        .summary-label {
+
+            color: #64748b;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+        .summary-value {
+
+            margin-top: 8px;
+
+            font-size: 23px;
+
+            font-weight: 800;
+        }
+
+        .green {
+            color: #15803d;
+        }
+
+        .blue {
+            color: #2563eb;
+        }
+
+        .red {
+            color: #dc2626;
+        }
+
+        .orange {
+            color: #c2410c;
+        }
+
+        /* =========================================
+           PROFIT / POSITION
+        ========================================= */
+
+        .position-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 14px;
+
+            margin-bottom: 20px;
+        }
+
+        .position-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 18px;
+        }
+
+        .position-card h3 {
+
+            margin: 0 0 14px;
+
+            font-size: 15px;
+        }
+
+        .position-row {
+
+            display: flex;
+
+            justify-content:
+                space-between;
+
+            padding: 7px 0;
+
+            border-bottom:
+                1px solid
+                #f1f5f9;
+
+            font-size: 13px;
+        }
+
+        .position-row:last-child {
+            border-bottom: 0;
+        }
+
+        /* =========================================
+           TABLE
+        ========================================= */
+
+        .table-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 18px;
+
+            margin-bottom: 20px;
+
+            overflow: hidden;
+        }
+
+        .table-title {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+            margin-bottom: 14px;
+        }
+
+        .table-wrap {
+
+            overflow-x: auto;
+        }
+
+        table {
+
+            width: 100%;
+
+            border-collapse:
+                collapse;
+
+            min-width: 1100px;
+        }
+
+        th {
+
+            background: #f8fafc;
+
+            color: #475569;
+
+            font-size: 10px;
+
+            text-align: left;
+
+            padding: 11px 9px;
+
+            white-space: nowrap;
+        }
+
+        td {
+
+            padding: 11px 9px;
+
+            border-top:
+                1px solid
+                #e2e8f0;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+        }
+
+        .money {
+            font-weight: 700;
+        }
+
+        .empty {
+
+            text-align: center;
+
+            padding: 30px;
+
+            color: #64748b;
+        }
+
+        /* =========================================
+           RESPONSIVE
+        ========================================= */
+
+        @media (
+            max-width: 1000px
+        ) {
+
+            .filter-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .summary-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .position-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+        }
+
+        @media (
+            max-width: 600px
+        ) {
+
+            .header {
+                padding: 0 14px;
+            }
+
+            .main {
+                padding:
+                    18px 12px 40px;
+            }
+
+            .filter-grid,
+            .summary-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="header">
+
+    <div class="brand">
+
+        <div class="logo">
+            SR
+        </div>
+
+        <div>
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Business Summary
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <button
+        class="back-btn"
+        onclick="location.href='reports.html'"
+    >
+        ← Reports
+    </button>
+
+</header>
+
+
+<main class="main">
+
+
+    <section class="page-title">
+
+        <h2>
+            Business Summary
+        </h2>
+
+        <p>
+            Principal, interest, collection and pending position
+        </p>
+
+    </section>
+
+
+    <!-- =========================================
+         FILTERS
+    ========================================= -->
+
+    <section class="filter-card">
+
+        <div class="filter-grid">
+
+
+            <div class="field">
+
+                <label>
+                    Customer
+                </label>
+
+                <select id="customerSelect">
+
+                    <option value="">
+                        All Customers
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Staff
+                </label>
+
+                <select id="staffSelect">
+
+                    <option value="">
+                        All Staff
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    Tenure
+                </label>
+
+                <select id="tenureSelect">
+
+                    <option value="">
+                        All Tenures
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    From Date
+                </label>
+
+                <input
+                    type="date"
+                    id="fromDate"
+                >
+
+            </div>
+
+
+            <div class="field">
+
+                <label>
+                    To Date
+                </label>
+
+                <input
+                    type="date"
+                    id="toDate"
+                >
+
+            </div>
+
+
+        </div>
+
+
+        <div>
+
+            <button
+                class="search-btn"
+                id="searchBtn"
+            >
+                Search
+            </button>
+
+        </div>
+
+
+        <div class="view-buttons">
+
+            <button
+                class="view-btn active"
+                data-view="overall"
+            >
+                Overall
+            </button>
+
+            <button
+                class="view-btn"
+                data-view="month"
+            >
+                Month Wise
+            </button>
+
+            <button
+                class="view-btn"
+                data-view="tenure"
+            >
+                Tenure Wise
+            </button>
+
+            <button
+                class="view-btn"
+                data-view="customer"
+            >
+                Customer Wise
+            </button>
+
+            <button
+                class="view-btn"
+                data-view="loan"
+            >
+                Loan Wise
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================================
+         SUMMARY
+    ========================================= -->
+
+    <section class="summary-grid">
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Principal
+            </div>
+
+            <div
+                class="summary-value blue"
+                id="totalPrincipal"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Interest
+            </div>
+
+            <div
+                class="summary-value green"
+                id="totalInterest"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Payable
+            </div>
+
+            <div
+                class="summary-value"
+                id="totalPayable"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Collected
+            </div>
+
+            <div
+                class="summary-value green"
+                id="totalCollected"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Principal Pending
+            </div>
+
+            <div
+                class="summary-value red"
+                id="principalPending"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Interest Pending
+            </div>
+
+            <div
+                class="summary-value orange"
+                id="interestPending"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Total Pending
+            </div>
+
+            <div
+                class="summary-value red"
+                id="totalPending"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+        <div class="summary-card">
+
+            <div class="summary-label">
+                Interest Collected
+            </div>
+
+            <div
+                class="summary-value green"
+                id="interestCollected"
+            >
+                ₹0
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =========================================
+         BUSINESS POSITION
+    ========================================= -->
+
+    <section class="position-grid">
+
+
+        <div class="position-card">
+
+            <h3>
+                Current Business Position
+            </h3>
+
+            <div class="position-row">
+
+                <span>
+                    Principal Disbursed
+                </span>
+
+                <strong id="positionPrincipal">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Principal Recovered
+                </span>
+
+                <strong id="positionPrincipalPaid">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Principal Outstanding
+                </span>
+
+                <strong
+                    class="red"
+                    id="positionPrincipalPending"
+                >
+                    ₹0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="position-card">
+
+            <h3>
+                Interest Position
+            </h3>
+
+            <div class="position-row">
+
+                <span>
+                    Expected Interest
+                </span>
+
+                <strong id="positionInterest">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Interest Collected
+                </span>
+
+                <strong
+                    class="green"
+                    id="positionInterestPaid"
+                >
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Interest Pending
+                </span>
+
+                <strong
+                    class="orange"
+                    id="positionInterestPending"
+                >
+                    ₹0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="position-card">
+
+            <h3>
+                Finance Income
+            </h3>
+
+            <div class="position-row">
+
+                <span>
+                    Interest Collected
+                </span>
+
+                <strong
+                    class="green"
+                    id="financeIncome"
+                >
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Penalty Collected
+                </span>
+
+                <strong id="penaltyCollected">
+                    ₹0
+                </strong>
+
+            </div>
+
+
+            <div class="position-row">
+
+                <span>
+                    Total Finance Income
+                </span>
+
+                <strong
+                    class="green"
+                    id="totalFinanceIncome"
+                >
+                    ₹0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =========================================
+         MAIN TABLE
+    ========================================= -->
+
+    <section class="table-card">
+
+        <div
+            class="table-title"
+            id="tableTitle"
+        >
+            Overall Business Summary
+        </div>
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead id="reportHead">
+                </thead>
+
+                <tbody id="reportBody">
+
+                    <tr>
+
+                        <td
+                            colspan="10"
+                            class="empty"
+                        >
+                            Loading business summary...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+<script
+    type="module"
+    src="js/business-summary.js"
+></script>
+
+
+</body>
+
+</html>
