@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Deposit Collection - SR Auto Finance
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #0f172a;
+
+        }
+
+
+        /* =====================================================
+           TOPBAR
+        ====================================================== */
+
+        .topbar {
+
+            height: 68px;
+
+            background: #ffffff;
+
+            border-bottom:
+                1px solid #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 20;
+
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .logo {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 11px;
+
+            background: #2563eb;
+
+            color: #ffffff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-title {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-subtitle {
+
+            margin-top: 2px;
+
+            font-size: 11px;
+
+            color: #64748b;
+
+        }
+
+
+        .top-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+        .back-btn,
+        .logout-btn {
+
+            border: 0;
+
+            padding:
+                9px 13px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .back-btn {
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .logout-btn {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =====================================================
+           PAGE
+        ====================================================== */
+
+        .page {
+
+            width: 100%;
+
+            max-width: 1000px;
+
+            margin: 0 auto;
+
+            padding: 24px;
+
+        }
+
+
+        .page-title {
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .page-title h1 {
+
+            margin: 0;
+
+            font-size: 24px;
+
+        }
+
+
+        .page-title p {
+
+            margin:
+                6px 0 0;
+
+            font-size: 13px;
+
+            color: #64748b;
+
+        }
+
+
+        /* =====================================================
+           STAFF SUMMARY
+        ====================================================== */
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 12px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .summary-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 12px;
+
+            padding: 16px;
+
+        }
+
+
+        .summary-label {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .summary-value {
+
+            margin-top: 8px;
+
+            font-size: 20px;
+
+            font-weight: 800;
+
+        }
+
+
+        .summary-value.green {
+
+            color: #15803d;
+
+        }
+
+
+        .summary-value.orange {
+
+            color: #c2410c;
+
+        }
+
+
+        .summary-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        .summary-value.blue {
+
+            color: #1d4ed8;
+
+        }
+
+
+        /* =====================================================
+           DEPOSIT FORM CARD
+        ====================================================== */
+
+        .form-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            padding: 20px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .section-title {
+
+            margin: 0 0 18px;
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .form-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 16px;
+
+        }
+
+
+        .form-group {
+
+            display: flex;
+
+            flex-direction: column;
+
+        }
+
+
+        .form-group.full {
+
+            grid-column:
+                1 / -1;
+
+        }
+
+
+        label {
+
+            margin-bottom: 7px;
+
+            font-size: 11px;
+
+            color: #334155;
+
+            font-weight: 700;
+
+        }
+
+
+        input,
+        select,
+        textarea {
+
+            width: 100%;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            outline: none;
+
+            font-family: inherit;
+
+            font-size: 13px;
+
+            background: #ffffff;
+
+        }
+
+
+        input,
+        select {
+
+            height: 44px;
+
+            padding:
+                0 12px;
+
+        }
+
+
+        textarea {
+
+            min-height: 80px;
+
+            padding:
+                11px 12px;
+
+            resize: vertical;
+
+        }
+
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+
+            border-color:
+                #2563eb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.10
+                );
+
+        }
+
+
+        input[readonly] {
+
+            background: #f8fafc;
+
+            color: #475569;
+
+        }
+
+
+        /* =====================================================
+           DEPOSIT PREVIEW
+        ====================================================== */
+
+        .preview {
+
+            margin-top: 20px;
+
+            background: #eff6ff;
+
+            border:
+                1px solid #bfdbfe;
+
+            border-radius: 12px;
+
+            padding: 17px;
+
+        }
+
+
+        .preview-title {
+
+            margin-bottom: 12px;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            color: #1e3a8a;
+
+        }
+
+
+        .preview-row {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                8px 0;
+
+            border-bottom:
+                1px solid
+                rgba(
+                    147,
+                    197,
+                    253,
+                    0.45
+                );
+
+            font-size: 12px;
+
+        }
+
+
+        .preview-row:last-child {
+
+            border-bottom: 0;
+
+        }
+
+
+        .preview-label {
+
+            color: #475569;
+
+        }
+
+
+        .preview-value {
+
+            font-weight: 800;
+
+        }
+
+
+        .preview-after {
+
+            color: #15803d;
+
+        }
+
+
+        /* =====================================================
+           WARNING / MESSAGE
+        ====================================================== */
+
+        .message {
+
+            display: none;
+
+            margin-bottom: 16px;
+
+            padding:
+                11px 13px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+
+        }
+
+
+        .message.error {
+
+            display: block;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border:
+                1px solid #fecaca;
+
+        }
+
+
+        .message.success {
+
+            display: block;
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            border:
+                1px solid #bbf7d0;
+
+        }
+
+
+        /* =====================================================
+           ACTIONS
+        ====================================================== */
+
+        .form-actions {
+
+            display: flex;
+
+            justify-content: flex-end;
+
+            gap: 10px;
+
+            margin-top: 22px;
+
+        }
+
+
+        .cancel-btn,
+        .submit-btn {
+
+            height: 46px;
+
+            padding:
+                0 20px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .cancel-btn {
+
+            border:
+                1px solid #cbd5e1;
+
+            background: #ffffff;
+
+            color: #334155;
+
+        }
+
+
+        .submit-btn {
+
+            border: 0;
+
+            background: #2563eb;
+
+            color: #ffffff;
+
+        }
+
+
+        .submit-btn:hover {
+
+            background: #1d4ed8;
+
+        }
+
+
+        .submit-btn:disabled {
+
+            opacity: 0.55;
+
+            cursor: not-allowed;
+
+        }
+
+
+        /* =====================================================
+           REQUEST HISTORY
+        ====================================================== */
+
+        .history-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            overflow: hidden;
+
+        }
+
+
+        .history-header {
+
+            padding:
+                17px 20px;
+
+            border-bottom:
+                1px solid #e2e8f0;
+
+        }
+
+
+        .history-title {
+
+            margin: 0;
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+        }
+
+
+        .history-subtitle {
+
+            margin:
+                4px 0 0;
+
+            font-size: 11px;
+
+            color: #64748b;
+
+        }
+
+
+        .history-list {
+
+            padding: 0;
+
+        }
+
+
+        .history-item {
+
+            padding:
+                15px 20px;
+
+            border-bottom:
+                1px solid #f1f5f9;
+
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                auto
+                auto;
+
+            gap: 15px;
+
+            align-items: center;
+
+        }
+
+
+        .history-item:last-child {
+
+            border-bottom: 0;
+
+        }
+
+
+        .history-date {
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+        }
+
+
+        .history-meta {
+
+            margin-top: 5px;
+
+            font-size: 10px;
+
+            color: #64748b;
+
+        }
+
+
+        .history-amount {
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .status {
+
+            display: inline-flex;
+
+            padding:
+                5px 8px;
+
+            border-radius: 6px;
+
+            font-size: 9px;
+
+            font-weight: 800;
+
+        }
+
+
+        .status.pending {
+
+            background: #ffedd5;
+
+            color: #c2410c;
+
+        }
+
+
+        .status.accepted {
+
+            background: #dcfce7;
+
+            color: #15803d;
+
+        }
+
+
+        .status.rejected {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        .status.reversed {
+
+            background: #f1f5f9;
+
+            color: #475569;
+
+        }
+
+
+        .empty {
+
+            padding:
+                30px 20px;
+
+            text-align: center;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =====================================================
+           LOADING
+        ====================================================== */
+
+        .loading {
+
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.25
+                );
+
+            align-items: center;
+
+            justify-content: center;
+
+            z-index: 100;
+
+        }
+
+
+        .loading-box {
+
+            background: #ffffff;
+
+            padding:
+                20px 26px;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            box-shadow:
+                0 15px 40px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.2
+                );
+
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ====================================================== */
+
+        @media (
+            max-width: 750px
+        ) {
+
+            .topbar {
+
+                padding:
+                    0 12px;
+
+            }
+
+
+            .page {
+
+                padding:
+                    14px;
+
+            }
+
+
+            .brand-subtitle {
+
+                display: none;
+
+            }
+
+
+            .summary-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .form-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .form-group.full {
+
+                grid-column:
+                    auto;
+
+            }
+
+
+            .history-item {
+
+                grid-template-columns:
+                    1fr auto;
+
+            }
+
+
+            .history-item
+            .status {
+
+                grid-column:
+                    2;
+
+                grid-row:
+                    1 / span 2;
+
+            }
+
+
+            .form-actions {
+
+                flex-direction:
+                    column-reverse;
+
+            }
+
+
+            .cancel-btn,
+            .submit-btn {
+
+                width: 100%;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         TOPBAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+
+        <div class="brand">
+
+            <div class="logo">
+                SR
+            </div>
+
+
+            <div>
+
+                <div class="brand-title">
+                    SR Auto Finance
+                </div>
+
+                <div class="brand-subtitle">
+                    Staff Deposit
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+
+            <button
+                type="button"
+                class="back-btn"
+                id="backBtn"
+            >
+                ← Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                Logout
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- =====================================================
+         PAGE
+    ====================================================== -->
+
+    <main class="page">
+
+
+        <div class="page-title">
+
+            <h1>
+                Deposit Collection
+            </h1>
+
+            <p>
+                Submit collected amount to owner for approval.
+            </p>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MESSAGE
+        ================================================== -->
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+
+
+        <!-- =================================================
+             SUMMARY
+        ================================================== -->
+
+        <section class="summary-grid">
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Total Collected
+                </div>
+
+                <div
+                    class="summary-value green"
+                    id="totalCollected"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Already Deposited
+                </div>
+
+                <div
+                    class="summary-value blue"
+                    id="alreadyDeposited"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Pending Deposit
+                </div>
+
+                <div
+                    class="summary-value orange"
+                    id="pendingDeposit"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Cash in Hand
+                </div>
+
+                <div
+                    class="summary-value red"
+                    id="cashInHand"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             DEPOSIT FORM
+        ================================================== -->
+
+        <section class="form-card">
+
+
+            <h2 class="section-title">
+                New Deposit Request
+            </h2>
+
+
+            <form
+                id="depositForm"
+            >
+
+
+                <div class="form-grid">
+
+
+                    <!-- STAFF -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Staff
+                        </label>
+
+                        <input
+                            type="text"
+                            id="staffName"
+                            readonly
+                        >
+
+                    </div>
+
+
+                    <!-- DATE -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="depositDate"
+                        >
+                            Deposit Date *
+                        </label>
+
+                        <input
+                            type="date"
+                            id="depositDate"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- AMOUNT -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="depositAmount"
+                        >
+                            Deposit Amount *
+                        </label>
+
+                        <input
+                            type="number"
+                            id="depositAmount"
+                            min="1"
+                            step="0.01"
+                            placeholder="Enter deposit amount"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- MODE -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="depositMode"
+                        >
+                            Deposit Mode *
+                        </label>
+
+                        <select
+                            id="depositMode"
+                            required
+                        >
+
+                            <option value="">
+                                Select Mode
+                            </option>
+
+                            <option value="Cash">
+                                Cash
+                            </option>
+
+                            <option value="Bank Transfer">
+                                Bank Transfer
+                            </option>
+
+                            <option value="UPI">
+                                UPI
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- REFERENCE -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="referenceNumber"
+                        >
+                            Reference Number
+                        </label>
+
+                        <input
+                            type="text"
+                            id="referenceNumber"
+                            placeholder="Optional"
+                        >
+
+                    </div>
+
+
+                    <!-- REMARKS -->
+
+                    <div class="form-group">
+
+                        <label
+                            for="depositRemarks"
+                        >
+                            Remarks
+                        </label>
+
+                        <input
+                            type="text"
+                            id="depositRemarks"
+                            placeholder="Optional remarks"
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                     PREVIEW
+                ================================================== -->
+
+                <div class="preview">
+
+
+                    <div class="preview-title">
+                        Deposit Summary
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Current Cash in Hand
+                        </span>
+
+                        <span
+                            class="preview-value"
+                            id="previewCashInHand"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Deposit Amount
+                        </span>
+
+                        <span
+                            class="preview-value"
+                            id="previewDeposit"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                    <div class="preview-row">
+
+                        <span class="preview-label">
+                            Balance After Approval
+                        </span>
+
+                        <span
+                            class="preview-value preview-after"
+                            id="previewAfter"
+                        >
+                            ₹0
+                        </span>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================================
+                     ACTIONS
+                ================================================== -->
+
+                <div class="form-actions">
+
+
+                    <button
+                        type="button"
+                        class="cancel-btn"
+                        id="cancelBtn"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="submit-btn"
+                        id="submitBtn"
+                    >
+                        Submit Deposit Request
+                    </button>
+
+
+                </div>
+
+
+            </form>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             REQUEST HISTORY
+        ================================================== -->
+
+        <section class="history-card">
+
+
+            <div class="history-header">
+
+                <h2 class="history-title">
+                    Deposit Requests
+                </h2>
+
+                <p class="history-subtitle">
+                    Track submitted deposits and owner approval status.
+                </p>
+
+            </div>
+
+
+            <div
+                class="history-list"
+                id="historyList"
+            >
+
+                <div class="empty">
+                    Loading deposit requests...
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         LOADING
+    ====================================================== -->
+
+    <div
+        class="loading"
+        id="loadingOverlay"
+    >
+
+        <div class="loading-box">
+            Loading deposit details...
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script
+        type="module"
+        src="js/staff-deposit.js"
+    ></script>
+
+
+</body>
+
+</html>
