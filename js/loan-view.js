@@ -2384,7 +2384,7 @@ function renderRepaymentSchedule() {
     // -------------------------------------------------
 
     setText(
-        "repaymentTotalDue",
+        "scheduleTotalDue",
         formatCurrency(
             totalDue
         )
@@ -2392,7 +2392,7 @@ function renderRepaymentSchedule() {
 
 
     setText(
-        "repaymentTotalPaid",
+        "scheduleTotalPaid",
         formatCurrency(
             totalPaid
         )
@@ -2400,7 +2400,7 @@ function renderRepaymentSchedule() {
 
 
     setText(
-        "repaymentTotalPending",
+        "scheduleTotalPending",
         formatCurrency(
             totalPending
         )
@@ -2408,7 +2408,7 @@ function renderRepaymentSchedule() {
 
 
     setText(
-        "repaymentTotalPenalty",
+        "scheduleTotalPenalty",
         formatCurrency(
             totalPenalty
         )
