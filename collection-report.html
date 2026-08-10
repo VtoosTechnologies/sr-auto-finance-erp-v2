@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Collection Report - SR Auto Finance</title>
+
+<style>
+
+:root{
+    --primary:#173f7a;
+    --secondary:#2563eb;
+    --green:#16803c;
+    --red:#c62828;
+    --orange:#b45309;
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --border:#e5e7eb;
+    --text:#1f2937;
+    --muted:#6b7280;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:var(--bg);
+    font-family:Arial,sans-serif;
+    color:var(--text);
+}
+
+/* HEADER */
+
+.header{
+    background:var(--primary);
+    color:#fff;
+    padding:16px 22px;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.logo{
+    width:42px;
+    height:42px;
+
+    border-radius:9px;
+
+    background:#fff;
+    color:var(--primary);
+
+    display:grid;
+    place-items:center;
+
+    font-weight:800;
+}
+
+.brand h1{
+    margin:0;
+    font-size:20px;
+}
+
+.brand p{
+    margin:3px 0 0;
+    font-size:12px;
+    opacity:.85;
+}
+
+/* MAIN */
+
+main{
+    max-width:1500px;
+    margin:auto;
+    padding:20px;
+}
+
+.head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+
+    flex-wrap:wrap;
+}
+
+.head h2{
+    margin:0 0 5px;
+}
+
+.head p{
+    margin:0;
+    color:var(--muted);
+}
+
+/* CARD */
+
+.card{
+    background:var(--card);
+
+    border:1px solid var(--border);
+    border-radius:12px;
+
+    padding:16px;
+    margin-top:16px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+
+/* BUTTON */
+
+button{
+    border:0;
+    border-radius:8px;
+
+    padding:10px 14px;
+
+    cursor:pointer;
+
+    font-weight:700;
+}
+
+.primary{
+    background:var(--secondary);
+    color:#fff;
+}
+
+.success{
+    background:var(--green);
+    color:#fff;
+}
+
+.light{
+    background:#eef2f7;
+    color:#1f2937;
+}
+
+/* FILTER */
+
+.filters{
+    display:grid;
+    grid-template-columns:
+        repeat(6,1fr);
+
+    gap:10px;
+}
+
+.field label{
+    display:block;
+
+    font-size:12px;
+    font-weight:700;
+
+    color:var(--muted);
+
+    margin-bottom:5px;
+}
+
+input,
+select{
+    width:100%;
+
+    padding:9px;
+
+    border:1px solid #d1d5db;
+    border-radius:8px;
+
+    background:#fff;
+}
+
+/* MODES */
+
+.modes{
+    display:flex;
+
+    gap:8px;
+
+    flex-wrap:wrap;
+
+    margin-top:12px;
+}
+
+.mode{
+    background:#eef2f7;
+}
+
+.mode.active{
+    background:var(--primary);
+    color:#fff;
+}
+
+/* SUMMARY */
+
+.summary{
+    display:grid;
+
+    grid-template-columns:
+        repeat(5,1fr);
+
+    gap:10px;
+}
+
+.stat{
+    border:1px solid var(--border);
+
+    border-radius:9px;
+
+    padding:13px;
+}
+
+.stat small{
+    display:block;
+
+    color:var(--muted);
+
+    font-weight:700;
+}
+
+.stat strong{
+    display:block;
+
+    font-size:21px;
+
+    margin-top:6px;
+}
+
+.green{
+    color:var(--green);
+}
+
+.red{
+    color:var(--red);
+}
+
+.orange{
+    color:var(--orange);
+}
+
+/* TABLE */
+
+.table-wrap{
+    overflow:auto;
+}
+
+.table{
+    width:100%;
+
+    border-collapse:collapse;
+
+    min-width:1100px;
+}
+
+.table th,
+.table td{
+    padding:9px;
+
+    border-bottom:
+        1px solid var(--border);
+
+    white-space:nowrap;
+
+    text-align:left;
+}
+
+.table th{
+    background:#f3f6fa;
+
+    font-size:12px;
+}
+
+.num{
+    text-align:right !important;
+}
+
+/* MODAL */
+
+.modal{
+    display:none;
+
+    position:fixed;
+
+    inset:0;
+
+    background:rgba(0,0,0,.45);
+
+    padding:20px;
+
+    z-index:10;
+
+    place-items:center;
+}
+
+.modal.show{
+    display:grid;
+}
+
+.modal-card{
+    background:#fff;
+
+    width:min(900px,100%);
+
+    max-height:90vh;
+
+    overflow:auto;
+
+    border-radius:12px;
+
+    padding:18px;
+}
+
+.detail{
+    display:grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap:10px;
+}
+
+.detail > div{
+    border-bottom:
+        1px solid var(--border);
+
+    padding:9px;
+}
+
+.detail b{
+    display:block;
+
+    color:var(--muted);
+
+    font-size:12px;
+
+    margin-bottom:4px;
+}
+
+.modal-actions{
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:8px;
+
+    margin-top:15px;
+}
+
+/* EMPTY */
+
+.empty{
+    text-align:center;
+
+    padding:30px;
+
+    color:var(--muted);
+}
+
+.note{
+    padding:10px;
+
+    background:#fff8e8;
+
+    border:1px solid #f3d08a;
+
+    border-radius:8px;
+
+    margin-top:10px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1000px){
+
+    .filters{
+        grid-template-columns:
+            repeat(3,1fr);
+    }
+
+    .summary{
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+}
+
+@media(max-width:600px){
+
+    .filters,
+    .summary{
+        grid-template-columns:1fr;
+    }
+
+    .detail{
+        grid-template-columns:1fr;
+    }
+
+    main{
+        padding:10px;
+    }
+
+}
+
+/* PRINT */
+
+@media print{
+
+    .no-print{
+        display:none !important;
+    }
+
+    body{
+        background:#fff;
+    }
+
+    .card{
+        box-shadow:none;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- =================================================
+     HEADER
+================================================== -->
+
+<header class="header">
+
+    <div class="brand">
+
+        <div class="logo">
+            SR
+        </div>
+
+        <div>
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Collection Report
+            </p>
+
+        </div>
+
+    </div>
+
+    <button
+        class="light no-print"
+        onclick="location.href='reports.html'"
+    >
+        ← Reports
+    </button>
+
+</header>
+
+
+<main>
+
+<!-- =================================================
+     PAGE HEADER
+================================================== -->
+
+<div class="head">
+
+    <div>
+
+        <h2>
+            Collection Report
+        </h2>
+
+        <p>
+            Due, paid, pending and penalty details
+        </p>
+
+    </div>
+
+
+    <div class="no-print">
+
+        <button
+            class="light"
+            id="printBtn"
+        >
+            Print
+        </button>
+
+        <button
+            class="success"
+            id="downloadBtn"
+        >
+            Download
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =================================================
+     FILTERS
+================================================== -->
+
+<section class="card no-print">
+
+    <div class="filters">
+
+        <div class="field">
+
+            <label>
+                From Date
+            </label>
+
+            <input
+                type="date"
+                id="fromDate"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                To Date
+            </label>
+
+            <input
+                type="date"
+                id="toDate"
+            >
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Staff
+            </label>
+
+            <select id="staffFilter">
+
+                <option value="">
+                    All Staff
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Customer
+            </label>
+
+            <select id="customerFilter">
+
+                <option value="">
+                    All Customers
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Loan
+            </label>
+
+            <select id="loanFilter">
+
+                <option value="">
+                    All Loans
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div>
+
+            <label>
+                &nbsp;
+            </label>
+
+            <button
+                class="primary"
+                id="searchBtn"
+            >
+                Search
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- REPORT MODES -->
+
+    <div class="modes">
+
+        <button
+            class="mode active"
+            data-group="date"
+        >
+            Date Wise
+        </button>
+
+        <button
+            class="mode"
+            data-group="week"
+        >
+            Week Wise
+        </button>
+
+        <button
+            class="mode"
+            data-group="month"
+        >
+            Month Wise
+        </button>
+
+        <button
+            class="mode"
+            data-group="staff"
+        >
+            Staff Wise
+        </button>
+
+        <button
+            class="mode"
+            data-group="customer"
+        >
+            Customer Wise
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- =================================================
+     SUMMARY
+================================================== -->
+
+<section class="card">
+
+    <div class="summary">
+
+        <div class="stat">
+
+            <small>
+                Total Due Amount
+            </small>
+
+            <strong id="sumDue">
+                ₹0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <small>
+                Total Paid Amount
+            </small>
+
+            <strong
+                class="green"
+                id="sumPaid"
+            >
+                ₹0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <small>
+                Total Pending
+            </small>
+
+            <strong
+                class="red"
+                id="sumPending"
+            >
+                ₹0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <small>
+                Penalty Collected
+            </small>
+
+            <strong
+                class="orange"
+                id="sumPenalty"
+            >
+                ₹0
+            </strong>
+
+        </div>
+
+
+        <div class="stat">
+
+            <small>
+                Total Collection
+            </small>
+
+            <strong
+                class="green"
+                id="sumTotal"
+            >
+                ₹0
+            </strong>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =================================================
+     REPORT TABLE
+================================================== -->
+
+<section class="card">
+
+    <b id="reportTitle">
+        Date Wise Collection
+    </b>
+
+
+    <div
+        class="table-wrap"
+        style="margin-top:12px"
+    >
+
+        <table class="table">
+
+            <thead id="head">
+            </thead>
+
+            <tbody id="body">
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <div
+        id="note"
+        class="note"
+        style="display:none"
+    >
+    </div>
+
+</section>
+
+</main>
+
+
+<!-- =================================================
+     MODAL
+================================================== -->
+
+<div
+    class="modal"
+    id="modal"
+>
+
+    <div class="modal-card">
+
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+            "
+        >
+
+            <h3>
+                Collection Transaction
+            </h3>
+
+            <button
+                class="light"
+                id="close"
+            >
+                Close
+            </button>
+
+        </div>
+
+
+        <div id="modalContent">
+        </div>
+
+
+        <div class="modal-actions no-print">
+
+            <button
+                class="light"
+                id="modalPrint"
+            >
+                Print
+            </button>
+
+            <button
+                class="success"
+                id="modalDownload"
+            >
+                Download
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =================================================
+     JAVASCRIPT
+================================================== -->
+
+<script
+    type="module"
+    src="js/collection-report.js"
+></script>
+
+</body>
+</html>
