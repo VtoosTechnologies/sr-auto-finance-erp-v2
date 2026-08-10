@@ -2948,22 +2948,6 @@ window.downloadRepaymentInstallment =
 
 
 // =====================================================
-// PAGE INITIALIZATION
-// =====================================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-
-        setupLoanDocumentsToggle();
-
-        setupRepaymentToggle();
-
-    }
-);
-
-
-// =====================================================
 // END PART 2
 // =====================================================
 // =====================================================
@@ -3903,7 +3887,6 @@ function setupPaymentHistoryToggle() {
 
 }
 
-
 // =====================================================
 // INITIALIZE ALL PAGE CONTROLS
 // =====================================================
@@ -3916,7 +3899,7 @@ function initializePageControls() {
 
     setupPrintButton();
 
-    setupDocumentToggle();
+    setupLoanDocumentsToggle();
 
     setupRepaymentToggle();
 
@@ -3937,8 +3920,6 @@ document.addEventListener(
 
     }
 );
-
-
 // =====================================================
 // GLOBAL REFRESH
 // =====================================================
