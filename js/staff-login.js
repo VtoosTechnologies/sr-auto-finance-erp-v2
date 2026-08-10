@@ -6,6 +6,7 @@
 
 import {
     signInWithEmailAndPassword,
+    signOut,
     sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
@@ -56,12 +57,17 @@ function showMessage(
         return;
     }
 
-    messageElement.textContent = message;
+    messageElement.textContent =
+        message;
 
     messageElement.className =
         `message ${type}`;
 }
 
+
+// ============================================================
+// CLEAR MESSAGE
+// ============================================================
 
 function clearMessage() {
 
@@ -69,7 +75,8 @@ function clearMessage() {
         return;
     }
 
-    messageElement.textContent = "";
+    messageElement.textContent =
+        "";
 
     messageElement.className =
         "message";
@@ -77,10 +84,12 @@ function clearMessage() {
 
 
 // ============================================================
-// FIND STAFF
+// FIND STAFF BY STAFF ID
 // ============================================================
 
-async function findStaff(staffId) {
+async function findStaff(
+    staffId
+) {
 
     const staffRef =
         collection(
@@ -88,11 +97,13 @@ async function findStaff(staffId) {
             "staff"
         );
 
+
     const possibleFields = [
         "staffId",
         "staffCode",
         "employeeId"
     ];
+
 
     for (
         const field
@@ -115,7 +126,9 @@ async function findStaff(staffId) {
                 );
 
 
-            if (!snapshot.empty) {
+            if (
+                !snapshot.empty
+            ) {
 
                 const staffDoc =
                     snapshot.docs[0];
@@ -133,7 +146,9 @@ async function findStaff(staffId) {
             }
 
         }
-        catch (error) {
+        catch (
+            error
+        ) {
 
             console.warn(
                 `Staff lookup failed for ${field}:`,
@@ -153,7 +168,9 @@ async function findStaff(staffId) {
 // FIND STAFF BY EMAIL
 // ============================================================
 
-async function findStaffByEmail(email) {
+async function findStaffByEmail(
+    email
+) {
 
     const staffRef =
         collection(
@@ -189,7 +206,9 @@ async function findStaffByEmail(email) {
                 );
 
 
-            if (!snapshot.empty) {
+            if (
+                !snapshot.empty
+            ) {
 
                 const staffDoc =
                     snapshot.docs[0];
@@ -207,7 +226,9 @@ async function findStaffByEmail(email) {
             }
 
         }
-        catch (error) {
+        catch (
+            error
+        ) {
 
             console.warn(
                 `Email lookup failed for ${field}:`,
@@ -227,7 +248,9 @@ async function findStaffByEmail(email) {
 // CHECK STAFF STATUS
 // ============================================================
 
-function isStaffActive(staff) {
+function isStaffActive(
+    staff
+) {
 
     const status =
         String(
@@ -244,6 +267,7 @@ function isStaffActive(staff) {
     ].includes(
         status
     );
+
 }
 
 
@@ -251,7 +275,9 @@ function isStaffActive(staff) {
 // SAVE STAFF SESSION
 // ============================================================
 
-function saveStaffSession(staff) {
+function saveStaffSession(
+    staff
+) {
 
     const session = {
 
@@ -290,7 +316,7 @@ function saveStaffSession(staff) {
 
 
 // ============================================================
-// LOGIN
+// STAFF LOGIN
 // ============================================================
 
 async function loginStaff() {
@@ -299,22 +325,24 @@ async function loginStaff() {
 
 
     const staffId =
-        staffIdInput
-            ?.value
+        staffIdInput?.value
             ?.trim() ||
         "";
 
 
     const password =
-        passwordInput
-            ?.value ||
+        passwordInput?.value ||
         "";
 
+
+    // ========================================================
+    // VALIDATION
+    // ========================================================
 
     if (!staffId) {
 
         showMessage(
-            "Please enter Staff ID or Email."
+            "Please enter Staff ID."
         );
 
         staffIdInput?.focus();
@@ -335,57 +363,29 @@ async function loginStaff() {
     }
 
 
-    if (loginBtn) {
+    loginBtn.disabled =
+        true;
 
-        loginBtn.disabled =
-            true;
-
-        loginBtn.textContent =
-            "Checking...";
-
-    }
+    loginBtn.textContent =
+        "Checking...";
 
 
     try {
 
         // ====================================================
-        // STEP 1
         // FIND STAFF
         // ====================================================
 
-        let staff = null;
+        const staff =
+            await findStaff(
+                staffId
+            );
 
-
-        // If user entered email
-        if (
-            staffId.includes("@")
-        ) {
-
-            staff =
-                await findStaffByEmail(
-                    staffId
-                );
-
-        }
-        else {
-
-            staff =
-                await findStaff(
-                    staffId
-                );
-
-        }
-
-
-        // ====================================================
-        // STEP 2
-        // STAFF RECORD CHECK
-        // ====================================================
 
         if (!staff) {
 
             showMessage(
-                "Staff ID / Email not found."
+                "Staff ID not found."
             );
 
             return;
@@ -393,8 +393,7 @@ async function loginStaff() {
 
 
         // ====================================================
-        // STEP 3
-        // STATUS CHECK
+        // CHECK STATUS
         // ====================================================
 
         if (
@@ -412,8 +411,7 @@ async function loginStaff() {
 
 
         // ====================================================
-        // STEP 4
-        // GET LOGIN EMAIL
+        // LOGIN EMAIL
         // ====================================================
 
         const loginEmail =
@@ -437,8 +435,7 @@ async function loginStaff() {
 
 
         // ====================================================
-        // STEP 5
-        // FIREBASE AUTH LOGIN
+        // FIREBASE AUTH
         // ====================================================
 
         const credential =
@@ -450,7 +447,6 @@ async function loginStaff() {
 
 
         // ====================================================
-        // STEP 6
         // SAVE SESSION
         // ====================================================
 
@@ -486,7 +482,9 @@ async function loginStaff() {
         );
 
     }
-    catch (error) {
+    catch (
+        error
+    ) {
 
         console.error(
             "Staff login error:",
@@ -504,7 +502,7 @@ async function loginStaff() {
         ) {
 
             message =
-                "Invalid email or password.";
+                "Invalid Staff ID or password.";
 
         }
 
@@ -514,7 +512,7 @@ async function loginStaff() {
         ) {
 
             message =
-                "Invalid email address.";
+                "Staff login email is invalid.";
 
         }
 
@@ -556,244 +554,11 @@ async function loginStaff() {
     }
     finally {
 
-        if (loginBtn) {
-
-            loginBtn.disabled =
-                false;
-
-            loginBtn.textContent =
-                "Login";
-
-        }
-
-    }
-
-}
-
-
-// ============================================================
-// GET EMAIL FOR PASSWORD RESET
-// ============================================================
-
-async function getResetEmail() {
-
-    const enteredValue =
-        staffIdInput
-            ?.value
-            ?.trim() ||
-        "";
-
-
-    if (!enteredValue) {
-
-        showMessage(
-            "Please enter Staff ID or Email first."
-        );
-
-        staffIdInput?.focus();
-
-        return null;
-    }
-
-
-    // --------------------------------------------------------
-    // CASE 1: EMAIL ENTERED
-    // --------------------------------------------------------
-
-    if (
-        enteredValue.includes("@")
-    ) {
-
-        const staff =
-            await findStaffByEmail(
-                enteredValue
-            );
-
-
-        if (!staff) {
-
-            showMessage(
-                "This email is not registered as a staff account."
-            );
-
-            return null;
-        }
-
-
-        if (
-            !isStaffActive(
-                staff
-            )
-        ) {
-
-            showMessage(
-                "This staff account is inactive."
-            );
-
-            return null;
-        }
-
-
-        return (
-            staff.email ||
-            staff.loginEmail ||
-            enteredValue
-        );
-
-    }
-
-
-    // --------------------------------------------------------
-    // CASE 2: STAFF ID ENTERED
-    // --------------------------------------------------------
-
-    const staff =
-        await findStaff(
-            enteredValue
-        );
-
-
-    if (!staff) {
-
-        showMessage(
-            "Staff ID not found."
-        );
-
-        return null;
-    }
-
-
-    if (
-        !isStaffActive(
-            staff
-        )
-    ) {
-
-        showMessage(
-            "This staff account is inactive."
-        );
-
-        return null;
-    }
-
-
-    const email =
-        String(
-            staff.email ||
-            staff.loginEmail ||
-            ""
-        )
-        .trim();
-
-
-    if (!email) {
-
-        showMessage(
-            "Email is not configured for this staff account."
-        );
-
-        return null;
-    }
-
-
-    return email;
-}
-
-
-// ============================================================
-// SEND PASSWORD RESET EMAIL
-// ============================================================
-
-async function sendResetLink() {
-
-    clearMessage();
-
-
-    try {
-
-        const email =
-            await getResetEmail();
-
-
-        if (!email) {
-
-            return;
-        }
-
-
-        // ----------------------------------------------------
-        // SEND FIREBASE RESET EMAIL
-        // ----------------------------------------------------
-
-        await sendPasswordResetEmail(
-            auth,
-            email
-        );
-
-
-        showMessage(
-            `Password reset link sent to ${email}. Please check your email.`,
-            "success"
-        );
-
-
-    }
-    catch (error) {
-
-        console.error(
-            "Password reset error:",
-            error
-        );
-
-
-        let message =
-            "Unable to send password reset email.";
-
-
-        if (
-            error.code ===
-            "auth/invalid-email"
-        ) {
-
-            message =
-                "Invalid email address.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/user-not-found"
-        ) {
-
-            message =
-                "No Firebase Authentication user found for this email.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/too-many-requests"
-        ) {
-
-            message =
-                "Too many requests. Please try again later.";
-
-        }
-
-        else if (
-            error.code ===
-            "auth/network-request-failed"
-        ) {
-
-            message =
-                "Network error. Please check your internet connection.";
-
-        }
-
-
-        showMessage(
-            message
-        );
+        loginBtn.disabled =
+            false;
+
+        loginBtn.textContent =
+            "Login";
 
     }
 
@@ -806,16 +571,26 @@ async function sendResetLink() {
 
 function createPasswordResetModal() {
 
-    // Already exists
-    if (
+    // --------------------------------------------------------
+    // Don't create twice
+    // --------------------------------------------------------
+
+    const existing =
         document.getElementById(
             "srPasswordResetModal"
-        )
-    ) {
+        );
+
+
+    if (existing) {
 
         return;
+
     }
 
+
+    // --------------------------------------------------------
+    // MODAL
+    // --------------------------------------------------------
 
     const modal =
         document.createElement(
@@ -843,7 +618,7 @@ function createPasswordResetModal() {
 
                 <p>
                     Password create panna
-                    unga registered Staff ID or Email use pannunga.
+                    registered Staff ID or Email use pannunga.
                 </p>
 
                 <label>
@@ -881,6 +656,7 @@ function createPasswordResetModal() {
             </div>
 
         </div>
+
     `;
 
 
@@ -890,7 +666,7 @@ function createPasswordResetModal() {
 
 
     // ========================================================
-    // MODAL CSS
+    // MODAL STYLE
     // ========================================================
 
     const style =
@@ -908,6 +684,7 @@ function createPasswordResetModal() {
         .sr-reset-overlay {
 
             position: fixed;
+
             inset: 0;
 
             background:
@@ -916,6 +693,7 @@ function createPasswordResetModal() {
             display: flex;
 
             align-items: center;
+
             justify-content: center;
 
             z-index: 99999;
@@ -928,6 +706,7 @@ function createPasswordResetModal() {
         .sr-reset-card {
 
             width: 100%;
+
             max-width: 420px;
 
             background: #ffffff;
@@ -951,11 +730,13 @@ function createPasswordResetModal() {
         .sr-reset-icon {
 
             width: 55px;
+
             height: 55px;
 
             display: flex;
 
             align-items: center;
+
             justify-content: center;
 
             background: #eef5ff;
@@ -1068,6 +849,9 @@ function createPasswordResetModal() {
             font-size:
                 13px;
 
+            line-height:
+                1.5;
+
         }
 
 
@@ -1086,7 +870,8 @@ function createPasswordResetModal() {
             background:
                 #2563eb;
 
-            color: #ffffff;
+            color:
+                #ffffff;
 
             font-size:
                 15px;
@@ -1106,6 +891,17 @@ function createPasswordResetModal() {
 
             background:
                 #1d4ed8;
+
+        }
+
+
+        .sr-reset-primary:disabled {
+
+            opacity:
+                0.7;
+
+            cursor:
+                not-allowed;
 
         }
 
@@ -1132,7 +928,8 @@ function createPasswordResetModal() {
             font-size:
                 14px;
 
-            cursor: pointer;
+            cursor:
+                pointer;
 
         }
 
@@ -1145,7 +942,7 @@ function createPasswordResetModal() {
 
 
     // ========================================================
-    // DEFAULT VALUE
+    // ELEMENTS
     // ========================================================
 
     const resetInput =
@@ -1153,6 +950,28 @@ function createPasswordResetModal() {
             "srResetInput"
         );
 
+
+    const sendButton =
+        document.getElementById(
+            "srSendResetBtn"
+        );
+
+
+    const closeButton =
+        document.getElementById(
+            "srCloseResetBtn"
+        );
+
+
+    const resetMessage =
+        document.getElementById(
+            "srResetMessage"
+        );
+
+
+    // ========================================================
+    // AUTO FILL CURRENT STAFF ID / EMAIL
+    // ========================================================
 
     if (
         staffIdInput &&
@@ -1166,278 +985,271 @@ function createPasswordResetModal() {
 
 
     // ========================================================
-    // SEND BUTTON
+    // SEND RESET LINK
     // ========================================================
 
-    const sendButton =
-        document.getElementById(
-            "srSendResetBtn"
-        );
-    
-sendButton.addEventListener(
-    "click",
-    async () => {
+    sendButton.addEventListener(
+        "click",
+        async () => {
 
-        const value =
-            resetInput
-                .value
-                .trim();
-
-        const resetMessage =
-            document.getElementById(
-                "srResetMessage"
-            );
+            const value =
+                resetInput.value.trim();
 
 
-        if (!value) {
+            if (!value) {
 
-            resetMessage.textContent =
-                "Please enter Staff ID or Email.";
+                resetMessage.textContent =
+                    "Please enter Staff ID or Email.";
 
-            resetMessage.style.color =
-                "#dc2626";
+                resetMessage.style.color =
+                    "#dc2626";
 
-            return;
-        }
-
-
-        sendButton.disabled =
-            true;
-
-        sendButton.textContent =
-            "Checking...";
-
-
-        try {
-
-            let email = "";
-
-
-            // =================================================
-            // IF EMAIL ENTERED
-            // =================================================
-
-            if (
-                value.includes("@")
-            ) {
-
-                const staff =
-                    await findStaffByEmail(
-                        value
-                    );
-
-
-                if (!staff) {
-
-                    throw new Error(
-                        "STAFF_NOT_FOUND"
-                    );
-
-                }
-
-
-                if (
-                    !isStaffActive(
-                        staff
-                    )
-                ) {
-
-                    throw new Error(
-                        "STAFF_INACTIVE"
-                    );
-
-                }
-
-
-                email =
-                    String(
-                        staff.email ||
-                        staff.loginEmail ||
-                        value
-                    )
-                    .trim();
-
+                return;
             }
-
-
-            // =================================================
-            // IF STAFF ID ENTERED
-            // =================================================
-
-            else {
-
-                const staff =
-                    await findStaff(
-                        value
-                    );
-
-
-                if (!staff) {
-
-                    throw new Error(
-                        "STAFF_NOT_FOUND"
-                    );
-
-                }
-
-
-                if (
-                    !isStaffActive(
-                        staff
-                    )
-                ) {
-
-                    throw new Error(
-                        "STAFF_INACTIVE"
-                    );
-
-                }
-
-
-                email =
-                    String(
-                        staff.email ||
-                        staff.loginEmail ||
-                        ""
-                    )
-                    .trim();
-
-
-                if (!email) {
-
-                    throw new Error(
-                        "NO_EMAIL"
-                    );
-
-                }
-
-            }
-
-
-            // =================================================
-            // SEND FIREBASE PASSWORD RESET
-            // =================================================
-
-            await sendPasswordResetEmail(
-                auth,
-                email
-            );
-
-
-            resetMessage.textContent =
-                `Password reset link sent to ${email}. Check your email.`;
-
-            resetMessage.style.color =
-                "#15803d";
 
 
             sendButton.disabled =
                 true;
 
             sendButton.textContent =
-                "Link Sent";
+                "Checking...";
 
 
-        }
-        catch (error) {
+            try {
 
-            console.error(
-                "Reset email error:",
+                let email =
+                    "";
+
+
+                // =================================================
+                // CASE 1
+                // EMAIL ENTERED
+                // =================================================
+
+                if (
+                    value.includes("@")
+                ) {
+
+                    /*
+                     * IMPORTANT:
+                     *
+                     * Email entered directly.
+                     * No Firestore lookup required.
+                     *
+                     * Firebase Authentication will
+                     * handle the registered email.
+                     */
+
+                    email =
+                        value
+                            .trim()
+                            .toLowerCase();
+
+                }
+
+
+                // =================================================
+                // CASE 2
+                // STAFF ID ENTERED
+                // =================================================
+
+                else {
+
+                    const staff =
+                        await findStaff(
+                            value
+                        );
+
+
+                    if (!staff) {
+
+                        throw new Error(
+                            "STAFF_NOT_FOUND"
+                        );
+
+                    }
+
+
+                    if (
+                        !isStaffActive(
+                            staff
+                        )
+                    ) {
+
+                        throw new Error(
+                            "STAFF_INACTIVE"
+                        );
+
+                    }
+
+
+                    email =
+                        String(
+                            staff.email ||
+                            staff.loginEmail ||
+                            ""
+                        )
+                        .trim()
+                        .toLowerCase();
+
+
+                    if (!email) {
+
+                        throw new Error(
+                            "NO_EMAIL"
+                        );
+
+                    }
+
+                }
+
+
+                // =================================================
+                // FIREBASE PASSWORD RESET
+                // =================================================
+
+                await sendPasswordResetEmail(
+                    auth,
+                    email
+                );
+
+
+                // =================================================
+                // SUCCESS
+                // =================================================
+
+                resetMessage.textContent =
+                    `Password reset link sent to ${email}. Check your email.`;
+
+                resetMessage.style.color =
+                    "#15803d";
+
+
+                sendButton.disabled =
+                    true;
+
+                sendButton.textContent =
+                    "Link Sent";
+
+            }
+            catch (
                 error
-            );
-
-
-            resetMessage.style.color =
-                "#dc2626";
-
-
-            if (
-                error.message ===
-                "STAFF_NOT_FOUND"
             ) {
 
-                resetMessage.textContent =
-                    "Staff ID / Email not found.";
+                console.error(
+                    "Reset email error:",
+                    error
+                );
+
+
+                resetMessage.style.color =
+                    "#dc2626";
+
+
+                // =================================================
+                // STAFF ID ERRORS
+                // =================================================
+
+                if (
+                    error.message ===
+                    "STAFF_NOT_FOUND"
+                ) {
+
+                    resetMessage.textContent =
+                        "Staff ID not found.";
+
+                }
+
+                else if (
+                    error.message ===
+                    "STAFF_INACTIVE"
+                ) {
+
+                    resetMessage.textContent =
+                        "This staff account is inactive.";
+
+                }
+
+                else if (
+                    error.message ===
+                    "NO_EMAIL"
+                ) {
+
+                    resetMessage.textContent =
+                        "Email is not configured for this staff.";
+
+                }
+
+
+                // =================================================
+                // FIREBASE AUTH ERRORS
+                // =================================================
+
+                else if (
+                    error.code ===
+                    "auth/user-not-found"
+                ) {
+
+                    resetMessage.textContent =
+                        "This email is not registered in Firebase Authentication.";
+
+                }
+
+                else if (
+                    error.code ===
+                    "auth/invalid-email"
+                ) {
+
+                    resetMessage.textContent =
+                        "Invalid email address.";
+
+                }
+
+                else if (
+                    error.code ===
+                    "auth/too-many-requests"
+                ) {
+
+                    resetMessage.textContent =
+                        "Too many requests. Please try again later.";
+
+                }
+
+                else if (
+                    error.code ===
+                    "auth/network-request-failed"
+                ) {
+
+                    resetMessage.textContent =
+                        "Network error. Please check your internet connection.";
+
+                }
+
+                else {
+
+                    resetMessage.textContent =
+                        "Unable to send reset link. Please try again.";
+
+                }
+
+
+                sendButton.disabled =
+                    false;
+
+                sendButton.textContent =
+                    "Send Password Link";
 
             }
-
-            else if (
-                error.message ===
-                "STAFF_INACTIVE"
-            ) {
-
-                resetMessage.textContent =
-                    "This staff account is inactive.";
-
-            }
-
-            else if (
-                error.message ===
-                "NO_EMAIL"
-            ) {
-
-                resetMessage.textContent =
-                    "Email is not configured for this staff.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/user-not-found"
-            ) {
-
-                resetMessage.textContent =
-                    "Firebase Authentication account not found for this email.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/invalid-email"
-            ) {
-
-                resetMessage.textContent =
-                    "Invalid email address.";
-
-            }
-
-            else if (
-                error.code ===
-                "auth/too-many-requests"
-            ) {
-
-                resetMessage.textContent =
-                    "Too many requests. Please try again later.";
-
-            }
-
-            else {
-
-                resetMessage.textContent =
-                    "Unable to send reset link. Please try again.";
-
-            }
-
-
-            sendButton.disabled =
-                false;
-
-            sendButton.textContent =
-                "Send Password Link";
 
         }
+    );
 
-    }
-);
 
-       // ========================================================
-    // CLOSE BUTTON
+    // ========================================================
+    // CLOSE
     // ========================================================
 
-    document.getElementById(
-        "srCloseResetBtn"
-    )
-    .addEventListener(
+    closeButton.addEventListener(
         "click",
         () => {
 
@@ -1471,7 +1283,7 @@ sendButton.addEventListener(
 
 
 // ============================================================
-// FIND CREATE PASSWORD / FORGOT PASSWORD LINKS
+// BIND CREATE PASSWORD / FORGOT PASSWORD
 // ============================================================
 
 function bindPasswordLinks() {
@@ -1494,9 +1306,9 @@ function bindPasswordLinks() {
                 .toLowerCase();
 
 
-            // ------------------------------------------------
+            // =================================================
             // CREATE PASSWORD
-            // ------------------------------------------------
+            // =================================================
 
             if (
                 text.includes(
@@ -1518,9 +1330,9 @@ function bindPasswordLinks() {
             }
 
 
-            // ------------------------------------------------
+            // =================================================
             // FORGOT PASSWORD
-            // ------------------------------------------------
+            // =================================================
 
             if (
                 text.includes(
@@ -1548,10 +1360,12 @@ function bindPasswordLinks() {
 
 
 // ============================================================
-// FORM SUBMIT
+// LOGIN FORM
 // ============================================================
 
-if (loginForm) {
+if (
+    loginForm
+) {
 
     loginForm.addEventListener(
         "submit",
@@ -1568,14 +1382,7 @@ if (loginForm) {
 
 
 // ============================================================
-// PASSWORD LINK BINDING
-// ============================================================
-
-bindPasswordLinks();
-
-
-// ============================================================
-// IF OLD STAFF SESSION EXISTS
+// OLD STAFF SESSION CHECK
 // ============================================================
 
 const existingSession =
@@ -1584,7 +1391,9 @@ const existingSession =
     );
 
 
-if (existingSession) {
+if (
+    existingSession
+) {
 
     try {
 
