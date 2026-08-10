@@ -116,56 +116,20 @@ const downloadButton =
 // SUMMARY ELEMENTS
 // ============================================================
 
-function findElementByIds(ids) {
-
-    for (const id of ids) {
-
-        const element =
-            document.getElementById(id);
-
-        if (element) {
-            return element;
-        }
-    }
-
-    return null;
-}
-
-
 const totalDueElement =
-    findElementByIds([
-        "totalDueAmount",
-        "totalDue",
-        "dueAmount"
-    ]);
+    document.getElementById("sumDue");
 
 const totalPaidElement =
-    findElementByIds([
-        "totalPaidAmount",
-        "totalPaid",
-        "emiPaid"
-    ]);
+    document.getElementById("sumPaid");
 
 const totalPendingElement =
-    findElementByIds([
-        "totalPendingAmount",
-        "totalPending",
-        "emiPending"
-    ]);
+    document.getElementById("sumPending");
 
 const totalPenaltyElement =
-    findElementByIds([
-        "totalPenaltyAmount",
-        "penaltyCollected",
-        "totalPenalty"
-    ]);
+    document.getElementById("sumPenalty");
 
 const totalCollectionElement =
-    findElementByIds([
-        "totalCollectionAmount",
-        "totalCollection",
-        "collectionAmount"
-    ]);
+    document.getElementById("sumTotal");
 
 
 // ============================================================
