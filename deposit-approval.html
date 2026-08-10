@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Deposit Approval - SR Auto Finance
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #0f172a;
+
+        }
+
+
+        /* =====================================================
+           TOPBAR
+        ====================================================== */
+
+        .topbar {
+
+            height: 68px;
+
+            background: #ffffff;
+
+            border-bottom:
+                1px solid #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding:
+                0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 20;
+
+        }
+
+
+        .brand {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .logo {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 11px;
+
+            background: #2563eb;
+
+            color: #ffffff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-title {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-subtitle {
+
+            margin-top: 2px;
+
+            font-size: 11px;
+
+            color: #64748b;
+
+        }
+
+
+        .top-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 8px;
+
+        }
+
+
+        .back-btn,
+        .logout-btn {
+
+            border: 0;
+
+            padding:
+                9px 13px;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .back-btn {
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .logout-btn {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        /* =====================================================
+           PAGE
+        ====================================================== */
+
+        .page {
+
+            width: 100%;
+
+            max-width: 1200px;
+
+            margin: 0 auto;
+
+            padding: 24px;
+
+        }
+
+
+        .page-title {
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .page-title h1 {
+
+            margin: 0;
+
+            font-size: 24px;
+
+        }
+
+
+        .page-title p {
+
+            margin:
+                6px 0 0;
+
+            font-size: 13px;
+
+            color: #64748b;
+
+        }
+
+
+        /* =====================================================
+           SUMMARY CARDS
+        ====================================================== */
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 12px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .summary-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 12px;
+
+            padding: 16px;
+
+        }
+
+
+        .summary-label {
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .summary-value {
+
+            margin-top: 7px;
+
+            font-size: 20px;
+
+            font-weight: 800;
+
+        }
+
+
+        .summary-value.orange {
+
+            color: #c2410c;
+
+        }
+
+
+        .summary-value.green {
+
+            color: #15803d;
+
+        }
+
+
+        .summary-value.red {
+
+            color: #dc2626;
+
+        }
+
+
+        .summary-value.blue {
+
+            color: #1d4ed8;
+
+        }
+
+
+        /* =====================================================
+           MESSAGE
+        ====================================================== */
+
+        .message {
+
+            display: none;
+
+            margin-bottom: 16px;
+
+            padding:
+                11px 13px;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            line-height: 1.5;
+
+        }
+
+
+        .message.error {
+
+            display: block;
+
+            background: #fef2f2;
+
+            border:
+                1px solid #fecaca;
+
+            color: #b91c1c;
+
+        }
+
+
+        .message.success {
+
+            display: block;
+
+            background: #f0fdf4;
+
+            border:
+                1px solid #bbf7d0;
+
+            color: #15803d;
+
+        }
+
+
+        /* =====================================================
+           FILTER BAR
+        ====================================================== */
+
+        .filter-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 12px;
+
+            padding: 15px;
+
+            margin-bottom: 18px;
+
+        }
+
+
+        .filter-row {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                180px
+                140px
+                auto;
+
+            gap: 10px;
+
+            align-items: end;
+
+        }
+
+
+        .filter-group {
+
+            display: flex;
+
+            flex-direction: column;
+
+        }
+
+
+        .filter-group label {
+
+            margin-bottom: 6px;
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        input,
+        select {
+
+            width: 100%;
+
+            height: 40px;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            outline: none;
+
+            padding:
+                0 11px;
+
+            font-family: inherit;
+
+            font-size: 12px;
+
+        }
+
+
+        input:focus,
+        select:focus {
+
+            border-color:
+                #2563eb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.10
+                );
+
+        }
+
+
+        .clear-btn {
+
+            height: 40px;
+
+            padding:
+                0 14px;
+
+            border:
+                1px solid #cbd5e1;
+
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #334155;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        /* =====================================================
+           REQUEST CARD
+        ====================================================== */
+
+        .requests-card {
+
+            background: #ffffff;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 14px;
+
+            overflow: hidden;
+
+        }
+
+
+        .requests-header {
+
+            padding:
+                17px 20px;
+
+            border-bottom:
+                1px solid #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+        }
+
+
+        .requests-title {
+
+            margin: 0;
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+        }
+
+
+        .request-count {
+
+            padding:
+                5px 9px;
+
+            border-radius: 6px;
+
+            background: #ffedd5;
+
+            color: #c2410c;
+
+            font-size: 9px;
+
+            font-weight: 800;
+
+        }
+
+
+        /* =====================================================
+           REQUEST LIST
+        ====================================================== */
+
+        .request-list {
+
+            width: 100%;
+
+        }
+
+
+        .request-item {
+
+            padding:
+                18px 20px;
+
+            border-bottom:
+                1px solid #f1f5f9;
+
+        }
+
+
+        .request-item:last-child {
+
+            border-bottom: 0;
+
+        }
+
+
+        .request-top {
+
+            display: grid;
+
+            grid-template-columns:
+                1fr
+                auto
+                auto;
+
+            gap: 20px;
+
+            align-items: center;
+
+        }
+
+
+        .staff-name {
+
+            font-size: 14px;
+
+            font-weight: 800;
+
+        }
+
+
+        .staff-meta {
+
+            margin-top: 5px;
+
+            font-size: 10px;
+
+            color: #64748b;
+
+            line-height: 1.6;
+
+        }
+
+
+        .request-amount {
+
+            font-size: 18px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .status {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            min-width: 70px;
+
+            padding:
+                6px 9px;
+
+            border-radius: 6px;
+
+            font-size: 9px;
+
+            font-weight: 800;
+
+        }
+
+
+        .status.pending {
+
+            background: #ffedd5;
+
+            color: #c2410c;
+
+        }
+
+
+        .status.accepted {
+
+            background: #dcfce7;
+
+            color: #15803d;
+
+        }
+
+
+        .status.rejected {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        .status.reversed {
+
+            background: #f1f5f9;
+
+            color: #475569;
+
+        }
+
+
+        /* =====================================================
+           REQUEST DETAILS
+        ====================================================== */
+
+        .request-details {
+
+            margin-top: 14px;
+
+            padding:
+                13px;
+
+            background: #f8fafc;
+
+            border-radius: 9px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 10px;
+
+        }
+
+
+        .detail-box {
+
+            min-width: 0;
+
+        }
+
+
+        .detail-label {
+
+            font-size: 9px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .detail-value {
+
+            margin-top: 4px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            color: #334155;
+
+            word-break: break-word;
+
+        }
+
+
+        /* =====================================================
+           ACTIONS
+        ====================================================== */
+
+        .request-actions {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: flex-end;
+
+            gap: 8px;
+
+            margin-top: 14px;
+
+        }
+
+
+        .action-btn {
+
+            height: 36px;
+
+            padding:
+                0 14px;
+
+            border: 0;
+
+            border-radius: 7px;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .view-btn {
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .accept-btn {
+
+            background: #dcfce7;
+
+            color: #15803d;
+
+        }
+
+
+        .reject-btn {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+
+        .reverse-btn {
+
+            background: #f1f5f9;
+
+            color: #475569;
+
+        }
+
+
+        .action-btn:disabled {
+
+            opacity: 0.5;
+
+            cursor: not-allowed;
+
+        }
+
+
+        /* =====================================================
+           DETAILS PANEL
+        ====================================================== */
+
+        .details-panel {
+
+            display: none;
+
+            margin-top: 14px;
+
+            padding: 16px;
+
+            background: #eff6ff;
+
+            border:
+                1px solid #bfdbfe;
+
+            border-radius: 10px;
+
+        }
+
+
+        .details-panel.show {
+
+            display: block;
+
+        }
+
+
+        .details-title {
+
+            margin: 0 0 12px;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            color: #1e3a8a;
+
+        }
+
+
+        .details-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    3,
+                    minmax(
+                        0,
+                        1fr
+                    )
+                );
+
+            gap: 10px;
+
+        }
+
+
+        .details-row {
+
+            padding:
+                9px 10px;
+
+            background: #ffffff;
+
+            border-radius: 7px;
+
+        }
+
+
+        .details-row span {
+
+            display: block;
+
+            font-size: 9px;
+
+            color: #64748b;
+
+        }
+
+
+        .details-row strong {
+
+            display: block;
+
+            margin-top: 4px;
+
+            font-size: 11px;
+
+        }
+
+
+        /* =====================================================
+           EMPTY
+        ====================================================== */
+
+        .empty {
+
+            padding:
+                45px 20px;
+
+            text-align: center;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =====================================================
+           LOADING
+        ====================================================== */
+
+        .loading {
+
+            display: none;
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.25
+                );
+
+            align-items: center;
+
+            justify-content: center;
+
+            z-index: 100;
+
+        }
+
+
+        .loading-box {
+
+            background: #ffffff;
+
+            padding:
+                20px 26px;
+
+            border-radius: 12px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            box-shadow:
+                0 15px 40px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.2
+                );
+
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ====================================================== */
+
+        @media (
+            max-width: 850px
+        ) {
+
+            .summary-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .filter-row {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .request-top {
+
+                grid-template-columns:
+                    1fr auto;
+
+            }
+
+
+            .request-amount {
+
+                grid-column:
+                    1;
+
+            }
+
+
+            .status {
+
+                grid-column:
+                    2;
+
+                grid-row:
+                    1;
+
+            }
+
+
+            .request-details {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .details-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+        }
+
+
+        @media (
+            max-width: 600px
+        ) {
+
+            .topbar {
+
+                padding:
+                    0 12px;
+
+            }
+
+
+            .brand-subtitle {
+
+                display: none;
+
+            }
+
+
+            .page {
+
+                padding:
+                    14px;
+
+            }
+
+
+            .summary-grid {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .filter-row {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .request-top {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .status {
+
+                grid-column:
+                    auto;
+
+                grid-row:
+                    auto;
+
+                justify-self: start;
+
+            }
+
+
+            .request-details {
+
+                grid-template-columns:
+                    1fr 1fr;
+
+            }
+
+
+            .details-grid {
+
+                grid-template-columns:
+                    1fr;
+
+            }
+
+
+            .request-actions {
+
+                justify-content:
+                    stretch;
+
+                flex-wrap: wrap;
+
+            }
+
+
+            .action-btn {
+
+                flex: 1;
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =====================================================
+         TOPBAR
+    ====================================================== -->
+
+    <header class="topbar">
+
+
+        <div class="brand">
+
+            <div class="logo">
+                SR
+            </div>
+
+
+            <div>
+
+                <div class="brand-title">
+                    SR Auto Finance
+                </div>
+
+                <div class="brand-subtitle">
+                    Owner Deposit Approval
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+
+            <button
+                type="button"
+                class="back-btn"
+                id="backBtn"
+            >
+                ← Dashboard
+            </button>
+
+
+            <button
+                type="button"
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                Logout
+            </button>
+
+
+        </div>
+
+
+    </header>
+
+
+
+    <!-- =====================================================
+         PAGE
+    ====================================================== -->
+
+    <main class="page">
+
+
+        <div class="page-title">
+
+            <h1>
+                Deposit Approval
+            </h1>
+
+            <p>
+                Review staff collection deposits and update owner accounts after approval.
+            </p>
+
+        </div>
+
+
+
+        <!-- =================================================
+             MESSAGE
+        ================================================== -->
+
+        <div
+            id="message"
+            class="message"
+        ></div>
+
+
+
+        <!-- =================================================
+             SUMMARY
+        ================================================== -->
+
+        <section class="summary-grid">
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Pending Requests
+                </div>
+
+                <div
+                    class="summary-value orange"
+                    id="pendingCount"
+                >
+                    0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Pending Amount
+                </div>
+
+                <div
+                    class="summary-value orange"
+                    id="pendingAmount"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Accepted Amount
+                </div>
+
+                <div
+                    class="summary-value green"
+                    id="acceptedAmount"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    Rejected / Reversed
+                </div>
+
+                <div
+                    class="summary-value red"
+                    id="rejectedReversedAmount"
+                >
+                    ₹0
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             FILTER
+        ================================================== -->
+
+        <section class="filter-card">
+
+
+            <div class="filter-row">
+
+
+                <div class="filter-group">
+
+                    <label
+                        for="searchInput"
+                    >
+                        Search Staff / Request
+                    </label>
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search staff name or request ID"
+                    >
+
+                </div>
+
+
+                <div class="filter-group">
+
+                    <label
+                        for="statusFilter"
+                    >
+                        Status
+                    </label>
+
+                    <select
+                        id="statusFilter"
+                    >
+
+                        <option value="all">
+                            All
+                        </option>
+
+                        <option value="pending">
+                            Pending
+                        </option>
+
+                        <option value="accepted">
+                            Accepted
+                        </option>
+
+                        <option value="rejected">
+                            Rejected
+                        </option>
+
+                        <option value="reversed">
+                            Reversed
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="filter-group">
+
+                    <label
+                        for="dateFilter"
+                    >
+                        Date
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dateFilter"
+                    >
+
+                </div>
+
+
+                <button
+                    type="button"
+                    class="clear-btn"
+                    id="clearFilterBtn"
+                >
+                    Clear Filter
+                </button>
+
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =================================================
+             REQUEST LIST
+        ================================================== -->
+
+        <section class="requests-card">
+
+
+            <div class="requests-header">
+
+                <h2 class="requests-title">
+                    Deposit Requests
+                </h2>
+
+
+                <span
+                    class="request-count"
+                    id="requestCount"
+                >
+                    0 Requests
+                </span>
+
+            </div>
+
+
+            <div
+                class="request-list"
+                id="requestList"
+            >
+
+                <div class="empty">
+                    Loading deposit requests...
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+
+    <!-- =====================================================
+         LOADING
+    ====================================================== -->
+
+    <div
+        class="loading"
+        id="loadingOverlay"
+    >
+
+        <div class="loading-box">
+            Loading deposit requests...
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script
+        type="module"
+        src="js/deposit-approval.js"
+    ></script>
+
+
+</body>
+
+</html>
