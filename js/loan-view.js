@@ -1,12 +1,9 @@
 // =====================================================
 // SR AUTO FINANCE ERP
-// Loan View Controller
-// File: js/loan-view.js
+// LOAN VIEW CONTROLLER
 // =====================================================
 
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { auth, db } from "./firebase-config.js";
 
 import {
     doc,
@@ -15,36 +12,38 @@ import {
     getDocs,
     query,
     where,
+    orderBy,
+    limit,
+    addDoc,
     updateDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
-    auth,
-    db
-} from "./firebase-config.js";
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 
 // =====================================================
-// ELEMENTS
+// GLOBAL
 // =====================================================
 
-const message =
-    document.getElementById("message");
+let currentLoan = null;
+let currentCustomer = null;
+let currentUser = null;
 
-const documentTableBody =
-    document.getElementById(
-        "documentTableBody"
-    );
+let loanDocuments = [];
 
-const headerCloseLoanBtn =
-    document.getElementById(
-        "headerCloseLoanBtn"
-    );
+// =====================================================
+// REPAYMENT SCHEDULE STATE
+// =====================================================
+
+let repaymentSchedule = [];
+let repaymentPayments = [];
 
 
 // =====================================================
-// URL LOAN ID
+// URL / LOAN ID
 // =====================================================
 
 const urlParams =
@@ -53,43 +52,129 @@ const urlParams =
     );
 
 const loanDocumentId =
-    urlParams.get("id");
+    urlParams.get("id") ||
+    urlParams.get("loanId");
 
 
 // =====================================================
-// STATE
+// ELEMENT HELPERS
 // =====================================================
 
-let currentUser = null;
+function getElement(id) {
 
-let currentLoan = null;
-
-let loanDocuments = [];
-
-
-// =====================================================
-// HELPERS
-// =====================================================
-
-function escapeHTML(value) {
-
-    return String(
-        value ?? ""
-    )
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return document.getElementById(id);
 
 }
 
 
-// =====================================================
-// CURRENCY
-// =====================================================
+function setText(
+    id,
+    value
+) {
 
-function formatCurrency(value) {
+    const element =
+        getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.textContent =
+        value ??
+        "-";
+
+}
+
+
+function setHTML(
+    id,
+    value
+) {
+
+    const element =
+        getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.innerHTML =
+        value ??
+        "";
+
+}
+
+
+function showElement(id) {
+
+    const element =
+        getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.style.display =
+        "";
+
+}
+
+
+function hideElement(id) {
+
+    const element =
+        getElement(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.style.display =
+        "none";
+
+}
+
+
+function getNumber(...values) {
+
+    for (
+        const value of values
+    ) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
+            continue;
+        }
+
+        const number =
+            Number(
+                String(value)
+                    .replace(/,/g, "")
+                    .replace(/[₹$]/g, "")
+                    .trim()
+            );
+
+        if (
+            Number.isFinite(number)
+        ) {
+
+            return number;
+
+        }
+
+    }
+
+    return 0;
+
+}
+
+
+function formatCurrency(
+    value
+) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -99,55 +184,48 @@ function formatCurrency(value) {
             maximumFractionDigits: 0
         }
     ).format(
-        Number(value) || 0
+        getNumber(value)
     );
 
 }
 
 
-// =====================================================
-// DATE
-// =====================================================
+function formatNumber(
+    value
+) {
 
-function formatDate(value) {
+    return new Intl.NumberFormat(
+        "en-IN"
+    ).format(
+        getNumber(value)
+    );
+
+}
+
+
+function formatDate(
+    value
+) {
 
     if (!value) {
         return "-";
     }
 
-
     try {
 
-        let date;
-
-
-        if (
+        const date =
             value &&
-            typeof value.toDate ===
-            "function"
-        ) {
-
-            date =
-                value.toDate();
-
-        } else {
-
-            date =
-                new Date(value);
-
-        }
-
+            typeof value.toDate === "function"
+                ? value.toDate()
+                : new Date(value);
 
         if (
             isNaN(
                 date.getTime()
             )
         ) {
-
             return "-";
-
         }
-
 
         return date.toLocaleDateString(
             "en-IN",
@@ -167,92 +245,130 @@ function formatDate(value) {
 }
 
 
-// =====================================================
-// MESSAGE
-// =====================================================
-
-function showMessage(
-    text,
-    type = "error"
-) {
-
-    if (!message) {
-        return;
-    }
-
-
-    message.textContent =
-        text;
-
-
-    message.className =
-        `message ${type}`;
-
-}
-
-
-// =====================================================
-// SET TEXT
-// =====================================================
-
-function setText(
-    id,
+function escapeHTML(
     value
 ) {
 
-    const element =
-        document.getElementById(id);
-
-
-    if (!element) {
-        return;
-    }
-
-
-    element.textContent =
-        value ?? "-";
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
 
-// =====================================================
-// GET NUMBER FROM MULTIPLE FIELDS
-// =====================================================
-
-function getNumber(
-    ...values
+function firstValue(
+    object,
+    fields,
+    fallback = ""
 ) {
 
     for (
-        const value of values
+        const field of fields
     ) {
+
+        const value =
+            object?.[field];
 
         if (
             value !== undefined &&
             value !== null &&
-            value !== ""
+            String(value).trim() !== ""
         ) {
 
-            const number =
-                Number(value);
-
-
-            if (
-                !isNaN(number)
-            ) {
-
-                return number;
-
-            }
+            return value;
 
         }
 
     }
 
-
-    return 0;
+    return fallback;
 
 }
+
+
+// =====================================================
+// MESSAGE
+// =====================================================
+
+function showMessage(
+    message
+) {
+
+    const element =
+        getElement(
+            "message"
+        );
+
+    if (element) {
+
+        element.textContent =
+            message;
+
+        element.style.display =
+            "block";
+
+        setTimeout(
+            () => {
+
+                element.style.display =
+                    "none";
+
+            },
+            3000
+        );
+
+        return;
+    }
+
+    alert(message);
+
+}
+
+
+// =====================================================
+// AUTH
+// =====================================================
+
+onAuthStateChanged(
+    auth,
+    async user => {
+
+        if (!user) {
+
+            window.location.href =
+                "login.html";
+
+            return;
+
+        }
+
+        currentUser =
+            user;
+
+        await loadLoan();
+
+    }
+);
 
 
 // =====================================================
@@ -264,13 +380,11 @@ async function loadLoan() {
     if (!loanDocumentId) {
 
         showMessage(
-            "Loan information not found."
+            "Loan ID is missing."
         );
 
         return;
-
     }
-
 
     try {
 
@@ -281,23 +395,21 @@ async function loadLoan() {
                 loanDocumentId
             );
 
-
         const loanSnap =
             await getDoc(
                 loanRef
             );
 
-
-        if (!loanSnap.exists()) {
+        if (
+            !loanSnap.exists()
+        ) {
 
             showMessage(
                 "Loan not found."
             );
 
             return;
-
         }
-
 
         currentLoan = {
 
@@ -309,10 +421,15 @@ async function loadLoan() {
         };
 
 
+        await loadCustomer();
+
+
         renderLoan();
 
 
         await loadDocuments();
+
+        await loadRepaymentSchedule();
 
 
     } catch (error) {
@@ -322,9 +439,72 @@ async function loadLoan() {
             error
         );
 
-
         showMessage(
             "Unable to load loan details."
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD CUSTOMER
+// =====================================================
+
+async function loadCustomer() {
+
+    if (!currentLoan) {
+        return;
+    }
+
+    const customerDocumentId =
+        firstValue(
+            currentLoan,
+            [
+                "customerDocumentId",
+                "customerId"
+            ]
+        );
+
+    if (!customerDocumentId) {
+        return;
+    }
+
+    try {
+
+        const customerRef =
+            doc(
+                db,
+                "customers",
+                customerDocumentId
+            );
+
+        const customerSnap =
+            await getDoc(
+                customerRef
+            );
+
+        if (
+            customerSnap.exists()
+        ) {
+
+            currentCustomer = {
+
+                id:
+                    customerSnap.id,
+
+                ...customerSnap.data()
+
+            };
+
+        }
+
+    } catch (error) {
+
+        console.warn(
+            "Customer loading error:",
+            error
         );
 
     }
@@ -339,55 +519,182 @@ async function loadLoan() {
 function renderLoan() {
 
     const loan =
-        currentLoan;
+        currentLoan || {};
+
+    const customer =
+        currentCustomer || {};
 
 
-    // =================================================
-    // BASIC LOAN
-    // =================================================
+    // -----------------------------------------------------
+    // BASIC LOAN DETAILS
+    // -----------------------------------------------------
 
     setText(
         "loanId",
-        loan.loanId ||
-        loan.loanNumber ||
-        loan.id
-    );
-
-
-    setText(
-        "loanType",
-        String(
-            loan.loanType ||
-            "New Loan"
-        ).toLowerCase() === "reloan"
-            ? "ReLoan"
-            : "New Loan"
-    );
-
-
-    setText(
-        "loanDate",
-        formatDate(
-            loan.loanDate
+        firstValue(
+            loan,
+            [
+                "loanId",
+                "loanNumber",
+                "loanCode"
+            ],
+            loan.id
         )
     );
 
 
     setText(
-        "loanDuration",
-        loan.duration ||
-        loan.loanDuration ||
-        loan.tenure
-            ? `${loan.duration || loan.loanDuration || loan.tenure} Months`
+        "loanType",
+        firstValue(
+            loan,
+            [
+                "loanType",
+                "type"
+            ],
+            "New Loan"
+        )
+    );
+
+
+    setText(
+        "loanStatus",
+        firstValue(
+            loan,
+            [
+                "status"
+            ],
+            "Active"
+        )
+    );
+
+
+    setText(
+        "customerName",
+        firstValue(
+            loan,
+            [
+                "customerName"
+            ]
+        ) ||
+        firstValue(
+            customer,
+            [
+                "customerName",
+                "name",
+                "fullName"
+            ],
+            "-"
+        )
+    );
+
+
+    setText(
+        "customerMobile",
+        firstValue(
+            loan,
+            [
+                "customerMobile",
+                "mobile",
+                "phone"
+            ]
+        ) ||
+        firstValue(
+            customer,
+            [
+                "mobile",
+                "phone",
+                "mobileNumber"
+            ],
+            "-"
+        )
+    );
+
+
+    setText(
+        "customerId",
+        firstValue(
+            loan,
+            [
+                "customerId",
+                "customerDocumentId"
+            ]
+        ) ||
+        customer.id ||
+        "-"
+    );
+
+
+    // -----------------------------------------------------
+    // LOAN AMOUNT
+    // -----------------------------------------------------
+
+    const loanAmount =
+        getNumber(
+            loan.loanAmount,
+            loan.principalAmount,
+            loan.amount
+        );
+
+
+    setText(
+        "loanAmount",
+        formatCurrency(
+            loanAmount
+        )
+    );
+
+
+    // -----------------------------------------------------
+    // INSTALLMENT
+    // -----------------------------------------------------
+
+    const installmentAmount =
+        getNumber(
+            loan.installmentAmount,
+            loan.monthlyInstallment,
+            loan.emi
+        );
+
+
+    setText(
+        "installmentAmount",
+        formatCurrency(
+            installmentAmount
+        )
+    );
+
+
+    // -----------------------------------------------------
+    // TENURE
+    // -----------------------------------------------------
+
+    const tenure =
+        getNumber(
+            loan.totalInstallments,
+            loan.installments,
+            loan.duration,
+            loan.loanDuration,
+            loan.tenure
+        );
+
+
+    setText(
+        "tenure",
+        tenure
+            ? `${tenure} Months`
             : "-"
     );
 
 
+    // -----------------------------------------------------
+    // INTEREST
+    // -----------------------------------------------------
+
     const interestRate =
         getNumber(
             loan.interestRate,
-            loan.rateOfInterest,
-            loan.interest
+            loan.interestPercentage,
+            loan.rate
         );
 
 
@@ -399,286 +706,148 @@ function renderLoan() {
     );
 
 
-    // =================================================
-    // STATUS
-    // =================================================
-
-    const statusElement =
-        document.getElementById(
-            "loanStatus"
-        );
-
-
-    const status =
-        loan.status ||
-        "Active";
-
-
-    if (statusElement) {
-
-        const statusLower =
-            String(
-                status
-            ).toLowerCase();
-
-
-        statusElement.innerHTML = `
-            <span class="status ${
-                statusLower === "closed" ||
-                statusLower === "completed"
-                    ? "closed"
-                    : ""
-            }">
-                ${escapeHTML(status)}
-            </span>
-        `;
-
-    }
-
-
-    // =================================================
-    // CUSTOMER
-    // =================================================
+    // -----------------------------------------------------
+    // PAYMENT FREQUENCY
+    // -----------------------------------------------------
 
     setText(
-        "customerId",
-        loan.customerId ||
-        "-"
+        "paymentFrequency",
+        firstValue(
+            loan,
+            [
+                "paymentFrequency",
+                "frequency"
+            ],
+            "Monthly"
+        )
     );
 
 
+    // -----------------------------------------------------
+    // LOAN DATE
+    // -----------------------------------------------------
+
     setText(
-        "customerName",
-        loan.customerName ||
-        "-"
+        "loanDate",
+        formatDate(
+            firstValue(
+                loan,
+                [
+                    "loanDate",
+                    "startDate",
+                    "createdAt"
+                ]
+            )
+        )
     );
 
 
+    // -----------------------------------------------------
+    // FIRST DUE DATE
+    // -----------------------------------------------------
+
     setText(
-        "customerMobile",
-        loan.customerMobile ||
-        loan.mobile ||
-        "-"
+        "firstDueDate",
+        formatDate(
+            firstValue(
+                loan,
+                [
+                    "firstDueDate",
+                    "dueDate"
+                ]
+            )
+        )
     );
 
 
-    setText(
-        "previousLoan",
-        loan.previousLoanId ||
-        loan.previousLoanNumber ||
-        "-"
-    );
-
-
-    // =================================================
+    // -----------------------------------------------------
     // VEHICLE
-    // =================================================
+    // -----------------------------------------------------
 
     setText(
-        "vehicleType",
-        loan.vehicleType ||
-        "-"
-    );
-
-
-    setText(
-        "vehicleBrand",
-        loan.vehicleBrand ||
-        "-"
+        "vehicleNumber",
+        firstValue(
+            loan,
+            [
+                "vehicleNumber",
+                "vehicleNo"
+            ],
+            "-"
+        )
     );
 
 
     setText(
         "vehicleModel",
-        loan.vehicleModel ||
-        "-"
-    );
-
-
-    setText(
-        "vehicleNumber",
-        loan.vehicleNumber ||
-        "-"
-    );
-
-
-    setText(
-        "chassisNumber",
-        loan.chassisNumber ||
-        loan.chassisNo ||
-        "-"
-    );
-
-
-    setText(
-        "engineNumber",
-        loan.engineNumber ||
-        loan.engineNo ||
-        "-"
-    );
-
-
-    setText(
-        "showroomName",
-        loan.showroomName ||
-        loan.showroom ||
-        "-"
-    );
-
-
-    setText(
-        "bookingId",
-        loan.showroomBookingId ||
-        loan.bookingId ||
-        "-"
-    );
-
-
-    // =================================================
-    // FINANCIAL
-    // =================================================
-
-    const loanAmount =
-        getNumber(
-            loan.loanAmount,
-            loan.principalAmount,
-            loan.amount
-        );
-
-
-    const installment =
-        getNumber(
-            loan.installmentAmount,
-            loan.monthlyInstallment,
-            loan.emi
-        );
-
-
-    const penalty =
-        getNumber(
-            loan.penaltyAmount,
-            loan.penalty,
-            loan.totalPenalty
-        );
-
-
- const outstanding =
-    getNumber(
-        loan.outstanding
-    );
-
-
-    setText(
-        "loanAmount",
-        formatCurrency(
-            loanAmount
+        firstValue(
+            loan,
+            [
+                "vehicleModel",
+                "model"
+            ],
+            "-"
         )
     );
 
 
     setText(
-        "installment",
-        formatCurrency(
-            installment
+        "vehicleType",
+        firstValue(
+            loan,
+            [
+                "vehicleType",
+                "type"
+            ],
+            "-"
         )
     );
 
+
+    // -----------------------------------------------------
+    // STAFF
+    // -----------------------------------------------------
 
     setText(
-        "penaltyAmount",
-        formatCurrency(
-            penalty
+        "staffName",
+        firstValue(
+            loan,
+            [
+                "staffName",
+                "createdByName",
+                "assignedStaffName"
+            ],
+            "-"
         )
     );
 
 
-    setText(
-        "outstanding",
-        formatCurrency(
-            outstanding
-        )
-    );
-
-
-    // =================================================
-    // PAYMENT SUMMARY
-    // =================================================
+    // -----------------------------------------------------
+    // FINANCIAL VALUES
+    // -----------------------------------------------------
 
     const totalPaid =
         getNumber(
             loan.totalPaid,
             loan.paidAmount,
-            loan.totalCollection
+            loan.amountPaid
         );
 
 
-    const totalInstallments =
+    const totalPenalty =
         getNumber(
-            loan.totalInstallments,
-            loan.installments,
-            loan.duration,
-            loan.loanDuration,
-            loan.tenure
+            loan.totalPenalty,
+            loan.penaltyCollected,
+            loan.penaltyAmount
         );
 
 
-// =================================================
-// INSTALLMENT SUMMARY
-// =================================================
-
-const installmentAmount =
-    getNumber(
-        loan.installmentAmount,
-        loan.monthlyInstallment,
-        loan.emi
-    );
-
-
-let paidInstallments =
-    getNumber(
-        loan.paidInstallments,
-        loan.installmentsPaid
-    );
-
-
-let pendingInstallments =
-    getNumber(
-        loan.pendingInstallments,
-        loan.installmentsPending
-    );
-
-
-/*
- * Always derive installment count from
- * cumulative total paid when possible.
- *
- * This also fixes older loans where
- * paidInstallments was saved as 0.
- */
-
-if (
-    installmentAmount > 0 &&
-    totalInstallments > 0
-) {
-
-    paidInstallments =
-        Math.min(
-            Math.floor(
-                totalPaid /
-                installmentAmount
-            ),
-            totalInstallments
+    const balance =
+        getNumber(
+            loan.balanceAmount,
+            loan.outstandingAmount,
+            loan.balance,
+            loan.pendingAmount
         );
-
-
-    pendingInstallments =
-        Math.max(
-            totalInstallments -
-            paidInstallments,
-            0
-        );
-
-}
 
 
     setText(
@@ -690,322 +859,138 @@ if (
 
 
     setText(
-        "totalInstallments",
-        totalInstallments || 0
-    );
-
-
-    setText(
-        "paidInstallments",
-        paidInstallments || 0
-    );
-
-
-    setText(
-        "pendingInstallments",
-        pendingInstallments || 0
-    );
-
-
-    // =================================================
-    // DUE INFORMATION
-    // =================================================
-
-    setText(
-        "firstDueDate",
-        formatDate(
-            loan.firstDueDate
-        )
-    );
-
-
-    setText(
-        "nextDueDate",
-        formatDate(
-            loan.nextDueDate
-        )
-    );
-
-
-    setText(
-        "lastPaymentDate",
-        formatDate(
-            loan.lastPaymentDate
-        )
-    );
-
-
-    const lastPaymentAmount =
-        getNumber(
-            loan.lastPaymentAmount,
-            loan.lastPaidAmount
-        );
-
-
-    setText(
-        "lastPaymentAmount",
+        "totalPenalty",
         formatCurrency(
-            lastPaymentAmount
+            totalPenalty
         )
     );
 
 
-    // =================================================
-    // CLOSING SUMMARY
-    // =================================================
-
-    renderClosingSummary();
-
-
-    // =================================================
-    // CLOSE BUTTON
-    // =================================================
-
-    updateCloseButton();
-
-}
+    setText(
+        "outstandingAmount",
+        formatCurrency(
+            balance
+        )
+    );
 
 
-// =====================================================
-// CLOSING SUMMARY
-// =====================================================
+    // -----------------------------------------------------
+    // SUMMARY
+    // -----------------------------------------------------
 
-function renderClosingSummary() {
+    setText(
+        "summaryLoanAmount",
+        formatCurrency(
+            loanAmount
+        )
+    );
 
-    const card =
-        document.getElementById(
-            "closingSummaryCard"
-        );
+
+    setText(
+        "summaryInstallment",
+        formatCurrency(
+            installmentAmount
+        )
+    );
 
 
-    if (!currentLoan) {
-        return;
-    }
+    setText(
+        "summaryPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
 
+
+    setText(
+        "summaryPending",
+        formatCurrency(
+            balance
+        )
+    );
+
+
+    setText(
+        "summaryPenalty",
+        formatCurrency(
+            totalPenalty
+        )
+    );
+
+
+    // -----------------------------------------------------
+    // CLOSING STATUS
+    // -----------------------------------------------------
 
     const status =
         String(
-            currentLoan.status ||
-            ""
+            firstValue(
+                loan,
+                [
+                    "status"
+                ],
+                "Active"
+            )
         ).toLowerCase();
 
 
     if (
-        status !== "closed" &&
-        status !== "completed"
+        status === "closed" ||
+        status === "completed"
     ) {
 
-        if (card) {
+        showElement(
+            "closingSummary"
+        );
 
-            card.style.display =
-                "none";
+    } else {
 
-        }
-
-        return;
+        hideElement(
+            "closingSummary"
+        );
 
     }
-
-
-    if (card) {
-
-        card.style.display =
-            "block";
-
-    }
-
-
-    const calculatedOverallDue =
-        getNumber(
-            currentLoan.calculatedOverallDue
-        );
-
-
-    const closingPenalty =
-        getNumber(
-            currentLoan.closingPenalty,
-            currentLoan.penaltyAmount
-        );
-
-
-    const closingWaiver =
-        getNumber(
-            currentLoan.closingWaiver,
-            currentLoan.waiverAmount
-        );
-
-
-    const finalSettlement =
-        getNumber(
-            currentLoan.finalSettlementAmount,
-            currentLoan.agreedClosingAmount,
-            currentLoan.settlementAmount
-        );
-
-
-    setText(
-        "calculatedOverallDue",
-        formatCurrency(
-            calculatedOverallDue
-        )
-    );
-
-
-    setText(
-        "closingPenalty",
-        formatCurrency(
-            closingPenalty
-        )
-    );
-
-
-    setText(
-        "closingWaiver",
-        formatCurrency(
-            closingWaiver
-        )
-    );
-
-
-    setText(
-        "finalSettlement",
-        formatCurrency(
-            finalSettlement
-        )
-    );
-
-
-    setText(
-        "closedDate",
-        formatDate(
-            currentLoan.closedDate ||
-            currentLoan.closingDate
-        )
-    );
-
-
-    setText(
-        "closingRemarks",
-        currentLoan.closingRemarks ||
-        "-"
-    );
 
 }
 
 
 // =====================================================
-// CLOSE BUTTON
-// =====================================================
-
-function updateCloseButton() {
-
-    if (!headerCloseLoanBtn) {
-        return;
-    }
-
-
-    const status =
-        String(
-            currentLoan?.status ||
-            "Active"
-        ).toLowerCase();
-
-
-    if (
-        status === "active"
-    ) {
-
-        headerCloseLoanBtn.style.display =
-            "block";
-
-        return;
-
-    }
-
-
-    headerCloseLoanBtn.style.display =
-        "none";
-
-}
-
-
-// =====================================================
-// CLOSE LOAN NAVIGATION
-// =====================================================
-
-if (headerCloseLoanBtn) {
-
-    headerCloseLoanBtn.addEventListener(
-        "click",
-        function() {
-
-            if (!loanDocumentId) {
-                return;
-            }
-
-
-            window.location.href =
-                `loan-close.html?id=${
-                    encodeURIComponent(
-                        loanDocumentId
-                    )
-                }`;
-
-        }
-    );
-
-}
-
-
-// =====================================================
-// LOAD DOCUMENTS
+// LOAD LOAN DOCUMENTS
 // =====================================================
 
 async function loadDocuments() {
 
-    try {
+    const container =
+        getElement(
+            "loanDocuments"
+        );
 
-        documentTableBody.innerHTML = `
-            <tr>
-                <td colspan="8">
-                    <div class="empty">
-                        Loading documents...
-                    </div>
-                </td>
-            </tr>
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML =
+        `
+        <div class="empty">
+            Loading documents...
+        </div>
         `;
 
+
+    try {
 
         const documentsRef =
             collection(
                 db,
+                "loans",
+                loanDocumentId,
                 "documents"
             );
 
-
-        /*
-         * IMPORTANT
-         *
-         * Only this loan's documents
-         * are loaded.
-         */
-
-        const documentsQuery =
-            query(
-                documentsRef,
-                where(
-                    "loanDocumentId",
-                    "==",
-                    loanDocumentId
-                )
-            );
-
-
         const snapshot =
             await getDocs(
-                documentsQuery
+                documentsRef
             );
-
 
         loanDocuments = [];
 
@@ -1026,207 +1011,24 @@ async function loadDocuments() {
         );
 
 
-        // =================================================
-        // SORT
-        // =================================================
-
-        loanDocuments.sort(
-            (a, b) => {
-
-                const order = {
-
-                    "Aadhaar Card": 1,
-
-                    "PAN Card": 2,
-
-                    "RC Book": 3,
-
-                    "Insurance": 4,
-
-                    "Sale Invoice": 5
-
-                };
-
-
-                return (
-                    (
-                        order[
-                            a.documentType
-                        ] || 99
-                    )
-                    -
-                    (
-                        order[
-                            b.documentType
-                        ] || 99
-                    )
-                );
-
-            }
-        );
-
-
         renderDocuments();
 
 
     } catch (error) {
 
         console.error(
-            "Document loading error:",
+            "Documents loading error:",
             error
         );
 
-
-        documentTableBody.innerHTML = `
-            <tr>
-                <td colspan="8">
-                    <div class="empty">
-                        Unable to load loan documents.
-                    </div>
-                </td>
-            </tr>
-        `;
+        container.innerHTML =
+            `
+            <div class="empty">
+                Unable to load documents.
+            </div>
+            `;
 
     }
-
-}
-
-
-// =====================================================
-// DOCUMENT STATUS CLASS
-// =====================================================
-
-function getDocumentStatusClass(
-    status
-) {
-
-    const value =
-        String(
-            status ||
-            "Pending"
-        ).toLowerCase();
-
-
-    if (
-        value === "received"
-    ) {
-
-        return "received";
-
-    }
-
-
-    if (
-        value === "issued"
-    ) {
-
-        return "issued";
-
-    }
-
-
-    if (
-        value === "returned"
-    ) {
-
-        return "returned";
-
-    }
-
-
-    return "pending";
-
-}
-
-
-// =====================================================
-// DOCUMENT ACTION BUTTON
-// =====================================================
-
-function getDocumentActionButton(
-    documentItem
-) {
-
-    const status =
-        String(
-            documentItem.status ||
-            "Pending"
-        ).toLowerCase();
-
-
-    if (
-        status === "pending"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="receiveDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Receive
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status === "received"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="issueDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Issue
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status === "issued"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="returnDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Return
-            </button>
-        `;
-
-    }
-
-
-    if (
-        status === "returned"
-    ) {
-
-        return `
-            <button
-                class="action-btn"
-                onclick="receiveDocument(
-                    '${documentItem.id}'
-                )"
-            >
-                Receive
-            </button>
-        `;
-
-    }
-
-
-    return "-";
 
 }
 
@@ -1237,15 +1039,1253 @@ function getDocumentActionButton(
 
 function renderDocuments() {
 
+    const container =
+        getElement(
+            "loanDocuments"
+        );
+
+    if (!container) {
+        return;
+    }
+
+
     if (
         !loanDocuments.length
     ) {
 
-        documentTableBody.innerHTML = `
+        container.innerHTML =
+            `
+            <div class="empty">
+                No loan documents available.
+            </div>
+            `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        loanDocuments
+            .map(
+                documentItem => {
+
+                    const documentName =
+                        firstValue(
+                            documentItem,
+                            [
+                                "documentName",
+                                "name",
+                                "title"
+                            ],
+                            "Loan Document"
+                        );
+
+
+                    const documentType =
+                        firstValue(
+                            documentItem,
+                            [
+                                "documentType",
+                                "type"
+                            ],
+                            "-"
+                        );
+
+
+                    const documentStatus =
+                        firstValue(
+                            documentItem,
+                            [
+                                "status"
+                            ],
+                            "Available"
+                        );
+
+
+                    const fileUrl =
+                        firstValue(
+                            documentItem,
+                            [
+                                "fileUrl",
+                                "url",
+                                "downloadURL"
+                            ]
+                        );
+
+
+                    return `
+                        <div class="document-item">
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHTML(
+                                        documentName
+                                    )}
+                                </strong>
+
+                                <div>
+                                    ${escapeHTML(
+                                        documentType
+                                    )}
+                                </div>
+
+                                <div>
+                                    ${escapeHTML(
+                                        documentStatus
+                                    )}
+                                </div>
+
+                            </div>
+
+                            ${
+                                fileUrl
+                                    ? `
+                                        <a
+                                            href="${escapeHTML(fileUrl)}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            class="action-btn"
+                                        >
+                                            View
+                                        </a>
+                                    `
+                                    : ""
+                            }
+
+                        </div>
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+// =====================================================
+// DOCUMENT TOGGLE
+// =====================================================
+
+function setupDocumentToggle() {
+
+    const button =
+        getElement(
+            "toggleDocumentsBtn"
+        );
+
+    const container =
+        getElement(
+            "loanDocuments"
+        );
+
+    if (
+        !button ||
+        !container
+    ) {
+        return;
+    }
+
+
+    container.style.display =
+        "none";
+
+
+    button.addEventListener(
+        "click",
+        async () => {
+
+            const isHidden =
+                container.style.display ===
+                "none";
+
+
+            if (isHidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Loan Documents";
+
+                if (
+                    !loanDocuments.length
+                ) {
+
+                    await loadDocuments();
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Loan Documents";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// DOCUMENT ISSUE / RETURN
+// =====================================================
+
+async function updateDocumentStatus(
+    documentId,
+    status
+) {
+
+    if (!documentId) {
+        return;
+    }
+
+
+    try {
+
+        const documentRef =
+            doc(
+                db,
+                "loans",
+                loanDocumentId,
+                "documents",
+                documentId
+            );
+
+
+        await updateDoc(
+            documentRef,
+            {
+
+                status,
+
+                updatedAt:
+                    serverTimestamp(),
+
+                updatedBy:
+                    currentUser?.uid ||
+                    ""
+
+            }
+        );
+
+
+        await loadDocuments();
+
+
+        showMessage(
+            `Document marked as ${status}.`
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Document status update error:",
+            error
+        );
+
+        showMessage(
+            "Unable to update document status."
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// REPAYMENT SCHEDULE STATE
+// =====================================================
+// =====================================================
+// REPAYMENT SCHEDULE - HELPERS
+// =====================================================
+
+function getLoanTenure() {
+
+    return Math.max(
+        Math.floor(
+            getNumber(
+                currentLoan?.totalInstallments,
+                currentLoan?.installments,
+                currentLoan?.duration,
+                currentLoan?.loanDuration,
+                currentLoan?.tenure
+            )
+        ),
+        0
+    );
+
+}
+
+
+function getInstallmentAmount() {
+
+    return getNumber(
+        currentLoan?.installmentAmount,
+        currentLoan?.monthlyInstallment,
+        currentLoan?.emi
+    );
+
+}
+
+
+function getLoanStartDate() {
+
+    const raw =
+        currentLoan?.firstDueDate ||
+        currentLoan?.loanDate ||
+        currentLoan?.startDate ||
+        currentLoan?.createdAt;
+
+    if (!raw) {
+        return null;
+    }
+
+    try {
+
+        const date =
+            raw &&
+            typeof raw.toDate === "function"
+                ? raw.toDate()
+                : new Date(raw);
+
+        if (
+            isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return null;
+
+        }
+
+        return date;
+
+    } catch (error) {
+
+        return null;
+
+    }
+
+}
+
+
+function addMonthsSafe(
+    date,
+    months
+) {
+
+    const result =
+        new Date(
+            date.getTime()
+        );
+
+    const originalDay =
+        result.getDate();
+
+    result.setDate(1);
+
+    result.setMonth(
+        result.getMonth() +
+        months
+    );
+
+    const lastDay =
+        new Date(
+            result.getFullYear(),
+            result.getMonth() + 1,
+            0
+        ).getDate();
+
+    result.setDate(
+        Math.min(
+            originalDay,
+            lastDay
+        )
+    );
+
+    return result;
+
+}
+
+
+function getScheduleDueDate(
+    installmentNo
+) {
+
+    const firstDueDate =
+        getLoanStartDate();
+
+    if (!firstDueDate) {
+        return null;
+    }
+
+    const periods =
+        Math.max(
+            Number(
+                installmentNo || 1
+            ) - 1,
+            0
+        );
+
+    const dueDate =
+        new Date(
+            firstDueDate.getTime()
+        );
+
+    const frequency =
+        String(
+            currentLoan?.paymentFrequency ||
+            currentLoan?.frequency ||
+            "Monthly"
+        ).toLowerCase();
+
+
+    if (
+        frequency === "weekly"
+    ) {
+
+        dueDate.setDate(
+            dueDate.getDate() +
+            (
+                periods * 7
+            )
+        );
+
+        return dueDate;
+
+    }
+
+
+    if (
+        frequency === "daily"
+    ) {
+
+        dueDate.setDate(
+            dueDate.getDate() +
+            periods
+        );
+
+        return dueDate;
+
+    }
+
+
+    return addMonthsSafe(
+        dueDate,
+        periods
+    );
+
+}
+
+
+function toScheduleDate(
+    value
+) {
+
+    if (!value) {
+        return null;
+    }
+
+    try {
+
+        const date =
+            value &&
+            typeof value.toDate === "function"
+                ? value.toDate()
+                : new Date(value);
+
+        if (
+            isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return null;
+
+        }
+
+        return new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate()
+        );
+
+    } catch (error) {
+
+        return null;
+
+    }
+
+}
+
+
+function scheduleDateKey(
+    value
+) {
+
+    const date =
+        toScheduleDate(
+            value
+        );
+
+    if (!date) {
+        return "";
+    }
+
+    return [
+        date.getFullYear(),
+
+        String(
+            date.getMonth() + 1
+        ).padStart(
+            2,
+            "0"
+        ),
+
+        String(
+            date.getDate()
+        ).padStart(
+            2,
+            "0"
+        )
+
+    ].join("-");
+
+}
+
+
+function getPaymentInstallmentNo(
+    payment
+) {
+
+    const number =
+        getNumber(
+            payment.installmentNo,
+            payment.installmentNumber,
+            payment.emiNumber,
+            payment.emiNo,
+            payment.paidInstallment,
+            payment.paidInstallmentNo
+        );
+
+    return number > 0
+        ? Math.floor(number)
+        : 0;
+
+}
+
+
+function getPaymentAmount(
+    payment
+) {
+
+    return getNumber(
+        payment.amountReceived,
+        payment.paidAmount,
+        payment.amount,
+        payment.totalReceived,
+        payment.collectionAmount
+    );
+
+}
+
+
+function getPaymentPenalty(
+    payment
+) {
+
+    return getNumber(
+        payment.penaltyCollected,
+        payment.penaltyAmount,
+        payment.penalty
+    );
+
+}
+
+
+function getPaymentDate(
+    payment
+) {
+
+    return (
+        payment.paymentDate ||
+        payment.paidDate ||
+        payment.collectionDate ||
+        payment.createdAt ||
+        null
+    );
+
+}
+
+
+// =====================================================
+// LOAD REPAYMENT PAYMENTS
+// =====================================================
+
+async function loadRepaymentSchedule() {
+
+    const body =
+        getElement(
+            "repaymentScheduleBody"
+        );
+
+    if (
+        !body ||
+        !currentLoan
+    ) {
+
+        return;
+
+    }
+
+
+    body.innerHTML = `
+        <tr>
+            <td colspan="9">
+                <div class="empty">
+                    Loading repayment schedule...
+                </div>
+            </td>
+        </tr>
+    `;
+
+
+    try {
+
+        const paymentsRef =
+            collection(
+                db,
+                "payments"
+            );
+
+
+        let snapshot;
+
+
+        // -------------------------------------------------
+        // FIRST: loanDocumentId
+        // -------------------------------------------------
+
+        try {
+
+            snapshot =
+                await getDocs(
+                    query(
+                        paymentsRef,
+                        where(
+                            "loanDocumentId",
+                            "==",
+                            loanDocumentId
+                        )
+                    )
+                );
+
+        } catch (error) {
+
+            console.warn(
+                "loanDocumentId query failed.",
+                error
+            );
+
+            snapshot =
+                null;
+
+        }
+
+
+        // -------------------------------------------------
+        // SECOND: loanId
+        // -------------------------------------------------
+
+        if (
+            !snapshot ||
+            snapshot.empty
+        ) {
+
+            const loanNumber =
+                firstValue(
+                    currentLoan,
+                    [
+                        "loanId",
+                        "loanNumber",
+                        "loanCode"
+                    ]
+                );
+
+
+            if (loanNumber) {
+
+                try {
+
+                    snapshot =
+                        await getDocs(
+                            query(
+                                paymentsRef,
+                                where(
+                                    "loanId",
+                                    "==",
+                                    loanNumber
+                                )
+                            )
+                        );
+
+                } catch (error) {
+
+                    console.warn(
+                        "loanId query failed.",
+                        error
+                    );
+
+                }
+
+            }
+
+        }
+
+
+        repaymentPayments = [];
+
+
+        if (snapshot) {
+
+            snapshot.forEach(
+                paymentSnap => {
+
+                    repaymentPayments.push({
+
+                        id:
+                            paymentSnap.id,
+
+                        ...paymentSnap.data()
+
+                    });
+
+                }
+            );
+
+        }
+
+
+        repaymentSchedule =
+            buildRepaymentSchedule();
+
+
+        renderRepaymentSchedule();
+
+
+    } catch (error) {
+
+        console.error(
+            "Repayment schedule loading error:",
+            error
+        );
+
+
+        repaymentPayments = [];
+
+
+        repaymentSchedule =
+            buildRepaymentSchedule();
+
+
+        renderRepaymentSchedule();
+
+    }
+
+}
+
+
+// =====================================================
+// BUILD REPAYMENT SCHEDULE
+// =====================================================
+
+function buildRepaymentSchedule() {
+
+    const tenure =
+        getLoanTenure();
+
+    const emi =
+        getInstallmentAmount();
+
+
+    if (
+        tenure <= 0 ||
+        emi <= 0
+    ) {
+
+        return [];
+
+    }
+
+
+    const schedule = [];
+
+
+    const today =
+        toScheduleDate(
+            new Date()
+        );
+
+
+    for (
+        let installmentNo = 1;
+        installmentNo <= tenure;
+        installmentNo++
+    ) {
+
+
+        const dueDate =
+            getScheduleDueDate(
+                installmentNo
+            );
+
+
+        const dueDateKey =
+            scheduleDateKey(
+                dueDate
+            );
+
+
+        // -------------------------------------------------
+        // FIND PAYMENTS FOR THIS EMI
+        // -------------------------------------------------
+
+        const matchingPayments =
+            repaymentPayments.filter(
+                payment => {
+
+
+                    const paymentInstallmentNo =
+                        getPaymentInstallmentNo(
+                            payment
+                        );
+
+
+                    // New payment records
+                    // with installment number
+                    if (
+                        paymentInstallmentNo > 0
+                    ) {
+
+                        return (
+                            paymentInstallmentNo ===
+                            installmentNo
+                        );
+
+                    }
+
+
+                    // -------------------------------------------------
+                    // OLD PAYMENT RECORDS
+                    // Match using due date
+                    // -------------------------------------------------
+
+                    const paymentDueDate =
+                        payment.dueDate ||
+                        payment.installmentDueDate ||
+                        payment.emiDueDate;
+
+
+                    if (
+                        paymentDueDate
+                    ) {
+
+                        return (
+                            scheduleDateKey(
+                                paymentDueDate
+                            ) ===
+                            dueDateKey
+                        );
+
+                    }
+
+
+                    return false;
+
+                }
+            );
+
+
+        // -------------------------------------------------
+        // CALCULATE PAYMENT VALUES
+        // -------------------------------------------------
+
+        let paidAmount = 0;
+
+        let penalty = 0;
+
+        let paidDate = null;
+
+        let receiptNumbers = [];
+
+
+        matchingPayments.forEach(
+            payment => {
+
+
+                paidAmount +=
+                    getPaymentAmount(
+                        payment
+                    );
+
+
+                penalty +=
+                    getPaymentPenalty(
+                        payment
+                    );
+
+
+                const paymentDate =
+                    getPaymentDate(
+                        payment
+                    );
+
+
+                if (
+                    paymentDate
+                ) {
+
+                    paidDate =
+                        paymentDate;
+
+                }
+
+
+                if (
+                    payment.receiptNumber
+                ) {
+
+                    receiptNumbers.push(
+                        payment.receiptNumber
+                    );
+
+                }
+
+            }
+        );
+
+
+        // -------------------------------------------------
+        // PAID AMOUNT CANNOT EXCEED EMI
+        // -------------------------------------------------
+
+        paidAmount =
+            Math.min(
+                paidAmount,
+                emi
+            );
+
+
+        // -------------------------------------------------
+        // PENDING
+        // -------------------------------------------------
+
+        const pendingAmount =
+            Math.max(
+                emi -
+                paidAmount,
+                0
+            );
+
+
+        // -------------------------------------------------
+        // STATUS
+        // -------------------------------------------------
+
+        let status =
+            "Upcoming";
+
+
+        const dueDateOnly =
+            toScheduleDate(
+                dueDate
+            );
+
+
+        if (
+            pendingAmount <= 0
+        ) {
+
+            status =
+                penalty > 0
+                    ? "Paid + Penalty"
+                    : "Paid";
+
+        }
+
+        else if (
+            dueDateOnly &&
+            today &&
+            dueDateOnly < today
+        ) {
+
+            status =
+                "Overdue";
+
+        }
+
+        else if (
+            dueDateOnly &&
+            today &&
+            scheduleDateKey(
+                dueDateOnly
+            ) ===
+            scheduleDateKey(
+                today
+            )
+        ) {
+
+            status =
+                "Due Today";
+
+        }
+
+        else {
+
+            status =
+                "Upcoming";
+
+        }
+
+
+        schedule.push({
+
+            installmentNo,
+
+            dueDate,
+
+            dueAmount:
+                emi,
+
+            paidAmount,
+
+            pendingAmount,
+
+            penalty,
+
+            paidDate,
+
+            status,
+
+            receiptNumbers:
+                receiptNumbers.join(
+                    ", "
+                )
+
+        });
+
+    }
+
+
+    return schedule;
+
+}
+
+
+// =====================================================
+// REPAYMENT STATUS CLASS
+// =====================================================
+
+function repaymentStatusClass(
+    status
+) {
+
+    const value =
+        String(
+            status || ""
+        ).toLowerCase();
+
+
+    if (
+        value === "paid"
+    ) {
+
+        return "paid";
+
+    }
+
+
+    if (
+        value.includes(
+            "penalty"
+        )
+    ) {
+
+        return "penalty";
+
+    }
+
+
+    if (
+        value === "overdue"
+    ) {
+
+        return "overdue";
+
+    }
+
+
+    if (
+        value === "due today"
+    ) {
+
+        return "due";
+
+    }
+
+
+    return "upcoming";
+
+}
+
+
+// =====================================================
+// RENDER REPAYMENT SCHEDULE
+// =====================================================
+
+function renderRepaymentSchedule() {
+
+    const body =
+        getElement(
+            "repaymentScheduleBody"
+        );
+
+
+    if (!body) {
+
+        return;
+
+    }
+
+
+    // -------------------------------------------------
+    // SUMMARY
+    // -------------------------------------------------
+
+    const totalDue =
+        repaymentSchedule.reduce(
+            (
+                total,
+                row
+            ) => {
+
+                return (
+                    total +
+                    row.dueAmount
+                );
+
+            },
+            0
+        );
+
+
+    const totalPaid =
+        repaymentSchedule.reduce(
+            (
+                total,
+                row
+            ) => {
+
+                return (
+                    total +
+                    row.paidAmount
+                );
+
+            },
+            0
+        );
+
+
+    const totalPending =
+        repaymentSchedule.reduce(
+            (
+                total,
+                row
+            ) => {
+
+                return (
+                    total +
+                    row.pendingAmount
+                );
+
+            },
+            0
+        );
+
+
+    const totalPenalty =
+        repaymentSchedule.reduce(
+            (
+                total,
+                row
+            ) => {
+
+                return (
+                    total +
+                    row.penalty
+                );
+
+            },
+            0
+        );
+
+
+    // -------------------------------------------------
+    // SUMMARY ELEMENTS
+    // -------------------------------------------------
+
+    setText(
+        "repaymentTotalDue",
+        formatCurrency(
+            totalDue
+        )
+    );
+
+
+    setText(
+        "repaymentTotalPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
+
+
+    setText(
+        "repaymentTotalPending",
+        formatCurrency(
+            totalPending
+        )
+    );
+
+
+    setText(
+        "repaymentTotalPenalty",
+        formatCurrency(
+            totalPenalty
+        )
+    );
+
+
+    // -------------------------------------------------
+    // EMPTY
+    // -------------------------------------------------
+
+    if (
+        !repaymentSchedule.length
+    ) {
+
+        body.innerHTML = `
             <tr>
-                <td colspan="8">
+                <td colspan="9">
                     <div class="empty">
-                        No documents found for this loan.
+                        No repayment schedule available.
                     </div>
                 </td>
             </tr>
@@ -1256,528 +2296,1256 @@ function renderDocuments() {
     }
 
 
-    documentTableBody.innerHTML =
-        loanDocuments.map(
-            documentItem => {
-
-                const status =
-                    documentItem.status ||
-                    "Pending";
-
-
-                const statusClass =
-                    getDocumentStatusClass(
-                        status
-                    );
-
-
-                const staffName =
-                    documentItem.staffName ||
-                    "-";
-
-
-                const holder =
-                    documentItem.currentHolder ||
-                    "-";
-
-
-                return `
-
-                    <tr>
-
-                        <td>
-
-                            <span class="doc-name">
-                                ${escapeHTML(
-                                    documentItem.documentType ||
-                                    "-"
-                                )}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span
-                                class="
-                                    badge
-                                    ${statusClass}
-                                "
-                            >
-                                ${escapeHTML(
-                                    status
-                                )}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-
-                            <span class="holder">
-                                ${escapeHTML(
-                                    holder
-                                )}
-                            </span>
-
-                        </td>
-
-
-                        <td>
-                            ${escapeHTML(
-                                staffName
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${formatDate(
-                                documentItem.receivedDate
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${formatDate(
-                                documentItem.issuedDate
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${formatDate(
-                                documentItem.returnedDate
-                            )}
-                        </td>
-
-
-                        <td>
-                            ${getDocumentActionButton(
-                                documentItem
-                            )}
-                        </td>
-
-                    </tr>
-
-                `;
-
-            }
-        ).join("");
-
-}
-
-
-// =====================================================
-// UPDATE DOCUMENT
-// =====================================================
-
-async function updateDocument(
-    documentId,
-    data,
-    successMessage
-) {
-
-    try {
-
-        const documentRef =
-            doc(
-                db,
-                "documents",
-                documentId
-            );
-
-
-        await updateDoc(
-            documentRef,
-            {
-
-                ...data,
-
-                updatedAt:
-                    serverTimestamp(),
-
-                updatedBy:
-                    currentUser.uid
-
-            }
-        );
-
-
-        showMessage(
-            successMessage,
-            "success"
-        );
-
-
-        await loadDocuments();
-
-
-    } catch (error) {
-
-        console.error(
-            "Document update error:",
-            error
-        );
-
-
-        showMessage(
-            "Unable to update document."
-        );
-
-    }
-
-}
-
-
-// =====================================================
-// RECEIVE DOCUMENT
-// =====================================================
-
-window.receiveDocument =
-    async function(
-        documentId
-    ) {
-
-        const documentItem =
-            loanDocuments.find(
-                item =>
-                    item.id ===
-                    documentId
-            );
-
-
-        if (!documentItem) {
-            return;
-        }
-
-
-        const status =
-            String(
-                documentItem.status ||
-                "Pending"
-            ).toLowerCase();
-
-
-        if (
-            status === "issued"
-        ) {
-
-            showMessage(
-                "Document is currently with staff. Return it first."
-            );
-
-            return;
-
-        }
-
-
-        const confirmed =
-            confirm(
-                `Receive ${documentItem.documentType}?`
-            );
-
-
-        if (!confirmed) {
-            return;
-        }
-
-
-        const today =
-            new Date()
-                .toISOString()
-                .split("T")[0];
-
-
-        const history =
-            Array.isArray(
-                documentItem.history
-            )
-                ? [
-                    ...documentItem.history
-                ]
-                : [];
-
-
-        history.push({
-
-            action:
-                "Document Received",
-
-            status:
-                "Received",
-
-            currentHolder:
-                "Office",
-
-            staffId:
-                "",
-
-            staffCode:
-                "",
-
-            staffName:
-                "",
-
-            date:
-                today,
-
-            remarks:
-                "Document received."
-
-        });
-
-
-        await updateDocument(
-
-            documentId,
-
-            {
-
-                status:
-                    "Received",
-
-                currentHolder:
-                    "Office",
-
-                receivedDate:
-                    today,
-
-                returnedDate:
-                    null,
-
-                staffId:
-                    "",
-
-                staffCode:
-                    "",
-
-                staffName:
-                    "",
-
-                lastAction:
-                    "Document Received",
-
-                lastActionDate:
-                    today,
-
-                history:
-                    history
-
-            },
-
-            `${documentItem.documentType} received successfully.`
-
-        );
-
-    };
-
-
-// =====================================================
-// STAFF LIST
-// =====================================================
-
-let staffList = [];
-
-let selectedIssueDocumentId =
-    null;
-
-
-// =====================================================
-// ISSUE MODAL ELEMENTS
-// =====================================================
-
-const documentIssueModal =
-    document.getElementById(
-        "documentIssueModal"
-    );
-
-const closeIssueModalBtn =
-    document.getElementById(
-        "closeIssueModalBtn"
-    );
-
-const cancelIssueBtn =
-    document.getElementById(
-        "cancelIssueBtn"
-    );
-
-const confirmIssueBtn =
-    document.getElementById(
-        "confirmIssueBtn"
-    );
-
-const issueStaffSelect =
-    document.getElementById(
-        "issueStaffSelect"
-    );
-
-const issueDateInput =
-    document.getElementById(
-        "issueDateInput"
-    );
-
-const issueDocumentName =
-    document.getElementById(
-        "issueDocumentName"
-    );
-
-const issueRemarksInput =
-    document.getElementById(
-        "issueRemarksInput"
-    );
-
-
-// =====================================================
-// TODAY
-// =====================================================
-
-function getTodayDate() {
-
-    const today =
-        new Date();
-
-
-    const year =
-        today.getFullYear();
-
-
-    const month =
-        String(
-            today.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            today.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    return `${year}-${month}-${day}`;
-
-}
-
-
-// =====================================================
-// LOAD ACTIVE STAFF
-// =====================================================
-
-async function loadActiveStaff() {
-
-    try {
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "staff"
-                )
-            );
-
-
-        staffList = [];
-
-
-        snapshot.forEach(
-            staffDoc => {
-
-                const data =
-                    staffDoc.data();
-
-
-                const status =
-                    String(
-                        data.status ||
-                        "active"
-                    ).toLowerCase();
-
-
-                const active =
-                    data.active !== false;
-
-
-                if (
-                    status !== "active" &&
-                    data.status
-                ) {
-
-                    return;
-
-                }
-
-
-                if (!active) {
-                    return;
-                }
-
-
-                staffList.push({
-
-                    id:
-                        staffDoc.id,
-
-                    staffId:
-                        data.staffId ||
-                        data.employeeId ||
-                        staffDoc.id,
-
-                    name:
-                        data.name ||
-                        data.staffName ||
-                        data.fullName ||
-                        data.username ||
-                        "Staff"
-
-                });
-
-            }
-        );
-
-
-        staffList.sort(
-            (a, b) =>
-                a.name.localeCompare(
-                    b.name
-                )
-        );
-
-
-        if (issueStaffSelect) {
-
-            issueStaffSelect.innerHTML = `
-                <option value="">
-                    Select Staff
-                </option>
-            `;
-
-
-            staffList.forEach(
-                staff => {
-
-                    const option =
-                        document.createElement(
-                            "option"
+    // -------------------------------------------------
+    // TABLE
+    // -------------------------------------------------
+
+    body.innerHTML =
+        repaymentSchedule
+            .map(
+                row => {
+
+
+                    const statusClass =
+                        repaymentStatusClass(
+                            row.status
                         );
 
 
-                    option.value =
-                        staff.id;
+                    return `
+                        <tr>
+
+                            <td>
+                                ${row.installmentNo}
+                            </td>
+
+                            <td>
+                                ${formatDate(
+                                    row.dueDate
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatCurrency(
+                                    row.dueAmount
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatCurrency(
+                                    row.paidAmount
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatCurrency(
+                                    row.pendingAmount
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatCurrency(
+                                    row.penalty
+                                )}
+                            </td>
+
+                            <td>
+                                ${formatDate(
+                                    row.paidDate
+                                )}
+                            </td>
+
+                            <td>
+
+                                <span
+                                    class="status ${statusClass}"
+                                >
+                                    ${escapeHTML(
+                                        row.status
+                                    )}
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                ${
+                                    row.paidAmount > 0
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="action-btn"
+                                                onclick="downloadRepaymentInstallment(${row.installmentNo})"
+                                            >
+                                                Download
+                                            </button>
+                                        `
+                                        : "-"
+                                }
+
+                            </td>
+
+                        </tr>
+                    `;
+
+                }
+            )
+            .join("");
+
+}
 
 
-                    option.textContent =
-                        `${staff.name} (${staff.staffId})`;
+// =====================================================
+// REPAYMENT SCHEDULE TOGGLE
+// =====================================================
+
+function setupRepaymentToggle() {
+
+    const button =
+        getElement(
+            "toggleRepaymentBtn"
+        );
+
+    const container =
+        getElement(
+            "repaymentScheduleSection"
+        );
 
 
-                    issueStaffSelect.appendChild(
-                        option
+    if (
+        !button ||
+        !container
+    ) {
+
+        return;
+
+    }
+
+
+    // -------------------------------------------------
+    // DEFAULT CLOSED
+    // -------------------------------------------------
+
+    container.style.display =
+        "none";
+
+
+    button.textContent =
+        "View Repayment Schedule";
+
+
+    let loaded = false;
+
+
+    button.addEventListener(
+        "click",
+        async () => {
+
+
+            const hidden =
+                container.style.display ===
+                "none";
+
+
+            if (hidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Repayment Schedule";
+
+
+                if (!loaded) {
+
+                    await loadRepaymentSchedule();
+
+                    loaded = true;
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Repayment Schedule";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// DOCUMENT TOGGLE
+// =====================================================
+
+function setupLoanDocumentsToggle() {
+
+    const button =
+        getElement(
+            "toggleDocumentsBtn"
+        );
+
+    const container =
+        getElement(
+            "loanDocuments"
+        );
+
+
+    if (
+        !button ||
+        !container
+    ) {
+
+        return;
+
+    }
+
+
+    // -------------------------------------------------
+    // DEFAULT CLOSED
+    // -------------------------------------------------
+
+    container.style.display =
+        "none";
+
+
+    button.textContent =
+        "View Loan Documents";
+
+
+    let loaded = false;
+
+
+    button.addEventListener(
+        "click",
+        async () => {
+
+
+            const hidden =
+                container.style.display ===
+                "none";
+
+
+            if (hidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Loan Documents";
+
+
+                if (!loaded) {
+
+                    await loadDocuments();
+
+                    loaded = true;
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Loan Documents";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// CSV HELPERS
+// =====================================================
+
+function repaymentCsvEscape(
+    value
+) {
+
+    return `"${String(
+        value ?? ""
+    ).replace(
+        /"/g,
+        '""'
+    )}"`;
+
+}
+
+
+function downloadCsvFile(
+    filename,
+    rows
+) {
+
+    const csv =
+        rows
+            .map(
+                row =>
+                    row
+                        .map(
+                            repaymentCsvEscape
+                        )
+                        .join(",")
+            )
+            .join(
+                "\r\n"
+            );
+
+
+    const blob =
+        new Blob(
+            [csv],
+            {
+                type:
+                    "text/csv;charset=utf-8;"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        filename;
+
+
+    document.body.appendChild(
+        link
+    );
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+// =====================================================
+// DOWNLOAD FULL REPAYMENT SCHEDULE
+// =====================================================
+
+window.downloadRepaymentSchedule =
+    function () {
+
+
+        if (
+            !repaymentSchedule.length
+        ) {
+
+            showMessage(
+                "Repayment schedule is not available."
+            );
+
+            return;
+
+        }
+
+
+        const loan =
+            currentLoan || {};
+
+
+        const loanNumber =
+            firstValue(
+                loan,
+                [
+                    "loanId",
+                    "loanNumber",
+                    "loanCode"
+                ],
+                loan.id ||
+                "loan"
+            );
+
+
+        const rows = [
+
+            [
+                "SR Auto Finance"
+            ],
+
+            [
+                "Loan ID",
+                loanNumber
+            ],
+
+            [
+                "Customer",
+                firstValue(
+                    loan,
+                    [
+                        "customerName"
+                    ],
+                    currentCustomer?.name ||
+                    currentCustomer?.customerName ||
+                    ""
+                )
+            ],
+
+            [
+                "Loan Amount",
+                getNumber(
+                    loan.loanAmount,
+                    loan.principalAmount,
+                    loan.amount
+                )
+            ],
+
+            [
+                "Installment",
+                getInstallmentAmount()
+            ],
+
+            [
+                "Tenure",
+                getLoanTenure()
+            ],
+
+            [],
+
+            [
+                "EMI No",
+                "Due Date",
+                "Due Amount",
+                "Paid Amount",
+                "Pending Amount",
+                "Penalty",
+                "Paid Date",
+                "Status",
+                "Receipt Number"
+            ]
+
+        ];
+
+
+        repaymentSchedule.forEach(
+            row => {
+
+                rows.push([
+
+                    row.installmentNo,
+
+                    formatDate(
+                        row.dueDate
+                    ),
+
+                    row.dueAmount,
+
+                    row.paidAmount,
+
+                    row.pendingAmount,
+
+                    row.penalty,
+
+                    formatDate(
+                        row.paidDate
+                    ),
+
+                    row.status,
+
+                    row.receiptNumbers
+
+                ]);
+
+            }
+        );
+
+
+        downloadCsvFile(
+            `${loanNumber}-repayment-schedule.csv`,
+            rows
+        );
+
+    };
+
+
+// =====================================================
+// DOWNLOAD INDIVIDUAL EMI
+// =====================================================
+
+window.downloadRepaymentInstallment =
+    function (
+        installmentNo
+    ) {
+
+
+        const row =
+            repaymentSchedule.find(
+                item =>
+                    item.installmentNo ===
+                    Number(
+                        installmentNo
+                    )
+            );
+
+
+        if (!row) {
+
+            showMessage(
+                "Installment not found."
+            );
+
+            return;
+
+        }
+
+
+        const loan =
+            currentLoan || {};
+
+
+        const loanNumber =
+            firstValue(
+                loan,
+                [
+                    "loanId",
+                    "loanNumber",
+                    "loanCode"
+                ],
+                loan.id ||
+                "loan"
+            );
+
+
+        const rows = [
+
+            [
+                "SR Auto Finance"
+            ],
+
+            [
+                "Loan ID",
+                loanNumber
+            ],
+
+            [
+                "Customer",
+                firstValue(
+                    loan,
+                    [
+                        "customerName"
+                    ],
+                    currentCustomer?.name ||
+                    currentCustomer?.customerName ||
+                    ""
+                )
+            ],
+
+            [
+                "EMI Number",
+                row.installmentNo
+            ],
+
+            [
+                "Due Date",
+                formatDate(
+                    row.dueDate
+                )
+            ],
+
+            [
+                "Due Amount",
+                row.dueAmount
+            ],
+
+            [
+                "Paid Amount",
+                row.paidAmount
+            ],
+
+            [
+                "Pending Amount",
+                row.pendingAmount
+            ],
+
+            [
+                "Penalty",
+                row.penalty
+            ],
+
+            [
+                "Paid Date",
+                formatDate(
+                    row.paidDate
+                )
+            ],
+
+            [
+                "Status",
+                row.status
+            ],
+
+            [
+                "Receipt Number",
+                row.receiptNumbers
+            ]
+
+        ];
+
+
+        downloadCsvFile(
+            `${loanNumber}-EMI-${row.installmentNo}.csv`,
+            rows
+        );
+
+    };
+
+
+// =====================================================
+// PAGE INITIALIZATION
+// =====================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        setupDocumentToggle();
+
+        setupRepaymentToggle();
+
+    }
+);
+
+
+// =====================================================
+// END PART 2
+// =====================================================
+// =====================================================
+// PART 3
+// LOAN ACTIONS / CLOSING / EVENTS
+// =====================================================
+
+
+// =====================================================
+// LOAN DOCUMENT MANUAL STATUS ACTION
+// =====================================================
+
+window.markDocumentIssued =
+    async function (
+        documentId
+    ) {
+
+        await updateDocumentStatus(
+            documentId,
+            "Issued"
+        );
+
+    };
+
+
+window.markDocumentReturned =
+    async function (
+        documentId
+    ) {
+
+        await updateDocumentStatus(
+            documentId,
+            "Returned"
+        );
+
+    };
+
+
+// =====================================================
+// DOCUMENT DOWNLOAD
+// =====================================================
+
+window.downloadLoanDocument =
+    function (
+        url,
+        fileName = "loan-document"
+    ) {
+
+        if (!url) {
+
+            showMessage(
+                "Document file is not available."
+            );
+
+            return;
+
+        }
+
+        const link =
+            document.createElement(
+                "a"
+            );
+
+        link.href =
+            url;
+
+        link.download =
+            fileName;
+
+        link.target =
+            "_blank";
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        link.remove();
+
+    };
+
+
+// =====================================================
+// LOAN CLOSING SUMMARY
+// =====================================================
+
+function renderClosingSummary() {
+
+    const loan =
+        currentLoan || {};
+
+
+    const loanAmount =
+        getNumber(
+            loan.loanAmount,
+            loan.principalAmount,
+            loan.amount
+        );
+
+
+    const totalPaid =
+        getNumber(
+            loan.totalPaid,
+            loan.paidAmount,
+            loan.amountPaid
+        );
+
+
+    const totalPenalty =
+        getNumber(
+            loan.totalPenalty,
+            loan.penaltyCollected,
+            loan.penaltyAmount
+        );
+
+
+    const outstanding =
+        getNumber(
+            loan.balanceAmount,
+            loan.outstandingAmount,
+            loan.balance,
+            loan.pendingAmount
+        );
+
+
+    setText(
+        "closingLoanAmount",
+        formatCurrency(
+            loanAmount
+        )
+    );
+
+
+    setText(
+        "closingTotalPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
+
+
+    setText(
+        "closingPenalty",
+        formatCurrency(
+            totalPenalty
+        )
+    );
+
+
+    setText(
+        "closingOutstanding",
+        formatCurrency(
+            outstanding
+        )
+    );
+
+
+    setText(
+        "closingStatus",
+        firstValue(
+            loan,
+            [
+                "status"
+            ],
+            "Active"
+        )
+    );
+
+
+    setText(
+        "closingDate",
+        formatDate(
+            firstValue(
+                loan,
+                [
+                    "closedDate",
+                    "closingDate"
+                ]
+            )
+        )
+    );
+
+
+    setText(
+        "closingRemarks",
+        firstValue(
+            loan,
+            [
+                "closingRemarks",
+                "closureRemarks"
+            ],
+            "-"
+        )
+    );
+
+}
+
+
+// =====================================================
+// REFRESH LOAN DATA
+// =====================================================
+
+async function refreshLoanView() {
+
+    await loadLoan();
+
+}
+
+
+// =====================================================
+// BACK BUTTON
+// =====================================================
+
+function setupBackButton() {
+
+    const button =
+        getElement(
+            "backBtn"
+        );
+
+
+    if (!button) {
+        return;
+    }
+
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            if (
+                window.history.length > 1
+            ) {
+
+                window.history.back();
+
+            } else {
+
+                window.location.href =
+                    "loans.html";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// CLOSE PAGE
+// =====================================================
+
+function setupCloseButton() {
+
+    const buttons =
+        document.querySelectorAll(
+            "[data-action='close']"
+        );
+
+
+    buttons.forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    window.close();
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// PRINT LOAN VIEW
+// =====================================================
+
+function setupPrintButton() {
+
+    const button =
+        getElement(
+            "printBtn"
+        );
+
+
+    if (!button) {
+        return;
+    }
+
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            window.print();
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// LOAN INFORMATION DOWNLOAD
+// =====================================================
+
+window.downloadLoanSummary =
+    function () {
+
+        const loan =
+            currentLoan || {};
+
+        const customer =
+            currentCustomer || {};
+
+
+        const rows = [
+
+            [
+                "SR Auto Finance"
+            ],
+
+            [
+                "Loan ID",
+                firstValue(
+                    loan,
+                    [
+                        "loanId",
+                        "loanNumber",
+                        "loanCode"
+                    ],
+                    loan.id ||
+                    ""
+                )
+            ],
+
+            [
+                "Customer",
+                firstValue(
+                    loan,
+                    [
+                        "customerName"
+                    ],
+                    firstValue(
+                        customer,
+                        [
+                            "name",
+                            "customerName",
+                            "fullName"
+                        ],
+                        ""
+                    )
+                )
+            ],
+
+            [
+                "Mobile",
+                firstValue(
+                    loan,
+                    [
+                        "customerMobile",
+                        "mobile",
+                        "phone"
+                    ],
+                    firstValue(
+                        customer,
+                        [
+                            "mobile",
+                            "phone"
+                        ],
+                        ""
+                    )
+                )
+            ],
+
+            [
+                "Loan Amount",
+                getNumber(
+                    loan.loanAmount,
+                    loan.principalAmount,
+                    loan.amount
+                )
+            ],
+
+            [
+                "Installment",
+                getInstallmentAmount()
+            ],
+
+            [
+                "Tenure",
+                getLoanTenure()
+            ],
+
+            [
+                "Interest Rate",
+                getNumber(
+                    loan.interestRate,
+                    loan.interestPercentage,
+                    loan.rate
+                )
+            ],
+
+            [
+                "Total Paid",
+                getNumber(
+                    loan.totalPaid,
+                    loan.paidAmount,
+                    loan.amountPaid
+                )
+            ],
+
+            [
+                "Penalty",
+                getNumber(
+                    loan.totalPenalty,
+                    loan.penaltyCollected,
+                    loan.penaltyAmount
+                )
+            ],
+
+            [
+                "Outstanding",
+                getNumber(
+                    loan.balanceAmount,
+                    loan.outstandingAmount,
+                    loan.balance,
+                    loan.pendingAmount
+                )
+            ],
+
+            [
+                "Status",
+                firstValue(
+                    loan,
+                    [
+                        "status"
+                    ],
+                    "Active"
+                )
+            ]
+
+        ];
+
+
+        const loanNumber =
+            firstValue(
+                loan,
+                [
+                    "loanId",
+                    "loanNumber",
+                    "loanCode"
+                ],
+                loan.id ||
+                "loan"
+            );
+
+
+        downloadCsvFile(
+            `${loanNumber}-loan-summary.csv`,
+            rows
+        );
+
+    };
+
+
+// =====================================================
+// PAYMENT HISTORY
+// =====================================================
+
+let loanPaymentHistory = [];
+
+
+async function loadPaymentHistory() {
+
+    const container =
+        getElement(
+            "paymentHistory"
+        );
+
+
+    if (!container) {
+        return;
+    }
+
+
+    container.innerHTML =
+        `
+        <div class="empty">
+            Loading payment history...
+        </div>
+        `;
+
+
+    try {
+
+        const paymentsRef =
+            collection(
+                db,
+                "payments"
+            );
+
+
+        let snapshot = null;
+
+
+        // -------------------------------------------------
+        // LOAN DOCUMENT ID
+        // -------------------------------------------------
+
+        try {
+
+            snapshot =
+                await getDocs(
+                    query(
+                        paymentsRef,
+                        where(
+                            "loanDocumentId",
+                            "==",
+                            loanDocumentId
+                        )
+                    )
+                );
+
+        } catch (error) {
+
+            console.warn(
+                "Payment history loanDocumentId query failed.",
+                error
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // LOAN ID
+        // -------------------------------------------------
+
+        if (
+            !snapshot ||
+            snapshot.empty
+        ) {
+
+            const loanNumber =
+                firstValue(
+                    currentLoan,
+                    [
+                        "loanId",
+                        "loanNumber",
+                        "loanCode"
+                    ]
+                );
+
+
+            if (loanNumber) {
+
+                try {
+
+                    snapshot =
+                        await getDocs(
+                            query(
+                                paymentsRef,
+                                where(
+                                    "loanId",
+                                    "==",
+                                    loanNumber
+                                )
+                            )
+                        );
+
+                } catch (error) {
+
+                    console.warn(
+                        "Payment history loanId query failed.",
+                        error
                     );
+
+                }
+
+            }
+
+        }
+
+
+        loanPaymentHistory = [];
+
+
+        if (snapshot) {
+
+            snapshot.forEach(
+                paymentSnap => {
+
+                    loanPaymentHistory.push({
+
+                        id:
+                            paymentSnap.id,
+
+                        ...paymentSnap.data()
+
+                    });
 
                 }
             );
@@ -1785,560 +3553,323 @@ async function loadActiveStaff() {
         }
 
 
+        loanPaymentHistory.sort(
+            (
+                first,
+                second
+            ) => {
+
+                const firstDate =
+                    toScheduleDate(
+                        getPaymentDate(
+                            first
+                        )
+                    );
+
+                const secondDate =
+                    toScheduleDate(
+                        getPaymentDate(
+                            second
+                        )
+                    );
+
+
+                return (
+                    (
+                        secondDate?.getTime() ||
+                        0
+                    ) -
+                    (
+                        firstDate?.getTime() ||
+                        0
+                    )
+                );
+
+            }
+        );
+
+
+        renderPaymentHistory();
+
+
     } catch (error) {
 
         console.error(
-            "Staff loading error:",
+            "Payment history error:",
             error
         );
 
 
-        showMessage(
-            "Unable to load active staff."
+        container.innerHTML =
+            `
+            <div class="empty">
+                Unable to load payment history.
+            </div>
+            `;
+
+    }
+
+}
+
+
+// =====================================================
+// RENDER PAYMENT HISTORY
+// =====================================================
+
+function renderPaymentHistory() {
+
+    const container =
+        getElement(
+            "paymentHistory"
         );
 
+
+    if (!container) {
+        return;
     }
 
-}
 
-
-// =====================================================
-// ISSUE DOCUMENT
-// =====================================================
-
-window.issueDocument =
-    async function(
-        documentId
+    if (
+        !loanPaymentHistory.length
     ) {
 
-        const documentItem =
-            loanDocuments.find(
-                item =>
-                    item.id ===
-                    documentId
-            );
+        container.innerHTML =
+            `
+            <div class="empty">
+                No payment history available.
+            </div>
+            `;
 
-
-        if (!documentItem) {
-
-            showMessage(
-                "Document not found."
-            );
-
-            return;
-
-        }
-
-
-        const status =
-            String(
-                documentItem.status ||
-                ""
-            ).toLowerCase();
-
-
-        if (
-            status !== "received"
-        ) {
-
-            showMessage(
-                "Only received documents can be issued to staff."
-            );
-
-            return;
-
-        }
-
-
-        selectedIssueDocumentId =
-            documentId;
-
-
-        if (issueDocumentName) {
-
-            issueDocumentName.textContent =
-                documentItem.documentType ||
-                "Document";
-
-        }
-
-
-        if (issueDateInput) {
-
-            issueDateInput.value =
-                getTodayDate();
-
-        }
-
-
-        if (issueRemarksInput) {
-
-            issueRemarksInput.value =
-                "";
-
-        }
-
-
-        await loadActiveStaff();
-
-
-        if (
-            !staffList.length
-        ) {
-
-            showMessage(
-                "No active staff available."
-            );
-
-            return;
-
-        }
-
-
-        if (documentIssueModal) {
-
-            documentIssueModal.style.display =
-                "flex";
-
-        }
-
-    };
-
-
-// =====================================================
-// CLOSE ISSUE MODAL
-// =====================================================
-
-function closeIssueModal() {
-
-    selectedIssueDocumentId =
-        null;
-
-
-    if (documentIssueModal) {
-
-        documentIssueModal.style.display =
-            "none";
+        return;
 
     }
 
 
-    if (issueStaffSelect) {
+    container.innerHTML =
+        `
+        <div class="table-wrap">
 
-        issueStaffSelect.value =
-            "";
+            <table>
 
-    }
+                <thead>
 
+                    <tr>
 
-    if (issueRemarksInput) {
+                        <th>
+                            Date
+                        </th>
 
-        issueRemarksInput.value =
-            "";
-
-    }
-
-}
-
-
-if (closeIssueModalBtn) {
-
-    closeIssueModalBtn.addEventListener(
-        "click",
-        closeIssueModal
-    );
-
-}
-
-
-if (cancelIssueBtn) {
-
-    cancelIssueBtn.addEventListener(
-        "click",
-        closeIssueModal
-    );
-
-}
-
-
-// =====================================================
-// CONFIRM ISSUE
-// =====================================================
-
-if (confirmIssueBtn) {
-
-    confirmIssueBtn.addEventListener(
-        "click",
-        async function() {
-
-            if (
-                !selectedIssueDocumentId
-            ) {
-
-                showMessage(
-                    "Document not selected."
-                );
-
-                return;
-
-            }
-
-
-            const staffDocumentId =
-                issueStaffSelect?.value;
-
-
-            if (!staffDocumentId) {
-
-                showMessage(
-                    "Please select staff."
-                );
-
-                return;
-
-            }
-
-
-            const staff =
-                staffList.find(
-                    item =>
-                        item.id ===
-                        staffDocumentId
-                );
-
-
-            if (!staff) {
-
-                showMessage(
-                    "Selected staff not found."
-                );
-
-                return;
-
-            }
-
-
-            const issueDate =
-                issueDateInput?.value ||
-                getTodayDate();
-
-
-            const remarks =
-                issueRemarksInput?.value.trim() ||
-                "";
-
-
-            const documentItem =
-                loanDocuments.find(
-                    item =>
-                        item.id ===
-                        selectedIssueDocumentId
-                );
-
-
-            if (!documentItem) {
-
-                showMessage(
-                    "Document not found."
-                );
-
-                return;
-
-            }
-
-
-            confirmIssueBtn.disabled =
-                true;
-
-
-            confirmIssueBtn.textContent =
-                "Issuing...";
-
-
-            try {
-
-                const history =
-                    Array.isArray(
-                        documentItem.history
-                    )
-                        ? [
-                            ...documentItem.history
-                        ]
-                        : [];
-
-
-                history.push({
-
-                    action:
-                        "Document Issued to Staff",
-
-                    status:
-                        "Issued",
-
-                    currentHolder:
-                        "Staff",
-
-                    staffId:
-                        staff.id,
-
-                    staffCode:
-                        staff.staffId,
-
-                    staffName:
-                        staff.name,
-
-                    date:
-                        issueDate,
-
-                    remarks:
-                        remarks
-
-                });
-
-
-                const documentRef =
-                    doc(
-                        db,
-                        "documents",
-                        selectedIssueDocumentId
-                    );
-
-
-                await updateDoc(
-                    documentRef,
-                    {
-
-                        status:
-                            "Issued",
-
-                        currentHolder:
-                            "Staff",
-
-                        staffId:
-                            staff.id,
-
-                        staffCode:
-                            staff.staffId,
-
-                        staffName:
-                            staff.name,
-
-                        issuedDate:
-                            issueDate,
-
-                        lastAction:
-                            "Document Issued to Staff",
-
-                        lastActionDate:
-                            issueDate,
-
-                        remarks:
-                            remarks,
-
-                        history:
-                            history,
-
-                        updatedAt:
-                            serverTimestamp(),
-
-                        updatedBy:
-                            currentUser.uid
-
+                        <th>
+                            EMI
+                        </th>
+
+                        <th>
+                            Paid Amount
+                        </th>
+
+                        <th>
+                            Penalty
+                        </th>
+
+                        <th>
+                            Total Collection
+                        </th>
+
+                        <th>
+                            Payment Mode
+                        </th>
+
+                        <th>
+                            Receipt
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${
+                        loanPaymentHistory
+                            .map(
+                                payment => {
+
+                                    const installmentNo =
+                                        getPaymentInstallmentNo(
+                                            payment
+                                        );
+
+
+                                    const amount =
+                                        getPaymentAmount(
+                                            payment
+                                        );
+
+
+                                    const penalty =
+                                        getPaymentPenalty(
+                                            payment
+                                        );
+
+
+                                    const total =
+                                        amount +
+                                        penalty;
+
+
+                                    return `
+                                        <tr>
+
+                                            <td>
+                                                ${formatDate(
+                                                    getPaymentDate(
+                                                        payment
+                                                    )
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                ${
+                                                    installmentNo ||
+                                                    "-"
+                                                }
+                                            </td>
+
+                                            <td>
+                                                ${formatCurrency(
+                                                    amount
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                ${formatCurrency(
+                                                    penalty
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                <strong>
+                                                    ${formatCurrency(
+                                                        total
+                                                    )}
+                                                </strong>
+                                            </td>
+
+                                            <td>
+                                                ${escapeHTML(
+                                                    firstValue(
+                                                        payment,
+                                                        [
+                                                            "paymentMode",
+                                                            "mode"
+                                                        ],
+                                                        "-"
+                                                    )
+                                                )}
+                                            </td>
+
+                                            <td>
+                                                ${escapeHTML(
+                                                    firstValue(
+                                                        payment,
+                                                        [
+                                                            "receiptNumber",
+                                                            "receiptNo"
+                                                        ],
+                                                        "-"
+                                                    )
+                                                )}
+                                            </td>
+
+                                        </tr>
+                                    `;
+
+                                }
+                            )
+                            .join("")
                     }
-                );
 
+                </tbody>
 
-                closeIssueModal();
+            </table>
 
-
-                showMessage(
-                    `${documentItem.documentType} issued to ${staff.name}.`,
-                    "success"
-                );
-
-
-                await loadDocuments();
-
-
-            } catch (error) {
-
-                console.error(
-                    "Document issue error:",
-                    error
-                );
-
-
-                showMessage(
-                    "Unable to issue document."
-                );
-
-            } finally {
-
-                confirmIssueBtn.disabled =
-                    false;
-
-                confirmIssueBtn.textContent =
-                    "Issue Document";
-
-            }
-
-        }
-    );
+        </div>
+        `;
 
 }
 
 
 // =====================================================
-// RETURN DOCUMENT
+// PAYMENT HISTORY TOGGLE
 // =====================================================
 
-window.returnDocument =
-    async function(
-        documentId
-    ) {
+function setupPaymentHistoryToggle() {
 
-        const documentItem =
-            loanDocuments.find(
-                item =>
-                    item.id ===
-                    documentId
-            );
-
-
-        if (!documentItem) {
-            return;
-        }
-
-
-        const status =
-            String(
-                documentItem.status ||
-                ""
-            ).toLowerCase();
-
-
-        if (
-            status !== "issued"
-        ) {
-
-            showMessage(
-                "Only issued documents can be returned."
-            );
-
-            return;
-
-        }
-
-
-        const confirmed =
-            confirm(
-                `Return ${documentItem.documentType} from ${
-                    documentItem.staffName ||
-                    "staff"
-                }?`
-            );
-
-
-        if (!confirmed) {
-            return;
-        }
-
-
-        const today =
-            getTodayDate();
-
-
-        const history =
-            Array.isArray(
-                documentItem.history
-            )
-                ? [
-                    ...documentItem.history
-                ]
-                : [];
-
-
-        history.push({
-
-            action:
-                "Document Returned",
-
-            status:
-                "Returned",
-
-            currentHolder:
-                "Office",
-
-            staffId:
-                documentItem.staffId ||
-                "",
-
-            staffCode:
-                documentItem.staffCode ||
-                "",
-
-            staffName:
-                documentItem.staffName ||
-                "",
-
-            date:
-                today,
-
-            remarks:
-                "Document returned to office."
-
-        });
-
-
-        await updateDocument(
-
-            documentId,
-
-            {
-
-                status:
-                    "Returned",
-
-                currentHolder:
-                    "Office",
-
-                returnedDate:
-                    today,
-
-                lastAction:
-                    "Document Returned",
-
-                lastActionDate:
-                    today,
-
-                history:
-                    history
-
-            },
-
-            `${documentItem.documentType} returned successfully.`
-
+    const button =
+        getElement(
+            "togglePaymentHistoryBtn"
         );
 
-    };
+    const container =
+        getElement(
+            "paymentHistory"
+        );
 
 
-// =====================================================
-// MODAL OUTSIDE CLICK
-// =====================================================
+    if (
+        !button ||
+        !container
+    ) {
 
-if (documentIssueModal) {
+        return;
 
-    documentIssueModal.addEventListener(
+    }
+
+
+    container.style.display =
+        "none";
+
+
+    button.textContent =
+        "View Payment History";
+
+
+    let loaded = false;
+
+
+    button.addEventListener(
         "click",
-        function(event) {
+        async () => {
 
-            if (
-                event.target ===
-                documentIssueModal
-            ) {
+            const hidden =
+                container.style.display ===
+                "none";
 
-                closeIssueModal();
+
+            if (hidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Payment History";
+
+
+                if (!loaded) {
+
+                    await loadPaymentHistory();
+
+                    loaded = true;
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Payment History";
 
             }
 
@@ -2349,28 +3880,48 @@ if (documentIssueModal) {
 
 
 // =====================================================
-// AUTH
+// INITIALIZE ALL PAGE CONTROLS
 // =====================================================
 
-onAuthStateChanged(
-    auth,
-    async function(user) {
+function initializePageControls() {
 
-        if (!user) {
+    setupBackButton();
 
-            window.location.href =
-                "login.html";
+    setupCloseButton();
 
-            return;
+    setupPrintButton();
 
-        }
+    setupDocumentToggle();
+
+    setupRepaymentToggle();
+
+    setupPaymentHistoryToggle();
+
+}
 
 
-        currentUser =
-            user;
+// =====================================================
+// DOM READY
+// =====================================================
 
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-        await loadLoan();
+        initializePageControls();
 
     }
 );
+
+
+// =====================================================
+// GLOBAL REFRESH
+// =====================================================
+
+window.refreshLoanView =
+    refreshLoanView;
+
+
+// =====================================================
+// END OF LOAN VIEW CONTROLLER
+// =====================================================
