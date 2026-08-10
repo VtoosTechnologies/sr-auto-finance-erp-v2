@@ -1230,11 +1230,16 @@ function getLoanTenure() {
     return Math.max(
         Math.floor(
             getNumber(
+                currentLoan?.tenure,
                 currentLoan?.totalInstallments,
                 currentLoan?.installments,
                 currentLoan?.duration,
                 currentLoan?.loanDuration,
-                currentLoan?.tenure
+                currentLoan?.numberOfInstallments,
+                currentLoan?.numberOfMonths,
+                currentLoan?.months,
+                currentLoan?.termMonths,
+                currentLoan?.durationMonths
             )
         ),
         0
@@ -1245,12 +1250,40 @@ function getLoanTenure() {
 
 function getInstallmentAmount() {
 
-    return getNumber(
+    const directAmount = getNumber(
         currentLoan?.installmentAmount,
         currentLoan?.monthlyInstallment,
-        currentLoan?.emi
+        currentLoan?.emi,
+        currentLoan?.emiAmount,
+        currentLoan?.monthlyEmi,
+        currentLoan?.monthlyEMI,
+        currentLoan?.installment
     );
 
+    if (directAmount > 0) {
+        return directAmount;
+    }
+
+    // Fallback for older loan records
+    const totalPayable = getNumber(
+        currentLoan?.totalPayable,
+        currentLoan?.totalLoanPayable,
+        currentLoan?.repaymentAmount
+    );
+
+    const tenure = getNumber(
+        currentLoan?.tenure,
+        currentLoan?.totalInstallments,
+        currentLoan?.installments,
+        currentLoan?.duration,
+        currentLoan?.loanDuration
+    );
+
+    if (totalPayable > 0 && tenure > 0) {
+        return totalPayable / tenure;
+    }
+
+    return 0;
 }
 
 
@@ -1501,15 +1534,14 @@ function getPaymentInstallmentNo(
 }
 
 
-function getPaymentAmount(
-    payment
-) {
+function getPaymentAmount(payment) {
 
     return getNumber(
+        payment.emiPaid,
         payment.amountReceived,
         payment.paidAmount,
+        payment.paymentAmount,
         payment.amount,
-        payment.totalReceived,
         payment.collectionAmount
     );
 
@@ -2000,18 +2032,6 @@ function buildRepaymentSchedule() {
 
             }
         );
-
-
-        // =========================================
-        // NEVER SHOW MORE THAN EMI
-        // =========================================
-
-        paidAmount =
-            Math.min(
-                paidAmount,
-                emi
-            );
-
 
         const pendingAmount =
             Math.max(
