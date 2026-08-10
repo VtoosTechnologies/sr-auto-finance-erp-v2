@@ -1513,9 +1513,7 @@ function scheduleDateKey(
 }
 
 
-function getPaymentInstallmentNo(
-    payment
-) {
+function getPaymentInstallmentNo(payment) {
 
     const number =
         getNumber(
@@ -1523,8 +1521,7 @@ function getPaymentInstallmentNo(
             payment.installmentNumber,
             payment.emiNumber,
             payment.emiNo,
-            payment.paidInstallment,
-            payment.paidInstallmentNo
+            payment.emiIndex
         );
 
     return number > 0
@@ -1583,7 +1580,7 @@ function getPaymentDate(
 async function loadRepaymentSchedule() {
 
     const body =
-        getElement(
+        document.getElementById(
             "repaymentScheduleBody"
         );
 
@@ -1591,14 +1588,12 @@ async function loadRepaymentSchedule() {
         !body ||
         !currentLoan
     ) {
-
         return;
-
     }
 
     body.innerHTML = `
         <tr>
-            <td colspan="9">
+            <td colspan="8">
                 <div class="empty">
                     Loading repayment schedule...
                 </div>
@@ -1617,9 +1612,10 @@ async function loadRepaymentSchedule() {
         const paymentMap =
             new Map();
 
-        // =========================================
-        // LOAN DOCUMENT ID
-        // =========================================
+
+        // =================================================
+        // 1. SEARCH BY LOAN DOCUMENT ID
+        // =================================================
 
         try {
 
@@ -1655,18 +1651,63 @@ async function loadRepaymentSchedule() {
         } catch (error) {
 
             console.warn(
-                "loanDocumentId query failed.",
+                "loanDocumentId payment query failed:",
                 error
             );
 
         }
 
 
-        // =========================================
-        // LOAN ID / LOAN NUMBER
-        // =========================================
+        // =================================================
+        // 2. SEARCH BY CURRENT DOCUMENT ID AS loanId
+        // =================================================
 
-        const loanNumber =
+        try {
+
+            const snapshot =
+                await getDocs(
+                    query(
+                        paymentsRef,
+                        where(
+                            "loanId",
+                            "==",
+                            loanDocumentId
+                        )
+                    )
+                );
+
+            snapshot.forEach(
+                paymentSnap => {
+
+                    paymentMap.set(
+                        paymentSnap.id,
+                        {
+                            id:
+                                paymentSnap.id,
+
+                            ...paymentSnap.data()
+
+                        }
+                    );
+
+                }
+            );
+
+        } catch (error) {
+
+            console.warn(
+                "document ID loanId query failed:",
+                error
+            );
+
+        }
+
+
+        // =================================================
+        // 3. SEARCH BY ACTUAL LOAN NUMBER
+        // =================================================
+
+        const actualLoanNumber =
             firstValue(
                 currentLoan,
                 [
@@ -1678,7 +1719,7 @@ async function loadRepaymentSchedule() {
 
 
         if (
-            loanNumber
+            actualLoanNumber
         ) {
 
             try {
@@ -1690,7 +1731,7 @@ async function loadRepaymentSchedule() {
                             where(
                                 "loanId",
                                 "==",
-                                loanNumber
+                                actualLoanNumber
                             )
                         )
                     );
@@ -1715,7 +1756,7 @@ async function loadRepaymentSchedule() {
             } catch (error) {
 
                 console.warn(
-                    "loanId query failed.",
+                    "actual loanId payment query failed:",
                     error
                 );
 
@@ -1724,9 +1765,9 @@ async function loadRepaymentSchedule() {
         }
 
 
-        // =========================================
-        // FINAL PAYMENT LIST
-        // =========================================
+        // =================================================
+        // FINAL UNIQUE PAYMENT LIST
+        // =================================================
 
         repaymentPayments =
             Array.from(
@@ -1734,9 +1775,15 @@ async function loadRepaymentSchedule() {
             );
 
 
-        // =========================================
-        // BUILD
-        // =========================================
+        console.log(
+            "Repayment payments found:",
+            repaymentPayments
+        );
+
+    }
+        // =================================================
+        // BUILD EMI SCHEDULE
+        // =================================================
 
         repaymentSchedule =
             buildRepaymentSchedule();
@@ -1774,14 +1821,11 @@ function buildRepaymentSchedule() {
     const emi =
         getInstallmentAmount();
 
-
     if (
         tenure <= 0 ||
         emi <= 0
     ) {
-
         return [];
-
     }
 
 
@@ -1793,228 +1837,162 @@ function buildRepaymentSchedule() {
         );
 
 
-    // =========================================
-    // PAYMENT ALLOCATION
-    // =========================================
+    // =================================================
+    // SORT PAYMENTS BY PAYMENT DATE
+    // =================================================
 
-    const usedPayments =
-        new Set();
+    const payments =
+        [...repaymentPayments].sort(
+            (a, b) => {
 
-
-    // Payments which already contain EMI number
-    const directPayments =
-        repaymentPayments.filter(
-            payment =>
-                getPaymentInstallmentNo(
-                    payment
-                ) > 0
-        );
-
-
-    // Payments without EMI number
-    const unassignedPayments =
-        repaymentPayments.filter(
-            payment =>
-                getPaymentInstallmentNo(
-                    payment
-                ) <= 0
-        );
-
-
-    // =========================================
-    // CREATE EMI ROWS
-    // =========================================
-
-    for (
-        let installmentNo = 1;
-        installmentNo <= tenure;
-        installmentNo++
-    ) {
-
-        const dueDate =
-            getScheduleDueDate(
-                installmentNo
-            );
-
-
-        const dueDateKey =
-            scheduleDateKey(
-                dueDate
-            );
-
-
-        let matchingPayments = [];
-
-
-        // =========================================
-        // 1. EMI NUMBER MATCH
-        // =========================================
-
-        directPayments.forEach(
-            payment => {
-
-                const paymentEMI =
-                    getPaymentInstallmentNo(
-                        payment
+                const dateA =
+                    toScheduleDate(
+                        getPaymentDate(a)
                     );
 
-
-                if (
-                    paymentEMI ===
-                    installmentNo
-                ) {
-
-                    matchingPayments.push(
-                        payment
+                const dateB =
+                    toScheduleDate(
+                        getPaymentDate(b)
                     );
 
-                    usedPayments.add(
-                        payment.id
-                    );
-
-                }
-
-            }
-        );
-
-
-        // =========================================
-        // 2. DUE DATE MATCH
-        // =========================================
-
-        repaymentPayments.forEach(
-            payment => {
-
-                if (
-                    usedPayments.has(
-                        payment.id
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                const paymentEMI =
-                    getPaymentInstallmentNo(
-                        payment
-                    );
-
-
-                if (
-                    paymentEMI > 0
-                ) {
-
-                    return;
-
-                }
-
-
-                const paymentDueDate =
-                    payment.dueDate ||
-                    payment.installmentDueDate ||
-                    payment.emiDueDate;
-
-
-                if (
-                    paymentDueDate &&
-                    scheduleDateKey(
-                        paymentDueDate
-                    ) ===
-                    dueDateKey
-                ) {
-
-                    matchingPayments.push(
-                        payment
-                    );
-
-                    usedPayments.add(
-                        payment.id
-                    );
-
-                }
-
-            }
-        );
-
-
-        // =========================================
-        // 3. OLD PAYMENT RECORD
-        // WITHOUT EMI / DUE DATE
-        //
-        // Allocate sequentially to EMI
-        // =========================================
-
-        if (
-            matchingPayments.length === 0
-        ) {
-
-            const nextPayment =
-                unassignedPayments.find(
-                    payment =>
-                        !usedPayments.has(
-                            payment.id
-                        )
+                return (
+                    (dateA?.getTime() || 0) -
+                    (dateB?.getTime() || 0)
                 );
 
+            }
+        );
+
+
+    // =================================================
+    // EMI BALANCE
+    // =================================================
+
+    const emiBalances =
+        Array.from(
+            {
+                length: tenure
+            },
+            () => emi
+        );
+
+
+    const emiPaidAmounts =
+        Array.from(
+            {
+                length: tenure
+            },
+            () => 0
+        );
+
+
+    const emiPenalties =
+        Array.from(
+            {
+                length: tenure
+            },
+            () => 0
+        );
+
+
+    const emiPaidDates =
+        Array.from(
+            {
+                length: tenure
+            },
+            () => null
+        );
+
+
+    const emiReceipts =
+        Array.from(
+            {
+                length: tenure
+            },
+            () => []
+        );
+
+
+    // =================================================
+    // ALLOCATE PAYMENTS
+    // OLDEST UNPAID EMI FIRST
+    // =================================================
+
+    payments.forEach(
+        payment => {
+
+            let remainingPayment =
+                getPaymentAmount(
+                    payment
+                );
+
+
+            const penalty =
+                getPaymentPenalty(
+                    payment
+                );
+
+
+            const paymentDate =
+                getPaymentDate(
+                    payment
+                );
+
+
+            const explicitEMI =
+                getPaymentInstallmentNo(
+                    payment
+                );
+
+
+            // =========================================
+            // IF PAYMENT HAS EMI NUMBER
+            // =========================================
 
             if (
-                nextPayment
+                explicitEMI > 0 &&
+                explicitEMI <= tenure
             ) {
 
-                matchingPayments.push(
-                    nextPayment
-                );
-
-                usedPayments.add(
-                    nextPayment.id
-                );
-
-            }
-
-        }
+                const index =
+                    explicitEMI - 1;
 
 
-        // =========================================
-        // CALCULATE
-        // =========================================
-
-        let paidAmount = 0;
-
-        let penalty = 0;
-
-        let paidDate = null;
-
-        let receiptNumbers = [];
-
-
-        matchingPayments.forEach(
-            payment => {
-
-                paidAmount +=
-                    getPaymentAmount(
-                        payment
+                const available =
+                    Math.max(
+                        emiBalances[index],
+                        0
                     );
 
 
-                penalty +=
-                    getPaymentPenalty(
-                        payment
+                const allocation =
+                    Math.min(
+                        remainingPayment,
+                        available
                     );
 
 
-                const paymentDate =
-                    getPaymentDate(
-                        payment
+                emiPaidAmounts[index] +=
+                    allocation;
+
+
+                emiBalances[index] =
+                    Math.max(
+                        emiBalances[index] -
+                        allocation,
+                        0
                     );
+
+
+                remainingPayment -=
+                    allocation;
 
 
                 if (
                     paymentDate
                 ) {
 
-                    paidDate =
+                    emiPaidDates[index] =
                         paymentDate;
 
                 }
@@ -2024,14 +2002,132 @@ function buildRepaymentSchedule() {
                     payment.receiptNumber
                 ) {
 
-                    receiptNumbers.push(
+                    emiReceipts[index].push(
                         payment.receiptNumber
                     );
 
                 }
 
+
+                if (
+                    penalty > 0
+                ) {
+
+                    emiPenalties[index] +=
+                        penalty;
+
+                }
+
             }
-        );
+
+
+            // =========================================
+            // NO EMI NUMBER
+            // ALLOCATE OLDEST UNPAID EMI
+            // =========================================
+
+            while (
+                remainingPayment > 0
+            ) {
+
+                const nextIndex =
+                    emiBalances.findIndex(
+                        balance =>
+                            balance > 0
+                    );
+
+
+                if (
+                    nextIndex === -1
+                ) {
+
+                    break;
+
+                }
+
+
+                const allocation =
+                    Math.min(
+                        remainingPayment,
+                        emiBalances[nextIndex]
+                    );
+
+
+                emiPaidAmounts[nextIndex] +=
+                    allocation;
+
+
+                emiBalances[nextIndex] =
+                    Math.max(
+                        emiBalances[nextIndex] -
+                        allocation,
+                        0
+                    );
+
+
+                remainingPayment -=
+                    allocation;
+
+
+                if (
+                    paymentDate
+                ) {
+
+                    emiPaidDates[nextIndex] =
+                        paymentDate;
+
+                }
+
+
+                if (
+                    payment.receiptNumber
+                ) {
+
+                    emiReceipts[nextIndex].push(
+                        payment.receiptNumber
+                    );
+
+                }
+
+
+                if (
+                    penalty > 0
+                ) {
+
+                    emiPenalties[nextIndex] +=
+                        penalty;
+
+                }
+
+            }
+
+        }
+    );
+
+
+    // =================================================
+    // CREATE EMI ROWS
+    // =================================================
+
+    for (
+        let i = 0;
+        i < tenure;
+        i++
+    ) {
+
+        const installmentNo =
+            i + 1;
+
+
+        const dueDate =
+            getScheduleDueDate(
+                installmentNo
+            );
+
+
+        const paidAmount =
+            emiPaidAmounts[i];
+
 
         const pendingAmount =
             Math.max(
@@ -2041,9 +2137,9 @@ function buildRepaymentSchedule() {
             );
 
 
-        // =========================================
-        // STATUS
-        // =========================================
+        const penalty =
+            emiPenalties[i];
+
 
         let status =
             "Upcoming";
@@ -2063,6 +2159,15 @@ function buildRepaymentSchedule() {
                 penalty > 0
                     ? "Paid + Penalty"
                     : "Paid";
+
+        }
+
+        else if (
+            paidAmount > 0
+        ) {
+
+            status =
+                "Partial";
 
         }
 
@@ -2116,12 +2221,13 @@ function buildRepaymentSchedule() {
 
             penalty,
 
-            paidDate,
+            paidDate:
+                emiPaidDates[i],
 
             status,
 
             receiptNumbers:
-                receiptNumbers.join(
+                emiReceipts[i].join(
                     ", "
                 )
 
