@@ -283,6 +283,22 @@ function setText(
 
 
 // =====================================================
+// DISABLE CLOSE BUTTON
+// =====================================================
+
+function disableCloseButton() {
+
+    if (!closeLoanBtn) {
+        return;
+    }
+
+    closeLoanBtn.disabled =
+        true;
+
+}
+
+
+// =====================================================
 // LOAD LOAN
 // =====================================================
 
@@ -594,10 +610,14 @@ function calculateOverallDue() {
         settlementAmount.value === ""
     ) {
 
-        finalPayable.textContent =
-            formatCurrency(
-                calculatedOverallDue
-            );
+        if (finalPayable) {
+
+            finalPayable.textContent =
+                formatCurrency(
+                    calculatedOverallDue
+                );
+
+        }
 
     }
 
@@ -628,20 +648,28 @@ function updateSettlementDisplay() {
         !isNaN(manualSettlement)
     ) {
 
-        finalPayable.textContent =
-            formatCurrency(
-                Math.max(
-                    manualSettlement,
-                    0
-                )
-            );
+        if (finalPayable) {
+
+            finalPayable.textContent =
+                formatCurrency(
+                    Math.max(
+                        manualSettlement,
+                        0
+                    )
+                );
+
+        }
 
     } else {
 
-        finalPayable.textContent =
-            formatCurrency(
-                calculatedOverallDue
-            );
+        if (finalPayable) {
+
+            finalPayable.textContent =
+                formatCurrency(
+                    calculatedOverallDue
+                );
+
+        }
 
     }
 
@@ -704,18 +732,22 @@ async function loadDocuments() {
 
     try {
 
-        documentCheckList.innerHTML = `
-            <div
-                style="
-                    padding:20px;
-                    text-align:center;
-                    color:#94a3b8;
-                    font-size:11px;
-                "
-            >
-                Checking documents...
-            </div>
-        `;
+        if (documentCheckList) {
+
+            documentCheckList.innerHTML = `
+                <div
+                    style="
+                        padding:20px;
+                        text-align:center;
+                        color:#94a3b8;
+                        font-size:11px;
+                    "
+                >
+                    Checking documents...
+                </div>
+            `;
+
+        }
 
 
         const documentsRef =
@@ -776,20 +808,24 @@ async function loadDocuments() {
             false;
 
 
-        documentCheckList.innerHTML = `
-            <div
-                style="
-                    padding:15px;
-                    background:#fef2f2;
-                    color:#b91c1c;
-                    border-radius:9px;
-                    font-size:11px;
-                "
-            >
-                Unable to verify documents.
-                Loan closing is blocked for safety.
-            </div>
-        `;
+        if (documentCheckList) {
+
+            documentCheckList.innerHTML = `
+                <div
+                    style="
+                        padding:15px;
+                        background:#fef2f2;
+                        color:#b91c1c;
+                        border-radius:9px;
+                        font-size:11px;
+                    "
+                >
+                    Unable to verify documents.
+                    Document status could not be loaded.
+                </div>
+            `;
+
+        }
 
 
         updateClosingButton();
@@ -820,8 +856,8 @@ function isDocumentReady(
      * Pending
      * Issued
      *
-     * We require it to be physically
-     * available with office/owner.
+     * Received / Returned are considered
+     * available with office / owner.
      */
 
     if (
@@ -841,10 +877,6 @@ function isDocumentReady(
 
     }
 
-
-    /*
-     * Received / Returned are accepted.
-     */
 
     if (
         status === "received" ||
@@ -868,6 +900,13 @@ function isDocumentReady(
 function renderDocumentCheck() {
 
     if (
+        !documentCheckList
+    ) {
+        return;
+    }
+
+
+    if (
         !loanDocuments.length
     ) {
 
@@ -879,14 +918,16 @@ function renderDocumentCheck() {
             <div
                 style="
                     padding:15px;
-                    background:#fef2f2;
-                    color:#b91c1c;
+                    background:#fff7ed;
+                    color:#c2410c;
                     border-radius:9px;
                     font-size:11px;
                 "
             >
                 No document records found for this loan.
-                Loan closing is blocked.
+                You can still close the financial loan.
+                Document return cannot be recorded until
+                document records are available.
             </div>
         `;
 
@@ -1034,6 +1075,11 @@ function renderDocumentCheck() {
 
     if (closingWarning) {
 
+        /*
+         * Document pending is only a warning.
+         * It does NOT disable the financial closing.
+         */
+
         if (documentsReady) {
 
             closingWarning.classList.remove(
@@ -1096,15 +1142,16 @@ function updateClosingButton() {
      *
      * 1. Loan loaded
      * 2. Not already closed
-     * 3. Documents ready
-     * 4. Settlement amount entered
+     * 3. Settlement amount entered
+     *
+     * Document status does NOT block
+     * financial closing.
      */
 
     const canClose =
         Boolean(
             currentLoan &&
             !alreadyClosed &&
-            documentsReady &&
             settlementValid
         );
 
@@ -1150,17 +1197,7 @@ function validateClosing() {
 
 
     if (
-        !documentsReady
-    ) {
-
-        return (
-            "All mandatory documents must be received/returned before closing the loan."
-        );
-
-    }
-
-
-    if (
+        !settlementAmount ||
         settlementAmount.value === ""
     ) {
 
@@ -1191,13 +1228,13 @@ function validateClosing() {
 
     const penalty =
         Number(
-            penaltyAmount.value
+            penaltyAmount?.value
         ) || 0;
 
 
     const waiver =
         Number(
-            waiverAmount.value
+            waiverAmount?.value
         ) || 0;
 
 
@@ -1219,6 +1256,137 @@ function validateClosing() {
 
 
 // =====================================================
+// DOCUMENT RETURN STATUS
+// =====================================================
+
+function getDocumentReturnState() {
+
+    const requiredDocuments =
+        loanDocuments.filter(
+            item =>
+                item.requiredForClosure !== false
+        );
+
+
+    if (
+        !requiredDocuments.length
+    ) {
+
+        return {
+
+            status:
+                "Not Returned",
+
+            returned:
+                false
+
+        };
+
+    }
+
+
+    const allReturned =
+        requiredDocuments.every(
+            item =>
+                String(
+                    item.status ||
+                    "Pending"
+                ).toLowerCase() ===
+                "returned"
+        );
+
+
+    if (
+        allReturned
+    ) {
+
+        return {
+
+            status:
+                "Returned",
+
+            returned:
+                true
+
+        };
+
+    }
+
+
+    return {
+
+        status:
+            "Not Returned",
+
+        returned:
+            false
+
+    };
+
+}
+
+
+// =====================================================
+// UPDATE DOCUMENTS ON CLOSE
+// =====================================================
+
+async function updateDocumentsOnClose(
+    returnDocuments,
+    today
+) {
+
+    if (
+        !returnDocuments
+    ) {
+
+        return;
+
+    }
+
+
+    const requiredDocuments =
+        loanDocuments.filter(
+            item =>
+                item.requiredForClosure !==
+                false
+        );
+
+
+    await Promise.all(
+        requiredDocuments.map(
+            documentItem =>
+                updateDoc(
+                    doc(
+                        db,
+                        "documents",
+                        documentItem.id
+                    ),
+                    {
+
+                        status:
+                            "Returned",
+
+                        currentHolder:
+                            "Customer",
+
+                        returnedDate:
+                            today,
+
+                        updatedAt:
+                            serverTimestamp(),
+
+                        returnedBy:
+                            currentUser.uid
+
+                    }
+                )
+        )
+    );
+
+}
+
+
+// =====================================================
 // CLOSE LOAN
 // =====================================================
 
@@ -1228,7 +1396,9 @@ async function closeLoan() {
         validateClosing();
 
 
-    if (validationError) {
+    if (
+        validationError
+    ) {
 
         showMessage(
             validationError
@@ -1254,14 +1424,79 @@ async function closeLoan() {
 
     const penalty =
         Number(
-            penaltyAmount.value
+            penaltyAmount?.value
         ) || 0;
 
 
     const waiver =
         Number(
-            waiverAmount.value
+            waiverAmount?.value
         ) || 0;
+
+
+    // -----------------------------------------------------
+    // DOCUMENT RETURN CONFIRMATION
+    // -----------------------------------------------------
+    //
+    // Documents are NOT required to be received before
+    // financial closure.
+    //
+    // If documents are still Pending:
+    //     Loan can close.
+    //     Documents remain Pending.
+    //
+    // If documents are Received:
+    //     Ask whether they were returned.
+    //
+    // If documents are already Returned:
+    //     Keep them Returned.
+    // -----------------------------------------------------
+
+    const requiredDocuments =
+        loanDocuments.filter(
+            item =>
+                item.requiredForClosure !==
+                false
+        );
+
+
+    const pendingDocuments =
+        requiredDocuments.filter(
+            item =>
+                !isDocumentReady(
+                    item
+                )
+        );
+
+
+    const allDocumentsAlreadyReturned =
+        requiredDocuments.length > 0 &&
+        requiredDocuments.every(
+            item =>
+                String(
+                    item.status ||
+                    "Pending"
+                ).toLowerCase() ===
+                "returned"
+        );
+
+
+    let returnDocuments =
+        allDocumentsAlreadyReturned;
+
+
+    if (
+        !allDocumentsAlreadyReturned &&
+        pendingDocuments.length === 0 &&
+        requiredDocuments.length > 0
+    ) {
+
+        returnDocuments =
+            confirm(
+                "All mandatory documents are available. Have the documents been returned to the customer?\n\nOK = Mark documents as Returned\nCancel = Keep documents as Received"
+            );
+
+    }
 
 
     const confirmed =
@@ -1277,44 +1512,29 @@ async function closeLoan() {
         );
 
 
-    if (!confirmed) {
+    if (
+        !confirmed
+    ) {
+
         return;
+
     }
 
 
-    closeLoanBtn.disabled =
-        true;
+    if (
+        closeLoanBtn
+    ) {
 
+        closeLoanBtn.disabled =
+            true;
 
-    closeLoanBtn.textContent =
-        "Closing...";
+        closeLoanBtn.textContent =
+            "Closing...";
+
+    }
 
 
     try {
-
-        /*
-         * Re-check documents immediately
-         * before writing the final close.
-         *
-         * This prevents closing if another
-         * user issued a document after page load.
-         */
-
-        await loadDocuments();
-
-
-        if (
-            !documentsReady
-        ) {
-
-            showMessage(
-                "Loan cannot be closed because mandatory documents are not ready."
-            );
-
-            return;
-
-        }
-
 
         const loanRef =
             doc(
@@ -1325,12 +1545,13 @@ async function closeLoan() {
 
 
         const today =
-            closingDate.value ||
+            closingDate?.value ||
             getTodayDate();
 
 
         const remarks =
-            closingRemarks.value.trim();
+            closingRemarks?.value?.trim() ||
+            "";
 
 
         const previousHistory =
@@ -1366,6 +1587,11 @@ async function closeLoan() {
             remarks:
                 remarks,
 
+            documentReturnStatus:
+                returnDocuments
+                    ? "Returned"
+                    : "Not Returned",
+
             closedBy:
                 currentUser.uid
 
@@ -1386,6 +1612,7 @@ async function closeLoan() {
                 active:
                     false,
 
+
                 // =====================================
                 // CLOSING
                 // =====================================
@@ -1398,6 +1625,7 @@ async function closeLoan() {
 
                 closingStatus:
                     "Closed",
+
 
                 // =====================================
                 // AMOUNTS
@@ -1418,6 +1646,7 @@ async function closeLoan() {
                 finalSettlementAmount:
                     settlement,
 
+
                 // =====================================
                 // BALANCE
                 // =====================================
@@ -1431,6 +1660,7 @@ async function closeLoan() {
                 remainingAmount:
                     0,
 
+
                 // =====================================
                 // REMARKS
                 // =====================================
@@ -1438,12 +1668,14 @@ async function closeLoan() {
                 closingRemarks:
                     remarks,
 
+
                 // =====================================
                 // HISTORY
                 // =====================================
 
                 closingHistory:
                     previousHistory,
+
 
                 // =====================================
                 // META
@@ -1453,9 +1685,38 @@ async function closeLoan() {
                     serverTimestamp(),
 
                 closedBy:
-                    currentUser.uid
+                    currentUser.uid,
+
+
+                // =====================================
+                // DOCUMENT RETURN
+                // =====================================
+
+                documentReturnStatus:
+                    returnDocuments
+                        ? "Returned"
+                        : "Not Returned",
+
+                documentReturned:
+                    returnDocuments,
+
+                documentReturnedDate:
+                    returnDocuments
+                        ? today
+                        : null
 
             }
+        );
+
+
+        // -------------------------------------------------
+        // Update individual documents only when the owner
+        // confirms that the documents were returned.
+        // -------------------------------------------------
+
+        await updateDocumentsOnClose(
+            returnDocuments,
+            today
         );
 
 
@@ -1498,13 +1759,21 @@ async function closeLoan() {
             "Unable to close loan. Please try again."
         );
 
+
     } finally {
 
-        closeLoanBtn.disabled =
-            false;
+        if (
+            closeLoanBtn
+        ) {
 
-        closeLoanBtn.textContent =
-            "Close Loan";
+            closeLoanBtn.disabled =
+                false;
+
+            closeLoanBtn.textContent =
+                "Close Loan";
+
+        }
+
 
         updateClosingButton();
 
@@ -1517,7 +1786,9 @@ async function closeLoan() {
 // CLOSE BUTTON
 // =====================================================
 
-if (closeLoanBtn) {
+if (
+    closeLoanBtn
+) {
 
     closeLoanBtn.addEventListener(
         "click",
@@ -1549,7 +1820,9 @@ onAuthStateChanged(
             user;
 
 
-        if (closingDate) {
+        if (
+            closingDate
+        ) {
 
             closingDate.value =
                 getTodayDate();
