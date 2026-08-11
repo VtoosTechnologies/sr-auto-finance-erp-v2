@@ -453,26 +453,70 @@ function getLoanDue(loan) {
 // ============================================================
 // LOAN PENDING
 // ============================================================
+//
+// IMPORTANT:
+// Current outstanding priority:
+//
+// 1. outstandingAmount
+// 2. balanceAmount
+// 3. calculated:
+//       totalPayable - totalPaid
+//
+// pendingAmount is NOT used because it can contain
+// an old / legacy value and cause dashboard mismatch.
+//
+// ============================================================
 
 function getLoanPending(loan) {
 
-    const directPending =
-        numberValue(
+    if (!loan) {
+        return 0;
+    }
 
-            loan.pendingAmount,
 
-            loan.outstandingAmount,
-
-            loan.outstanding,
-
-            loan.balanceAmount
-        );
+    // --------------------------------------------------------
+    // 1. CURRENT OUTSTANDING AMOUNT
+    // --------------------------------------------------------
 
     if (
-        directPending > 0
+        loan.outstandingAmount !== undefined &&
+        loan.outstandingAmount !== null &&
+        loan.outstandingAmount !== ""
     ) {
-        return directPending;
+
+        return Math.max(
+            numberValue(
+                loan.outstandingAmount
+            ),
+            0
+        );
+
     }
+
+
+    // --------------------------------------------------------
+    // 2. CURRENT BALANCE AMOUNT
+    // --------------------------------------------------------
+
+    if (
+        loan.balanceAmount !== undefined &&
+        loan.balanceAmount !== null &&
+        loan.balanceAmount !== ""
+    ) {
+
+        return Math.max(
+            numberValue(
+                loan.balanceAmount
+            ),
+            0
+        );
+
+    }
+
+
+    // --------------------------------------------------------
+    // 3. FALLBACK CALCULATION
+    // --------------------------------------------------------
 
     const totalPayable =
         numberValue(
@@ -480,7 +524,9 @@ function getLoanPending(loan) {
             loan.totalPayable,
 
             loan.totalAmount
+
         );
+
 
     const totalPaid =
         numberValue(
@@ -490,22 +536,33 @@ function getLoanPending(loan) {
             loan.paidAmount,
 
             loan.amountPaid
+
         );
+
 
     if (
         totalPayable > 0
     ) {
 
         return Math.max(
+
             totalPayable -
             totalPaid,
+
             0
+
         );
+
     }
 
-    return 0;
-}
 
+    // --------------------------------------------------------
+    // 4. NO VALID VALUE
+    // --------------------------------------------------------
+
+    return 0;
+
+}
 
 // ============================================================
 // SAFE COLLECTION LOADER
