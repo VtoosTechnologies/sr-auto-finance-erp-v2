@@ -705,52 +705,51 @@ function normalizePayment(
         );
 
 
-    // --------------------------------------------------------
-    // PENDING
-    // --------------------------------------------------------
+// --------------------------------------------------------
+// EMI / INSTALLMENT PENDING
+// --------------------------------------------------------
+//
+// This is PAYMENT-level pending.
+// It must NOT use loan.pendingAmount or loan outstanding.
+//
+// Due EMI - EMI amount paid in this transaction
+//
+// Example:
+// EMI Due       ₹8,000
+// EMI Paid      ₹8,000
+// EMI Pending   ₹0
+//
+// If partial payment:
+// EMI Due       ₹8,000
+// EMI Paid      ₹5,000
+// EMI Pending   ₹3,000
+// --------------------------------------------------------
 
-    let pendingAmount =
-        numberValue(
-            firstValue(
-                payment,
-                [
-                    "pendingAmount",
-                    "emiPending"
-                ],
-                0
-            )
-        );
+const pendingAmount =
+    Math.max(
+        installmentAmount -
+        paidAmount,
+        0
+    );
 
-    if (
-        pendingAmount === 0 &&
-        installmentAmount > 0
-    ) {
+  // --------------------------------------------------------
+// TOTAL COLLECTION
+// --------------------------------------------------------
+//
+// EMI / payment amount + penalty / interest collected
+//
+// Example:
+// EMI Paid     ₹8,000
+// Penalty      ₹800
+// Total        ₹8,800
+// --------------------------------------------------------
 
-        pendingAmount =
-            Math.max(
-                installmentAmount -
-                paidAmount,
-                0
-            );
-    }
-
-
-    // --------------------------------------------------------
-    // TOTAL COLLECTION
-    // --------------------------------------------------------
-
-    const totalCollection =
-        numberValue(
-            firstValue(
-                payment,
-                [
-                    "totalCollection",
-                    "totalReceived"
-                ],
-                paidAmount + penalty
-            )
-        ) ||
-        paidAmount + penalty;
+const totalCollection =
+    Math.max(
+        paidAmount +
+        penalty,
+        0
+    );
 
 
     // --------------------------------------------------------
