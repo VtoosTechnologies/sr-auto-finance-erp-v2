@@ -1,67 +1,64 @@
-// =====================================================
-// SR AUTO FINANCE ERP
-// Dashboard Controller
-// File: js/dashboard.js
-// =====================================================
+// ============================================================
+// SR AUTO FINANCE
+// DASHBOARD.JS
+// ============================================================
 
+// Firebase imports
 import {
-    onAuthStateChanged,
-    signOut
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    db
+} from "./firebase.js";
 
 import {
     collection,
-    doc,
-    getDoc,
     getDocs
-} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-import {
-    auth,
-    db
-} from "./firebase-config.js";
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 
-// =====================================================
+// ============================================================
 // ELEMENTS
-// =====================================================
-
-const userNameElement =
-    document.getElementById("userName");
-
-const userRoleElement =
-    document.getElementById("userRole");
-
-const companyNameElement =
-    document.getElementById("companyName");
-
-const welcomeTextElement =
-    document.getElementById("welcomeText");
-
-const companyInfoElement =
-    document.getElementById("companyInfo");
+// ============================================================
 
 const totalCustomersElement =
-    document.getElementById("totalCustomers");
+    document.getElementById(
+        "totalCustomers"
+    );
 
 const activeLoansElement =
-    document.getElementById("activeLoans");
-
-const todayCollectionElement =
-    document.getElementById("todayCollection");
+    document.getElementById(
+        "activeLoans"
+    );
 
 const outstandingElement =
-    document.getElementById("outstanding");
+    document.getElementById(
+        "outstanding"
+    );
 
-const logoutBtn =
-    document.getElementById("logoutBtn");
+const todayCollectionElement =
+    document.getElementById(
+        "todayCollection"
+    );
+
+const companyNameElement =
+    document.getElementById(
+        "companyName"
+    );
+
+const companyInfoElement =
+    document.getElementById(
+        "companyInfo"
+    );
 
 
-// =====================================================
+// ============================================================
 // FORMAT CURRENCY
-// =====================================================
+// ============================================================
 
-function formatCurrency(value) {
+function formatCurrency(
+    value
+) {
+
+    const amount =
+        Number(value) || 0;
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -70,268 +67,69 @@ function formatCurrency(value) {
             currency: "INR",
             maximumFractionDigits: 0
         }
-    ).format(
-        Number(value) || 0
-    );
+    ).format(amount);
 
 }
 
 
-// =====================================================
-// FORMAT DATE
-// =====================================================
-
-function formatDate(value) {
-
-    if (!value) {
-        return "-";
-    }
-
-
-    let date;
-
-
-    try {
-
-        if (
-            value &&
-            typeof value.toDate ===
-            "function"
-        ) {
-
-            date =
-                value.toDate();
-
-        } else {
-
-            date =
-                new Date(value);
-
-        }
-
-    } catch {
-
-        return "-";
-
-    }
-
-
-    if (
-        !date ||
-        isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return "-";
-
-    }
-
-
-    return date.toLocaleDateString(
-        "en-IN",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
-        }
-    );
-
-}
-
-
-// =====================================================
-// GET TODAY KEY
-// =====================================================
-
-function getTodayKey() {
-
-    const today =
-        new Date();
-
-
-    const year =
-        today.getFullYear();
-
-
-    const month =
-        String(
-            today.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            today.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    return (
-        `${year}-${month}-${day}`
-    );
-
-}
-
-
-// =====================================================
-// GET DATE KEY
-// =====================================================
-
-function getDateKey(value) {
-
-    if (!value) {
-        return "";
-    }
-
-
-    let date;
-
-
-    try {
-
-        if (
-            value &&
-            typeof value.toDate ===
-            "function"
-        ) {
-
-            date =
-                value.toDate();
-
-        } else {
-
-            date =
-                new Date(value);
-
-        }
-
-    } catch {
-
-        return "";
-
-    }
-
-
-    if (
-        !date ||
-        isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return "";
-
-    }
-
-
-    const year =
-        date.getFullYear();
-
-
-    const month =
-        String(
-            date.getMonth() + 1
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    const day =
-        String(
-            date.getDate()
-        ).padStart(
-            2,
-            "0"
-        );
-
-
-    return (
-        `${year}-${month}-${day}`
-    );
-
-}
-
-
-// =====================================================
-// GET LOAN TOTAL
-// =====================================================
-
-function getLoanTotal(
-    loan
+// ============================================================
+// NORMALIZE NUMBER
+// ============================================================
+
+function toNumber(
+    value
 ) {
 
     if (
-        loan.totalPayable !==
-        undefined &&
-        loan.totalPayable !==
-        null
+        value === null ||
+        value === undefined ||
+        value === ""
     ) {
-
-        return (
-            Number(
-                loan.totalPayable
-            ) || 0
-        );
-
+        return 0;
     }
 
+    const number =
+        Number(value);
 
-    if (
-        loan.totalAmount !==
-        undefined &&
-        loan.totalAmount !==
-        null
-    ) {
+    return Number.isFinite(
+        number
+    )
+        ? number
+        : 0;
 
-        return (
-            Number(
-                loan.totalAmount
-            ) || 0
-        );
-
-    }
+}
 
 
-    const principal =
-        Number(
-            loan.loanAmount ??
-            loan.principalAmount ??
-            loan.amount ??
-            0
-        );
+// ============================================================
+// GET LOAN PRINCIPAL / DISBURSED AMOUNT
+// ============================================================
 
+function getLoanAmount(
+    loan
+) {
 
-    const interest =
-        Number(
-            loan.interestAmount ??
-            0
-        );
+    return toNumber(
 
+        loan.loanAmount ??
+        loan.amount ??
+        loan.principalAmount ??
+        loan.disbursedAmount ??
+        0
 
-    return (
-        principal +
-        interest
     );
 
 }
 
 
-// =====================================================
-// GET LOAN PAID
-// =====================================================
+// ============================================================
+// GET PAID AMOUNT
+// ============================================================
 
-function getLoanPaid(
+function getPaidAmount(
     loan
 ) {
 
-    return Number(
+    return toNumber(
 
         loan.amountPaid ??
         loan.paidAmount ??
@@ -342,59 +140,46 @@ function getLoanPaid(
 }
 
 
-// =====================================================
+// ============================================================
 // GET OUTSTANDING
-// =====================================================
+// ============================================================
+//
+// IMPORTANT
+// ------------------------------------------------------------
+// Current outstanding should be taken from the current
+// outstanding/balance fields.
+//
+// Legacy pendingAmount must NOT override a valid
+// outstandingAmount/balanceAmount.
+//
+// If no stored outstanding is available,
+// calculate:
+//
+// Loan Amount - Paid Amount
+//
+// ============================================================
 
 function getOutstanding(
     loan
 ) {
 
+    const outstandingValue =
+        loan.outstandingAmount ??
+        loan.balanceAmount ??
+        loan.remainingAmount;
+
     if (
-        loan.outstandingAmount !==
-        undefined &&
-        loan.outstandingAmount !==
-        null
+        outstandingValue !==
+            undefined &&
+        outstandingValue !==
+            null &&
+        outstandingValue !== ""
     ) {
 
         return Math.max(
-            Number(
-                loan.outstandingAmount
-            ) || 0,
-            0
-        );
-
-    }
-
-
-    if (
-        loan.balanceAmount !==
-        undefined &&
-        loan.balanceAmount !==
-        null
-    ) {
-
-        return Math.max(
-            Number(
-                loan.balanceAmount
-            ) || 0,
-            0
-        );
-
-    }
-
-
-    if (
-        loan.pendingAmount !==
-        undefined &&
-        loan.pendingAmount !==
-        null
-    ) {
-
-        return Math.max(
-            Number(
-                loan.pendingAmount
-            ) || 0,
+            toNumber(
+                outstandingValue
+            ),
             0
         );
 
@@ -403,11 +188,11 @@ function getOutstanding(
 
     return Math.max(
 
-        getLoanTotal(
+        getLoanAmount(
             loan
         ) -
 
-        getLoanPaid(
+        getPaidAmount(
             loan
         ),
 
@@ -418,288 +203,224 @@ function getOutstanding(
 }
 
 
-// =====================================================
-// GET PAYMENT AMOUNT
-// =====================================================
+// ============================================================
+// GET STATUS
+// ============================================================
 
-function getPaymentAmount(
-    payment
+function getStatus(
+    loan
 ) {
 
-    return Number(
-
-        payment.amountReceived ??
-        payment.totalCollection ??
-        payment.amountCollected ??
-        payment.paymentAmount ??
-        payment.paidAmount ??
-        payment.emiPaid ??
-        payment.amount ??
-        0
-
-    ) || 0;
+    return String(
+        loan.status ??
+        "Active"
+    )
+        .trim()
+        .toLowerCase();
 
 }
 
 
-// =====================================================
-// GET PAYMENT DATE
-// =====================================================
+// ============================================================
+// CHECK CLOSED STATUS
+// ============================================================
 
-function getPaymentDate(
-    payment
+function isClosedLoan(
+    loan
 ) {
+
+    const status =
+        getStatus(
+            loan
+        );
 
     return (
-        payment.paymentDate ||
-        payment.paidDate ||
-        payment.collectionDate ||
-        payment.date ||
-        payment.createdAt
+
+        status ===
+            "closed" ||
+
+        status ===
+            "cancelled" ||
+
+        status ===
+            "canceled" ||
+
+        status ===
+            "completed"
+
     );
 
 }
 
 
-// =====================================================
-// CHECK INVALID PAYMENT
-// =====================================================
+// ============================================================
+// DATE KEY
+// ============================================================
 
-function isInvalidPaymentStatus(
-    status
+function getDateKey(
+    value
 ) {
 
-    const value =
-        String(
-            status ||
-            "Success"
-        ).toLowerCase();
+    if (!value) {
+        return "";
+    }
 
-
-    return [
-
-        "cancelled",
-        "canceled",
-        "reversed",
-        "deleted"
-
-    ].includes(
-        value
-    );
-
-}
-
-
-// =====================================================
-// CHECK STAFF PAYMENT
-// =====================================================
-
-function isStaffPayment(
-    payment
-) {
-
-    const staffId =
-        payment.staffId ||
-        payment.assignedStaffId ||
-        payment.collectorStaffId ||
-        payment.collectedByStaffId ||
-        payment.staffDocumentId ||
-        payment.staffCode ||
-        payment.employeeId;
-
-
-    return !!staffId;
-
-}
-
-
-// =====================================================
-// LOAD USER PROFILE
-// =====================================================
-
-async function loadUserProfile(
-    user
-) {
 
     try {
 
-        const userRef =
-            doc(
-                db,
-                "users",
-                user.uid
-            );
-
-
-        const userSnap =
-            await getDoc(
-                userRef
-            );
-
+        let date;
 
         if (
-            !userSnap.exists()
+            value &&
+            typeof value.toDate ===
+                "function"
         ) {
 
-            console.error(
-                "User profile not found."
-            );
+            date =
+                value.toDate();
 
+        } else {
 
-            await signOut(
-                auth
-            );
-
-
-            window.location.href =
-                "login.html";
-
-
-            return false;
+            date =
+                new Date(value);
 
         }
 
 
-        const userData =
-            userSnap.data();
+        if (
+            Number.isNaN(
+                date.getTime()
+            )
+        ) {
+
+            return "";
+
+        }
 
 
-        const active =
-            userData.active ===
-            true;
+        const year =
+            date.getFullYear();
 
-
-        const status =
+        const month =
             String(
-                userData.status ||
-                ""
-            ).toLowerCase();
+                date.getMonth() + 1
+            )
+                .padStart(
+                    2,
+                    "0"
+                );
+
+        const day =
+            String(
+                date.getDate()
+            )
+                .padStart(
+                    2,
+                    "0"
+                );
 
 
-        if (
-            !active ||
-            status !==
-            "active"
-        ) {
-
-            await signOut(
-                auth
-            );
-
-
-            window.location.href =
-                "login.html";
-
-
-            return false;
-
-        }
-
-
-        const name =
-            userData.name ||
-            userData.username ||
-            "User";
-
-
-        const role =
-            userData.role ||
-            "Staff";
-
-
-        if (
-            userNameElement
-        ) {
-
-            userNameElement.textContent =
-                name;
-
-        }
-
-
-        if (
-            userRoleElement
-        ) {
-
-            userRoleElement.textContent =
-                role;
-
-        }
-
-
-        if (
-            welcomeTextElement
-        ) {
-
-            welcomeTextElement.textContent =
-                `Welcome back, ${name}. Here's your business overview.`;
-
-        }
-
-
-        return true;
-
+        return `${year}-${month}-${day}`;
 
     } catch (
         error
     ) {
 
-        console.error(
-            "User profile error:",
-            error
-        );
-
-
-        return false;
+        return "";
 
     }
 
 }
 
 
-// =====================================================
+// ============================================================
+// TODAY KEY
+// ============================================================
+
+function getTodayKey() {
+
+    const today =
+        new Date();
+
+    return getDateKey(
+        today
+    );
+
+}
+
+
+// ============================================================
 // LOAD COMPANY SETTINGS
-// =====================================================
+// ============================================================
 
 async function loadCompanySettings() {
 
     try {
 
-        const companyRef =
-            doc(
-                db,
-                "settings",
-                "company"
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "settings"
+                )
             );
 
 
-        const companySnap =
-            await getDoc(
-                companyRef
-            );
+        let company = null;
 
 
-        if (
-            !companySnap.exists()
-        ) {
+        snapshot.forEach(
+            docSnap => {
 
-            return;
+                const data =
+                    docSnap.data();
+
+
+                if (
+                    data.type ===
+                        "company" ||
+                    data.settingsType ===
+                        "company"
+                ) {
+
+                    company =
+                        data;
+
+                }
+
+            }
+        );
+
+
+        if (!company) {
+
+            if (
+                snapshot.docs.length
+            ) {
+
+                company =
+                    snapshot.docs[0]
+                        .data();
+
+            }
 
         }
 
 
-        const company =
-            companySnap.data();
+        if (!company) {
+            return;
+        }
 
 
         const companyName =
             company.companyName ||
-            company.brandName ||
+            company.name ||
             "SR Auto Finance";
 
 
         const ownerName =
             company.ownerName ||
+            company.owner ||
             "";
 
 
@@ -749,7 +470,6 @@ async function loadCompanySettings() {
                         ${companyName}
                     </div>
 
-
                     ${
                         ownerName
                             ? `
@@ -761,7 +481,6 @@ async function loadCompanySettings() {
                             : ""
                     }
 
-
                     ${
                         mobile
                             ? `
@@ -772,7 +491,6 @@ async function loadCompanySettings() {
                               `
                             : ""
                     }
-
 
                     ${
                         address
@@ -790,7 +508,6 @@ async function loadCompanySettings() {
 
         }
 
-
     } catch (
         error
     ) {
@@ -805,9 +522,9 @@ async function loadCompanySettings() {
 }
 
 
-// =====================================================
+// ============================================================
 // LOAD CUSTOMERS
-// =====================================================
+// ============================================================
 
 async function loadCustomers() {
 
@@ -830,7 +547,6 @@ async function loadCustomers() {
                 snapshot.size;
 
         }
-
 
     } catch (
         error
@@ -856,9 +572,9 @@ async function loadCustomers() {
 }
 
 
-// =====================================================
+// ============================================================
 // LOAD LOANS
-// =====================================================
+// ============================================================
 
 async function loadLoans() {
 
@@ -876,7 +592,6 @@ async function loadLoans() {
         let activeLoans =
             0;
 
-
         let totalOutstanding =
             0;
 
@@ -888,33 +603,16 @@ async function loadLoans() {
                     loanDoc.data();
 
 
-                const status =
-                    String(
-                        loan.status ||
-                        "Active"
-                    ).toLowerCase();
-
-
                 const outstanding =
                     getOutstanding(
                         loan
                     );
 
 
-                const isClosed = [
-
-                    "closed",
-                    "cancelled",
-                    "canceled",
-                    "completed"
-
-                ].includes(
-                    status
-                );
-
-
                 if (
-                    !isClosed &&
+                    !isClosedLoan(
+                        loan
+                    ) &&
                     outstanding > 0
                 ) {
 
@@ -957,7 +655,6 @@ async function loadLoans() {
 
         }
 
-
     } catch (
         error
     ) {
@@ -994,20 +691,22 @@ async function loadLoans() {
 }
 
 
-// =====================================================
-// LOAD TODAY'S COLLECTION
-//
-// OWNER COLLECTION
-// +
-// STAFF COLLECTION
-//
-// Staff payment is already customer collection.
-// Deposit acceptance is NOT added here again.
-// =====================================================
+// ============================================================
+// LOAD TODAY COLLECTION
+// ============================================================
 
 async function loadTodayCollection() {
 
     try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "collections"
+                )
+            );
+
 
         const todayKey =
             getTodayKey();
@@ -1017,34 +716,29 @@ async function loadTodayCollection() {
             0;
 
 
-        const countedIds =
-            new Set();
-
-
-        // =================================================
-        // OWNER DIRECT COLLECTIONS
-        // =================================================
-
-        const collectionsSnapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "collections"
-                )
-            );
-
-
-        collectionsSnapshot.forEach(
+        snapshot.forEach(
             collectionDoc => {
 
                 const data =
                     collectionDoc.data();
 
 
-                if (
-                    isInvalidPaymentStatus(
-                        data.status
+                const status =
+                    String(
+                        data.status ||
+                        "Success"
                     )
+                        .trim()
+                        .toLowerCase();
+
+
+                if (
+                    status ===
+                        "cancelled" ||
+                    status ===
+                        "canceled" ||
+                    status ===
+                        "reversed"
                 ) {
 
                     return;
@@ -1059,10 +753,14 @@ async function loadTodayCollection() {
                     data.createdAt;
 
 
-                if (
+                const paymentKey =
                     getDateKey(
                         paymentDate
-                    ) !==
+                    );
+
+
+                if (
+                    paymentKey !==
                     todayKey
                 ) {
 
@@ -1072,129 +770,22 @@ async function loadTodayCollection() {
 
 
                 const amount =
-                    Number(
+                    toNumber(
 
                         data.amount ??
                         data.paidAmount ??
                         data.paymentAmount ??
-                        data.amountReceived ??
                         0
 
-                    ) || 0;
+                    );
 
 
                 todayAmount +=
                     amount;
 
-
-                countedIds.add(
-                    `collections_${collectionDoc.id}`
-                );
-
             }
         );
 
-
-        // =================================================
-        // STAFF COLLECTION
-        // =================================================
-
-        const paymentsSnapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "payments"
-                )
-            );
-
-
-        paymentsSnapshot.forEach(
-            paymentDoc => {
-
-                const data =
-                    paymentDoc.data();
-
-
-                if (
-                    isInvalidPaymentStatus(
-                        data.status
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                /*
-                 * Only staff-linked payment
-                 * records are added.
-                 *
-                 * This prevents normal owner
-                 * payments from duplicate counting.
-                 */
-
-                if (
-                    !isStaffPayment(
-                        data
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                const paymentDate =
-                    getPaymentDate(
-                        data
-                    );
-
-
-                if (
-                    getDateKey(
-                        paymentDate
-                    ) !==
-                    todayKey
-                ) {
-
-                    return;
-
-                }
-
-
-                const uniqueId =
-                    `payments_${paymentDoc.id}`;
-
-
-                if (
-                    countedIds.has(
-                        uniqueId
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                countedIds.add(
-                    uniqueId
-                );
-
-
-                todayAmount +=
-                    getPaymentAmount(
-                        data
-                    );
-
-            }
-        );
-
-
-        // =================================================
-        // UPDATE
-        // =================================================
 
         if (
             todayCollectionElement
@@ -1206,7 +797,6 @@ async function loadTodayCollection() {
                 );
 
         }
-
 
     } catch (
         error
@@ -1234,622 +824,31 @@ async function loadTodayCollection() {
 }
 
 
-// =====================================================
-// LOAD RECENT COLLECTIONS
-//
-// OWNER COLLECTIONS
-// +
-// STAFF PAYMENTS
-// =====================================================
-
-async function loadRecentCollections() {
-
-    try {
-
-        const panel =
-            document.querySelector(
-                ".bottom-grid .panel:first-child"
-            );
-
-
-        if (
-            !panel
-        ) {
-
-            return;
-
-        }
-
-
-        const existingEmpty =
-            panel.querySelector(
-                ".empty-state"
-            );
-
-
-        const records = [];
-
-
-        // =================================================
-        // OWNER COLLECTIONS
-        // =================================================
-
-        const collectionsSnapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "collections"
-                )
-            );
-
-
-        collectionsSnapshot.forEach(
-            collectionDoc => {
-
-                const data =
-                    collectionDoc.data();
-
-
-                if (
-                    isInvalidPaymentStatus(
-                        data.status
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                records.push({
-
-                    id:
-                        collectionDoc.id,
-
-                    source:
-                        "owner",
-
-                    ...data
-
-                });
-
-            }
-        );
-
-
-        // =================================================
-        // STAFF PAYMENTS
-        // =================================================
-
-        const paymentsSnapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "payments"
-                )
-            );
-
-
-        paymentsSnapshot.forEach(
-            paymentDoc => {
-
-                const data =
-                    paymentDoc.data();
-
-
-                if (
-                    isInvalidPaymentStatus(
-                        data.status
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                if (
-                    !isStaffPayment(
-                        data
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                records.push({
-
-                    id:
-                        paymentDoc.id,
-
-                    source:
-                        "staff",
-
-                    ...data
-
-                });
-
-            }
-        );
-
-
-        // =================================================
-        // SORT LATEST
-        // =================================================
-
-        records.sort(
-            (
-                a,
-                b
-            ) => {
-
-                const dateA =
-                    a.createdAt &&
-                    typeof a.createdAt.toDate ===
-                    "function"
-
-                        ? a.createdAt.toDate()
-
-                        : new Date(
-                            a.paymentDate ||
-                            a.collectionDate ||
-                            a.date ||
-                            0
-                        );
-
-
-                const dateB =
-                    b.createdAt &&
-                    typeof b.createdAt.toDate ===
-                    "function"
-
-                        ? b.createdAt.toDate()
-
-                        : new Date(
-                            b.paymentDate ||
-                            b.collectionDate ||
-                            b.date ||
-                            0
-                        );
-
-
-                return (
-                    dateB.getTime() -
-                    dateA.getTime()
-                );
-
-            }
-        );
-
-
-        const latest =
-            records.slice(
-                0,
-                5
-            );
-
-
-        // Remove old generated list
-
-        const oldList =
-            panel.querySelector(
-                ".dashboard-recent-list"
-            );
-
-
-        if (
-            oldList
-        ) {
-
-            oldList.remove();
-
-        }
-
-
-        if (
-            existingEmpty
-        ) {
-
-            existingEmpty.remove();
-
-        }
-
-
-        if (
-            !latest.length
-        ) {
-
-            const empty =
-                document.createElement(
-                    "div"
-                );
-
-
-            empty.className =
-                "empty-state";
-
-
-            empty.textContent =
-                "No collections yet.";
-
-
-            panel.appendChild(
-                empty
-            );
-
-
-            return;
-
-        }
-
-
-        const list =
-            document.createElement(
-                "div"
-            );
-
-
-        list.className =
-            "dashboard-recent-list";
-
-
-        list.style.display =
-            "flex";
-
-        list.style.flexDirection =
-            "column";
-
-        list.style.gap =
-            "10px";
-
-
-        // =================================================
-        // ROWS
-        // =================================================
-
-        latest.forEach(
-            payment => {
-
-                const receiptNo =
-                    payment.receiptNo ||
-                    payment.receiptNumber ||
-                    payment.id;
-
-
-                const customerName =
-                    payment.customerName ||
-                    "Customer";
-
-
-                const staffName =
-                    payment.staffName ||
-                    payment.collectorName ||
-                    "Staff";
-
-
-                const amount =
-                    getPaymentAmount(
-                        payment
-                    );
-
-
-                const paymentMode =
-                    payment.paymentMode ||
-                    payment.mode ||
-                    "";
-
-
-                const paymentDate =
-                    getPaymentDate(
-                        payment
-                    );
-
-
-                const sourceLabel =
-                    payment.source ===
-                    "staff"
-
-                        ? `Staff: ${staffName}`
-
-                        : "Owner";
-
-
-                const row =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                row.style.display =
-                    "flex";
-
-                row.style.alignItems =
-                    "center";
-
-                row.style.justifyContent =
-                    "space-between";
-
-                row.style.gap =
-                    "12px";
-
-                row.style.padding =
-                    "11px";
-
-                row.style.border =
-                    "1px solid #e2e8f0";
-
-                row.style.borderRadius =
-                    "10px";
-
-                row.style.background =
-                    "#f8fafc";
-
-                row.style.cursor =
-                    "pointer";
-
-
-                row.innerHTML = `
-
-                    <div
-                        style="
-                            min-width:0;
-                            flex:1;
-                        "
-                    >
-
-                        <div
-                            style="
-                                font-size:12px;
-                                font-weight:700;
-                                color:#0f172a;
-                                white-space:nowrap;
-                                overflow:hidden;
-                                text-overflow:ellipsis;
-                            "
-                        >
-                            ${customerName}
-                        </div>
-
-
-                        <div
-                            style="
-                                font-size:10px;
-                                color:#64748b;
-                                margin-top:3px;
-                            "
-                        >
-
-                            ${receiptNo}
-
-                            ${
-                                paymentMode
-                                    ? ` • ${paymentMode}`
-                                    : ""
-                            }
-
-                            • ${sourceLabel}
-
-                        </div>
-
-                    </div>
-
-
-                    <div
-                        style="
-                            text-align:right;
-                            flex-shrink:0;
-                        "
-                    >
-
-                        <div
-                            style="
-                                font-size:13px;
-                                font-weight:800;
-                                color:#15803d;
-                            "
-                        >
-                            ${formatCurrency(
-                                amount
-                            )}
-                        </div>
-
-
-                        <div
-                            style="
-                                font-size:9px;
-                                color:#94a3b8;
-                                margin-top:3px;
-                            "
-                        >
-                            ${formatDate(
-                                paymentDate
-                            )}
-                        </div>
-
-                    </div>
-
-                `;
-
-
-                row.addEventListener(
-                    "click",
-                    function() {
-
-                        if (
-                            payment.source ===
-                            "staff"
-                        ) {
-
-                            /*
-                             * Staff collection
-                             * view page.
-                             *
-                             * If this page is not
-                             * created yet, change
-                             * this path later.
-                             */
-
-                            window.location.href =
-                                `staff-collection-view.html?id=${encodeURIComponent(
-                                    payment.id
-                                )}`;
-
-                        } else {
-
-                            window.location.href =
-                                `collection-view.html?id=${encodeURIComponent(
-                                    payment.id
-                                )}`;
-
-                        }
-
-                    }
-                );
-
-
-                list.appendChild(
-                    row
-                );
-
-            }
-        );
-
-
-        panel.appendChild(
-            list
-        );
-
-
-    } catch (
-        error
-    ) {
-
-        console.error(
-            "Recent collections error:",
-            error
-        );
-
-    }
+// ============================================================
+// INITIAL LOAD
+// ============================================================
+
+async function loadDashboard() {
+
+    await Promise.all([
+        loadCompanySettings(),
+        loadCustomers(),
+        loadLoans(),
+        loadTodayCollection()
+    ]);
 
 }
 
 
-// =====================================================
-// LOGOUT
-// =====================================================
+// ============================================================
+// START
+// ============================================================
 
-if (
-    logoutBtn
-) {
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
 
-    logoutBtn.addEventListener(
-        "click",
-        async function() {
-
-            try {
-
-                logoutBtn.disabled =
-                    true;
-
-
-                logoutBtn.textContent =
-                    "Logging out...";
-
-
-                sessionStorage.clear();
-
-
-                await signOut(
-                    auth
-                );
-
-
-                window.location.href =
-                    "login.html";
-
-
-            } catch (
-                error
-            ) {
-
-                console.error(
-                    "Logout error:",
-                    error
-                );
-
-
-                logoutBtn.disabled =
-                    false;
-
-
-                logoutBtn.textContent =
-                    "Logout";
-
-            }
-
-        }
-    );
-
-}
-
-
-// =====================================================
-// AUTH STATE
-// =====================================================
-
-onAuthStateChanged(
-    auth,
-    async function(user) {
-
-        if (
-            !user
-        ) {
-
-            window.location.href =
-                "login.html";
-
-            return;
-
-        }
-
-
-        const validUser =
-            await loadUserProfile(
-                user
-            );
-
-
-        if (
-            !validUser
-        ) {
-
-            return;
-
-        }
-
-
-        /*
-         * Load independently.
-         *
-         * One module failure should not
-         * stop the complete dashboard.
-         */
-
-        await Promise.all([
-
-            loadCompanySettings(),
-
-            loadCustomers(),
-
-            loadLoans(),
-
-            loadTodayCollection(),
-
-            loadRecentCollections()
-
-        ]);
+        loadDashboard();
 
     }
 );
