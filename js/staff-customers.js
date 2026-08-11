@@ -87,9 +87,8 @@ let allLoans = [];
 
 let allPayments = [];
 
-let assignedCustomers = [];
-
-let assignedLoans = [];
+let visibleCustomers = [];
+let visibleLoans = [];
 
 let selectedCustomerId = "";
 
@@ -664,9 +663,10 @@ async function loadData() {
         );
 
 
-        buildAssignedData();
-
-        renderCustomerList();
+      buildStaffData();
+renderCustomerList(
+    visibleCustomers
+);
 
 
     } catch (error) {
@@ -691,145 +691,41 @@ async function loadData() {
     }
 
 }
-
-
 // ============================================================
-// BUILD ASSIGNED DATA
+// BUILD V1 STAFF DATA
+// ============================================================
+// V1:
+// Single staff setup.
+// Staff can view all customers and all loans.
+// No staff assignment filtering.
 // ============================================================
 
-function buildAssignedData() {
+function buildStaffData() {
 
-    // ========================================================
-    // STAFF ASSIGNED LOANS
-    // ========================================================
+    visibleCustomers =
+        [...allCustomers];
 
-    assignedLoans =
-        allLoans.filter(
-            loan =>
-                matchesStaff(loan)
-        );
+    visibleLoans =
+        [...allLoans];
 
 
-    // ========================================================
-    // CUSTOMER IDS FROM LOANS
-    // ========================================================
+    // Sort customers by name
 
-    const customerIds =
-        new Set();
-
-
-    assignedLoans.forEach(
-        loan => {
-
-            const customerId =
-                getLoanCustomerId(
-                    loan
-                );
-
-            if (
-                customerId
-            ) {
-
-                customerIds.add(
-                    customerId
-                );
-
-            }
-
-        }
-    );
-
-
-    // ========================================================
-    // STAFF ASSIGNED CUSTOMERS
-    // ========================================================
-
-    assignedCustomers =
-        allCustomers.filter(
-            customer => {
-
-                const id =
-                    getCustomerId(
-                        customer
-                    );
-
-                return customerIds.has(
-                    id
-                );
-
-            }
-        );
-
-
-    // ========================================================
-    // FALLBACK
-    //
-    // If customer itself has staffId,
-    // include it also.
-    // ========================================================
-
-    allCustomers.forEach(
-        customer => {
-
-            if (
-                matchesStaff(
-                    customer
+    visibleCustomers.sort(
+        (a, b) =>
+            getCustomerName(a)
+                .localeCompare(
+                    getCustomerName(b)
                 )
-            ) {
-
-                const exists =
-                    assignedCustomers.some(
-                        item =>
-                            item.id ===
-                            customer.id
-                    );
-
-                if (
-                    !exists
-                ) {
-
-                    assignedCustomers.push(
-                        customer
-                    );
-
-                }
-
-            }
-
-        }
     );
-
-
-    // ========================================================
-    // SORT
-    // ========================================================
-
-    assignedCustomers.sort(
-        (
-            a,
-            b
-        ) => {
-
-            return getCustomerName(
-                a
-            ).localeCompare(
-                getCustomerName(
-                    b
-                )
-            );
-
-        }
-    );
-
 }
-
 
 // ============================================================
 // RENDER CUSTOMER LIST
 // ============================================================
 
 function renderCustomerList(
-    customers = assignedCustomers
+    customers = visibleCustomers
 ) {
 
     if (
@@ -846,7 +742,7 @@ function renderCustomerList(
         customerList.innerHTML =
             `
             <div class="empty">
-                No customers assigned to this staff.
+                No customers found.
             </div>
             `;
 
@@ -921,7 +817,7 @@ function createCustomerListItem(
 
 
     const customerLoans =
-        assignedLoans.filter(
+        visibleLoans.filter(
             loan =>
                 getLoanCustomerId(
                     loan
@@ -1031,7 +927,7 @@ function selectCustomer(
 
 
     const customer =
-        assignedCustomers.find(
+        visibleCustomers.find(
             item =>
                 getCustomerId(
                     item
@@ -1078,7 +974,7 @@ function renderCustomerDetails(
 
 
     const customerLoans =
-        assignedLoans.filter(
+        visibleLoans.filter(
             loan =>
                 getLoanCustomerId(
                     loan
@@ -2112,7 +2008,7 @@ function searchCustomers() {
     if (!value) {
 
         renderCustomerList(
-            assignedCustomers
+            visibleCustomers
         );
 
         return;
@@ -2121,7 +2017,7 @@ function searchCustomers() {
 
 
     const filtered =
-        assignedCustomers.filter(
+        visibleCustomers.filter(
             customer => {
 
                 const customerId =
@@ -2155,7 +2051,7 @@ function searchCustomers() {
 
 
                 const loanMatch =
-                    assignedLoans.some(
+                    visibleLoans.some(
                         loan => {
 
                             if (
@@ -2411,7 +2307,7 @@ if (
                 "";
 
             renderCustomerList(
-                assignedCustomers
+                visibleCustomers
             );
 
         }
