@@ -289,10 +289,62 @@ function getLoanAmount(loan) {
 
 function getOutstanding(loan) {
 
-    return Number(
-        loan.outstanding ?? 0
-    );
+    // 1. Current outstandingAmount
+    if (
+        loan.outstandingAmount !== undefined &&
+        loan.outstandingAmount !== null &&
+        loan.outstandingAmount !== ""
+    ) {
+        return Math.max(
+            Number(loan.outstandingAmount) || 0,
+            0
+        );
+    }
 
+    // 2. Current balanceAmount
+    if (
+        loan.balanceAmount !== undefined &&
+        loan.balanceAmount !== null &&
+        loan.balanceAmount !== ""
+    ) {
+        return Math.max(
+            Number(loan.balanceAmount) || 0,
+            0
+        );
+    }
+
+    // 3. Fallback calculation
+    const totalPayable =
+        Number(
+            loan.totalPayable ??
+            loan.totalAmount ??
+            (
+                Number(
+                    loan.loanAmount ??
+                    loan.principalAmount ??
+                    loan.amount ??
+                    0
+                ) || 0
+            ) +
+            (
+                Number(
+                    loan.interestAmount ??
+                    0
+                ) || 0
+            )
+        ) || 0;
+
+    const paidAmount =
+        Number(
+            loan.amountPaid ??
+            loan.paidAmount ??
+            0
+        ) || 0;
+
+    return Math.max(
+        totalPayable - paidAmount,
+        0
+    );
 }
 
 
