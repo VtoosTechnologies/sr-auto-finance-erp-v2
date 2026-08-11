@@ -784,14 +784,18 @@ function getPaymentAmount(
     payment
 ) {
 
+    // Actual EMI / loan payment only.
+    // Penalty must NOT be included here.
+
     return numberValue(
         payment.emiPaid,
         payment.amountReceived,
         payment.paidAmount,
         payment.paymentAmount,
-        payment.amount,
-        payment.totalCollection
+        payment.amount
     );
+
+}
 
 }
 
@@ -2365,13 +2369,12 @@ function getLoanFinancialData(
         totalPaid <= 0
     ) {
 
-        totalPaid =
-            numberValue(
-                loan.totalPaid,
-                loan.paidAmount,
-                loan.amountPaid,
-                loan.totalCollection
-            );
+      totalPaid =
+    numberValue(
+        loan.totalPaid,
+        loan.paidAmount,
+        loan.amountPaid
+    );
 
 
         // If exact split is unavailable,
