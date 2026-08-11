@@ -7,7 +7,8 @@
 import {
     signInWithEmailAndPassword,
     sendPasswordResetEmail,
-    signOut
+    signOut,
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
 import {
@@ -22,6 +23,17 @@ import {
     auth,
     db
 } from "./firebase-config.js";
+
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+const STAFF_SESSION_KEY = "srStaffSession";
+const STAFF_UID_KEY = "srStaffUid";
+
+const STAFF_DASHBOARD = "staff-dashboard.html";
+const COMMON_LOGIN = "login.html";
 
 
 // ============================================================
@@ -95,7 +107,9 @@ function showMessage(
 ) {
 
     if (!messageBox) {
+
         alert(message);
+
         return;
     }
 
@@ -125,6 +139,80 @@ function clearMessage() {
 
 
 // ============================================================
+// GET EXISTING STAFF SESSION
+// ============================================================
+
+function getStaffSession() {
+
+    const raw =
+        sessionStorage.getItem(
+            STAFF_SESSION_KEY
+        );
+
+    if (!raw) {
+        return null;
+    }
+
+    try {
+
+        const session =
+            JSON.parse(raw);
+
+        if (
+            !session ||
+            session.role !== "staff"
+        ) {
+
+            sessionStorage.removeItem(
+                STAFF_SESSION_KEY
+            );
+
+            sessionStorage.removeItem(
+                STAFF_UID_KEY
+            );
+
+            return null;
+        }
+
+        return session;
+
+    } catch (error) {
+
+        console.warn(
+            "Invalid staff session. Clearing it.",
+            error
+        );
+
+        sessionStorage.removeItem(
+            STAFF_SESSION_KEY
+        );
+
+        sessionStorage.removeItem(
+            STAFF_UID_KEY
+        );
+
+        return null;
+    }
+}
+
+
+// ============================================================
+// CLEAR STAFF SESSION
+// ============================================================
+
+function clearStaffSession() {
+
+    sessionStorage.removeItem(
+        STAFF_SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+        STAFF_UID_KEY
+    );
+}
+
+
+// ============================================================
 // FIND STAFF BY EMAIL
 // ============================================================
 
@@ -141,11 +229,13 @@ async function findStaffByEmail(email) {
         const q =
             query(
                 staffRef,
+
                 where(
                     "email",
                     "==",
                     email
                 ),
+
                 limit(1)
             );
 
@@ -155,23 +245,32 @@ async function findStaffByEmail(email) {
         if (
             snapshot.empty
         ) {
+
             return null;
         }
 
-        const doc =
+        const staffDoc =
             snapshot.docs[0];
 
         return {
-            id: doc.id,
-            ...doc.data()
+            id: staffDoc.id,
+            ...staffDoc.data()
         };
 
     } catch (error) {
 
         console.warn(
-            "Staff Firestore lookup skipped:",
+            "Staff Firestore lookup failed:",
             error
         );
+
+        /*
+         * Authentication itself does not depend
+         * on Firestore staff document.
+         *
+         * We return null so Firebase login
+         * can continue.
+         */
 
         return null;
     }
@@ -185,6 +284,12 @@ async function findStaffByEmail(email) {
 function isStaffActive(staff) {
 
     if (!staff) {
+
+        /*
+         * If staff document is unavailable,
+         * do not block Firebase authentication.
+         */
+
         return true;
     }
 
@@ -193,8 +298,8 @@ function isStaffActive(staff) {
             staff.status ||
             "active"
         )
-        .trim()
-        .toLowerCase();
+            .trim()
+            .toLowerCase();
 
     if (
         status === "inactive" ||
@@ -202,12 +307,14 @@ function isStaffActive(staff) {
         status === "blocked" ||
         status === "deleted"
     ) {
+
         return false;
     }
 
     if (
         staff.active === false
     ) {
+
         return false;
     }
 
@@ -251,7 +358,6 @@ function saveStaffSession(
             "",
 
         role:
-            staff?.role ||
             "staff",
 
         loginTime:
@@ -260,15 +366,135 @@ function saveStaffSession(
 
 
     sessionStorage.setItem(
-        "srStaffSession",
+        STAFF_SESSION_KEY,
         JSON.stringify(session)
     );
 
 
     sessionStorage.setItem(
-        "srStaffUid",
+        STAFF_UID_KEY,
         firebaseUser.uid
     );
+}
+
+
+// ============================================================
+// LOGIN PAGE CACHE / HISTORY PROTECTION
+// ============================================================
+
+function protectLoginPageHistory() {
+
+    try {
+
+        /*
+         * Replace current login history entry.
+         * This reduces accidental return to the
+         * previous Owner page through browser history.
+         */
+
+        window.history.replaceState(
+            {
+                staffLoginPage: true
+            },
+            "",
+            window.location.href
+        );
+
+
+        window.history.pushState(
+            {
+                staffLoginPage: true
+            },
+            "",
+            window.location.href
+        );
+
+
+        window.addEventListener(
+            "popstate",
+            function () {
+
+                /*
+                 * Keep the user on the login page
+                 * instead of allowing a direct history
+                 * jump into the previous application page.
+                 */
+
+                window.history.pushState(
+                    {
+                        staffLoginPage: true
+                    },
+                    "",
+                    window.location.href
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Login history protection skipped:",
+            error
+        );
+    }
+}
+
+
+// ============================================================
+// PAGE CACHE PROTECTION
+// ============================================================
+
+function protectLoginPageCache() {
+
+    window.addEventListener(
+        "pageshow",
+        function(event) {
+
+            if (
+                event.persisted
+            ) {
+
+                window.location.reload();
+            }
+
+        }
+    );
+}
+
+
+// ============================================================
+// ALREADY LOGGED-IN STAFF CHECK
+// ============================================================
+
+function handleExistingStaffSession() {
+
+    const session =
+        getStaffSession();
+
+    if (!session) {
+        return;
+    }
+
+
+    /*
+     * If a valid staff session already exists,
+     * do not show the login form again.
+     */
+
+    if (
+        session.role === "staff" &&
+        session.uid
+    ) {
+
+        console.log(
+            "Existing staff session found. Opening dashboard."
+        );
+
+        window.location.replace(
+            STAFF_DASHBOARD
+        );
+    }
 }
 
 
@@ -321,8 +547,8 @@ async function loginStaff() {
         String(
             emailInput.value || ""
         )
-        .trim()
-        .toLowerCase();
+            .trim()
+            .toLowerCase();
 
     const password =
         String(
@@ -387,9 +613,7 @@ async function loginStaff() {
     try {
 
         // ====================================================
-        // IMPORTANT
-        // Firebase Authentication is the MAIN LOGIN.
-        // Firestore is NOT required for authentication.
+        // FIREBASE AUTHENTICATION
         // ====================================================
 
         const credential =
@@ -405,13 +629,13 @@ async function loginStaff() {
 
 
         console.log(
-            "Firebase login successful:",
+            "Firebase staff login successful:",
             firebaseUser.uid
         );
 
 
         // ====================================================
-        // OPTIONAL STAFF DOCUMENT
+        // STAFF DOCUMENT
         // ====================================================
 
         let staff = null;
@@ -427,7 +651,7 @@ async function loginStaff() {
         } catch (error) {
 
             console.warn(
-                "Staff document could not be loaded:",
+                "Staff document lookup failed:",
                 error
             );
 
@@ -444,7 +668,11 @@ async function loginStaff() {
             !isStaffActive(staff)
         ) {
 
-            await signOut(auth);
+            await signOut(
+                auth
+            );
+
+            clearStaffSession();
 
             showMessage(
                 "Your staff account is inactive. Please contact administrator."
@@ -455,7 +683,7 @@ async function loginStaff() {
 
 
         // ====================================================
-        // SAVE SESSION
+        // SAVE STAFF SESSION
         // ====================================================
 
         saveStaffSession(
@@ -474,18 +702,19 @@ async function loginStaff() {
         );
 
 
-        // ----------------------------------------------------
-        // DASHBOARD
-        // ----------------------------------------------------
+        // ====================================================
+        // DASHBOARD REDIRECT
+        // ====================================================
 
         setTimeout(
             () => {
 
-                window.location.href =
-                    "staff-dashboard.html";
+                window.location.replace(
+                    STAFF_DASHBOARD
+                );
 
             },
-            500
+            400
         );
 
 
@@ -639,14 +868,11 @@ if (
 
 function createPasswordResetModal() {
 
-    // --------------------------------------------------------
-    // IF ALREADY EXISTS
-    // --------------------------------------------------------
-
     const existing =
         document.getElementById(
             "srPasswordResetModal"
         );
+
 
     if (existing) {
 
@@ -665,10 +891,6 @@ function createPasswordResetModal() {
         return;
     }
 
-
-    // --------------------------------------------------------
-    // MODAL
-    // --------------------------------------------------------
 
     const modal =
         document.createElement(
@@ -811,7 +1033,7 @@ function createPasswordResetModal() {
 
 
     // ========================================================
-    // ELEMENTS
+    // MODAL ELEMENTS
     // ========================================================
 
     const resetEmail =
@@ -861,8 +1083,8 @@ function createPasswordResetModal() {
                 String(
                     resetEmail.value || ""
                 )
-                .trim()
-                .toLowerCase();
+                    .trim()
+                    .toLowerCase();
 
 
             resetMessage.textContent =
@@ -905,12 +1127,6 @@ function createPasswordResetModal() {
 
 
             try {
-
-                // =================================================
-                // IMPORTANT:
-                // No Firestore lookup required here.
-                // Firebase Auth directly sends reset email.
-                // =================================================
 
                 await sendPasswordResetEmail(
                     auth,
@@ -999,6 +1215,7 @@ function createPasswordResetModal() {
 
             sendButton.disabled =
                 false;
+
         }
     );
 
@@ -1020,6 +1237,7 @@ function createPasswordResetModal() {
 
                 sendButton.click();
             }
+
         }
     );
 
@@ -1030,7 +1248,9 @@ function createPasswordResetModal() {
 
     setTimeout(
         () => {
+
             resetEmail.focus();
+
         },
         100
     );
@@ -1038,7 +1258,17 @@ function createPasswordResetModal() {
 
 
 // ============================================================
-// PASSWORD RESET LINK BINDING
+// OPEN PASSWORD RESET
+// ============================================================
+
+function openPasswordReset() {
+
+    createPasswordResetModal();
+}
+
+
+// ============================================================
+// BIND PASSWORD RESET LINKS
 // ============================================================
 
 function bindPasswordResetLinks() {
@@ -1057,11 +1287,11 @@ function bindPasswordResetLinks() {
                     element.textContent ||
                     ""
                 )
-                .trim()
-                .toLowerCase();
+                    .trim()
+                    .toLowerCase();
 
 
-            if (
+            const isPasswordLink =
                 text.includes(
                     "create password"
                 ) ||
@@ -1070,37 +1300,234 @@ function bindPasswordResetLinks() {
                 ) ||
                 text.includes(
                     "reset password"
-                )
+                );
+
+
+            if (
+                !isPasswordLink
             ) {
 
-                if (
-                    element.dataset
-                        .srResetBound ===
-                    "true"
-                ) {
-                    return;
-                }
-
-
-                element.dataset
-                    .srResetBound =
-                    "true";
-
-
-                element.addEventListener(
-                    "click",
-                    function(event) {
-
-                        event.preventDefault();
-
-                        createPasswordResetModal();
-
-                    }
-                );
+                return;
             }
+
+
+            if (
+                element.dataset
+                    .srResetBound ===
+                "true"
+            ) {
+
+                return;
+            }
+
+
+            element.dataset
+                .srResetBound =
+                "true";
+
+
+            element.addEventListener(
+                "click",
+                function(event) {
+
+                    event.preventDefault();
+
+                    openPasswordReset();
+
+                }
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // SUPPORT COMMON IDS
+    // ========================================================
+
+    const possibleIds = [
+
+        "createPasswordBtn",
+
+        "createPasswordLink",
+
+        "forgotPasswordBtn",
+
+        "forgotPasswordLink",
+
+        "resetPasswordBtn",
+
+        "resetPasswordLink"
+
+    ];
+
+
+    possibleIds.forEach(
+        function(id) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (!element) {
+                return;
+            }
+
+
+            if (
+                element.dataset
+                    .srResetBound ===
+                "true"
+            ) {
+
+                return;
+            }
+
+
+            element.dataset
+                .srResetBound =
+                "true";
+
+
+            element.addEventListener(
+                "click",
+                function(event) {
+
+                    event.preventDefault();
+
+                    openPasswordReset();
+
+                }
+            );
+
         }
     );
 }
+
+
+// ============================================================
+// PAGE INITIALIZATION
+// ============================================================
+
+function initializeStaffLoginPage() {
+
+    /*
+     * Protect login page from browser cache/history issues.
+     */
+
+    protectLoginPageHistory();
+
+    protectLoginPageCache();
+
+
+    /*
+     * Bind password buttons.
+     */
+
+    bindPasswordResetLinks();
+
+
+    /*
+     * Check if an old staff session exists.
+     */
+
+    const existingSession =
+        getStaffSession();
+
+
+    if (
+        existingSession &&
+        existingSession.role === "staff"
+    ) {
+
+        /*
+         * Dashboard will perform the final Firebase
+         * authentication/session validation.
+         */
+
+        window.location.replace(
+            STAFF_DASHBOARD
+        );
+
+        return;
+    }
+
+
+    console.log(
+        "SR Auto Finance Staff Login initialized."
+    );
+}
+
+
+// ============================================================
+// AUTH STATE
+// ============================================================
+
+onAuthStateChanged(
+    auth,
+    function(user) {
+
+        /*
+         * IMPORTANT:
+         *
+         * If Firebase user exists but there is NO valid
+         * staff session, do not automatically treat the
+         * user as staff.
+         *
+         * This prevents Owner authentication from being
+         * reused as Staff authentication.
+         */
+
+        const session =
+            getStaffSession();
+
+
+        if (
+            user &&
+            session &&
+            session.role === "staff" &&
+            session.uid === user.uid
+        ) {
+
+            /*
+             * Staff already logged in.
+             */
+
+            window.location.replace(
+                STAFF_DASHBOARD
+            );
+
+            return;
+        }
+
+
+        /*
+         * If Firebase has another user logged in
+         * but this is the Staff Login page, leave the
+         * login form usable.
+         *
+         * The next successful Staff login will replace
+         * the Firebase user.
+         */
+
+        if (
+            user &&
+            (
+                !session ||
+                session.role !== "staff" ||
+                session.uid !== user.uid
+            )
+        ) {
+
+            console.log(
+                "Different Firebase user detected. Staff login remains available."
+            );
+        }
+
+    }
+);
 
 
 // ============================================================
@@ -1116,21 +1543,13 @@ if (
         "DOMContentLoaded",
         function() {
 
-            bindPasswordResetLinks();
+            initializeStaffLoginPage();
 
         }
     );
 
 } else {
 
-    bindPasswordResetLinks();
+    initializeStaffLoginPage();
+
 }
-
-
-// ============================================================
-// DEBUG
-// ============================================================
-
-console.log(
-    "SR Auto Finance Staff Login loaded."
-);
