@@ -1,6 +1,6 @@
 // ============================================================
 // SR AUTO FINANCE ERP
-// STAFF DASHBOARD - V1
+// STAFF DASHBOARD - FINAL V2
 // File: js/staff-dashboard.js
 // ============================================================
 
@@ -20,6 +20,17 @@ import {
     auth,
     db
 } from "./firebase-config.js";
+
+
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+const STAFF_SESSION_KEY = "srStaffSession";
+const STAFF_UID_KEY = "srStaffUid";
+
+const COMMON_LOGIN_PAGE = "login.html";
+const STAFF_LOGIN_PAGE = "staff-login.html";
 
 
 // ============================================================
@@ -76,15 +87,24 @@ const loadingOverlay =
 
 
 // ============================================================
-// GLOBAL DATA
+// GLOBAL STATE
 // ============================================================
 
 let currentStaff = null;
 
 let allCustomers = [];
 let allLoans = [];
-let allPayments = [];
+
+// IMPORTANT:
+// Actual customer repayment transactions are stored
+// in the FINALIZED collection: "collections"
+let allCollections = [];
+
 let allDepositRequests = [];
+
+let dashboardStarted = false;
+let logoutStarted = false;
+let accessCheckRunning = false;
 
 
 // ============================================================
@@ -94,7 +114,9 @@ let allDepositRequests = [];
 function getStaffSession() {
 
     const raw =
-        sessionStorage.getItem("srStaffSession");
+        sessionStorage.getItem(
+            STAFF_SESSION_KEY
+        );
 
     if (!raw) {
         return null;
@@ -102,7 +124,21 @@ function getStaffSession() {
 
     try {
 
-        return JSON.parse(raw);
+        const session =
+            JSON.parse(raw);
+
+        if (
+            !session ||
+            String(session.role || "")
+                .toLowerCase() !== "staff"
+        ) {
+
+            clearStaffSession();
+
+            return null;
+        }
+
+        return session;
 
     } catch (error) {
 
@@ -111,11 +147,48 @@ function getStaffSession() {
             error
         );
 
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
+        clearStaffSession();
 
         return null;
+    }
+}
+
+
+// ============================================================
+// CLEAR STAFF SESSION
+// ============================================================
+
+function clearStaffSession() {
+
+    sessionStorage.removeItem(
+        STAFF_SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+        STAFF_UID_KEY
+    );
+}
+
+
+// ============================================================
+// SAVE STAFF SESSION
+// ============================================================
+
+function saveStaffSession(
+    session
+) {
+
+    sessionStorage.setItem(
+        STAFF_SESSION_KEY,
+        JSON.stringify(session)
+    );
+
+    if (session?.authUid) {
+
+        sessionStorage.setItem(
+            STAFF_UID_KEY,
+            session.authUid
+        );
     }
 }
 
@@ -134,7 +207,9 @@ function firstValue(
         return fallback;
     }
 
-    for (const field of fields) {
+    for (
+        const field of fields
+    ) {
 
         const value =
             object[field];
@@ -144,6 +219,7 @@ function firstValue(
             value !== null &&
             value !== ""
         ) {
+
             return value;
         }
     }
@@ -153,18 +229,23 @@ function firstValue(
 
 
 // ============================================================
-// NUMBER
+// NUMBER VALUE
 // ============================================================
 
-function numberValue(...values) {
+function numberValue(
+    ...values
+) {
 
-    for (const value of values) {
+    for (
+        const value of values
+    ) {
 
         if (
             value === undefined ||
             value === null ||
             value === ""
         ) {
+
             continue;
         }
 
@@ -174,6 +255,7 @@ function numberValue(...values) {
         if (
             Number.isFinite(number)
         ) {
+
             return number;
         }
     }
@@ -186,7 +268,9 @@ function numberValue(...values) {
 // CURRENCY
 // ============================================================
 
-function formatCurrency(value) {
+function formatCurrency(
+    value
+) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -202,50 +286,85 @@ function formatCurrency(value) {
 
 
 // ============================================================
+// SET TEXT
+// ============================================================
+
+function setText(
+    element,
+    value
+) {
+
+    if (element) {
+
+        element.textContent =
+            value;
+    }
+}
+
+
+// ============================================================
 // DATE PARSER
 // ============================================================
 
-function parseDate(value) {
+function parseDate(
+    value
+) {
 
     if (!value) {
         return null;
     }
 
+
     // Firestore Timestamp
+
     if (
-        typeof value.toDate === "function"
+        typeof value.toDate ===
+        "function"
     ) {
+
         return value.toDate();
     }
 
+
     // JavaScript Date
+
     if (
         value instanceof Date
     ) {
+
         return new Date(
             value.getTime()
         );
     }
 
-    // Firestore timestamp-like object
+
+    // Firestore-like object
+
     if (
         typeof value === "object" &&
         value.seconds !== undefined
     ) {
 
         return new Date(
-            Number(value.seconds) * 1000
+            Number(value.seconds) *
+            1000
         );
     }
+
 
     const date =
         new Date(value);
 
+
     if (
-        isNaN(date.getTime())
+        Number.isNaN(
+            date.getTime()
+        )
     ) {
+
         return null;
     }
+
 
     return date;
 }
@@ -255,7 +374,9 @@ function parseDate(value) {
 // DATE KEY
 // ============================================================
 
-function getDateKey(value) {
+function getDateKey(
+    value
+) {
 
     const date =
         parseDate(value);
@@ -277,7 +398,7 @@ function getDateKey(value) {
 
 
 // ============================================================
-// TODAY
+// TODAY KEY
 // ============================================================
 
 function getTodayKey() {
@@ -292,7 +413,9 @@ function getTodayKey() {
 // MONTH KEY
 // ============================================================
 
-function getMonthKey(value) {
+function getMonthKey(
+    value
+) {
 
     const date =
         parseDate(value);
@@ -323,19 +446,20 @@ function getCurrentMonthKey() {
 
 
 // ============================================================
-// STATUS
+// INACTIVE STATUS
 // ============================================================
 
-function isInactiveStatus(value) {
+function isInactiveStatus(
+    value
+) {
 
     const status =
-        String(
-            value || ""
-        )
-            .toLowerCase()
-            .trim();
+        String(value || "")
+            .trim()
+            .toLowerCase();
 
     return [
+
         "closed",
         "completed",
         "cancelled",
@@ -343,6 +467,7 @@ function isInactiveStatus(value) {
         "rejected",
         "deleted",
         "inactive"
+
     ].includes(status);
 }
 
@@ -351,15 +476,19 @@ function isInactiveStatus(value) {
 // CUSTOMER ID
 // ============================================================
 
-function getCustomerId(customer) {
+function getCustomerId(
+    customer
+) {
 
     return String(
         firstValue(
             customer,
+
             [
                 "customerId",
                 "customerCode"
             ],
+
             customer?.id || ""
         )
     );
@@ -370,15 +499,19 @@ function getCustomerId(customer) {
 // LOAN CUSTOMER ID
 // ============================================================
 
-function getLoanCustomerId(loan) {
+function getLoanCustomerId(
+    loan
+) {
 
     return String(
         firstValue(
             loan,
+
             [
                 "customerId",
                 "customerDocumentId"
             ],
+
             ""
         )
     );
@@ -386,44 +519,92 @@ function getLoanCustomerId(loan) {
 
 
 // ============================================================
-// PAYMENT AMOUNT
+// COLLECTION AMOUNT
+// ============================================================
+//
+// FINALIZED PAYMENT COLLECTION:
+// "collections"
+//
+// We support the existing field names used by
+// the collection transaction.
 // ============================================================
 
-function getPaymentAmount(payment) {
+function getCollectionAmount(
+    item
+) {
 
     return numberValue(
 
-        payment.amountReceived,
+        item.amountReceived,
 
-        payment.totalCollection,
+        item.totalCollection,
 
-        payment.amountCollected,
+        item.amountCollected,
 
-        payment.paidAmount,
+        item.emiPaid,
 
-        payment.emiPaid,
+        item.paidAmount,
 
-        payment.amount
+        item.collectionAmount,
+
+        item.amount
+
     );
 }
 
 
 // ============================================================
-// PAYMENT DATE
+// COLLECTION DATE
 // ============================================================
 
-function getPaymentDate(payment) {
+function getCollectionDate(
+    item
+) {
 
     return firstValue(
-        payment,
+
+        item,
+
         [
+
+            "collectionDate",
             "paymentDate",
             "paidDate",
-            "collectionDate",
+            "date",
             "createdAt"
+
         ],
+
         ""
     );
+}
+
+
+// ============================================================
+// COLLECTION STATUS
+// ============================================================
+
+function isValidCollection(
+    item
+) {
+
+    const status =
+        String(
+            item?.status ||
+            "success"
+        )
+            .trim()
+            .toLowerCase();
+
+    return ![
+
+        "cancelled",
+        "canceled",
+        "reversed",
+        "deleted",
+        "failed"
+
+    ].includes(status);
 }
 
 
@@ -431,7 +612,9 @@ function getPaymentDate(payment) {
 // LOAN DUE
 // ============================================================
 
-function getLoanDue(loan) {
+function getLoanDue(
+    loan
+) {
 
     return numberValue(
 
@@ -446,77 +629,73 @@ function getLoanDue(loan) {
         loan.monthlyInstallment,
 
         loan.currentEmi
+
     );
 }
 
 
 // ============================================================
-// LOAN PENDING
+// LOAN OUTSTANDING
 // ============================================================
 //
-// IMPORTANT:
-// Current outstanding priority:
-//
+// MASTER SOURCE:
 // 1. outstandingAmount
 // 2. balanceAmount
-// 3. calculated:
-//       totalPayable - totalPaid
+// 3. totalPayable - amountPaid
 //
-// pendingAmount is NOT used because it can contain
-// an old / legacy value and cause dashboard mismatch.
-//
+// pendingAmount is intentionally NOT used.
 // ============================================================
 
-function getLoanPending(loan) {
+function getLoanPending(
+    loan
+) {
 
     if (!loan) {
         return 0;
     }
 
 
-    // --------------------------------------------------------
-    // 1. CURRENT OUTSTANDING AMOUNT
-    // --------------------------------------------------------
-
     if (
-        loan.outstandingAmount !== undefined &&
-        loan.outstandingAmount !== null &&
-        loan.outstandingAmount !== ""
+        loan.outstandingAmount !==
+        undefined &&
+        loan.outstandingAmount !==
+        null &&
+        loan.outstandingAmount !==
+        ""
     ) {
 
         return Math.max(
+
             numberValue(
                 loan.outstandingAmount
             ),
-            0
-        );
 
+            0
+
+        );
     }
 
 
-    // --------------------------------------------------------
-    // 2. CURRENT BALANCE AMOUNT
-    // --------------------------------------------------------
-
     if (
-        loan.balanceAmount !== undefined &&
-        loan.balanceAmount !== null &&
-        loan.balanceAmount !== ""
+        loan.balanceAmount !==
+        undefined &&
+        loan.balanceAmount !==
+        null &&
+        loan.balanceAmount !==
+        ""
     ) {
 
         return Math.max(
+
             numberValue(
                 loan.balanceAmount
             ),
-            0
-        );
 
+            0
+
+        );
     }
 
-
-    // --------------------------------------------------------
-    // 3. FALLBACK CALCULATION
-    // --------------------------------------------------------
 
     const totalPayable =
         numberValue(
@@ -531,11 +710,11 @@ function getLoanPending(loan) {
     const totalPaid =
         numberValue(
 
-            loan.totalPaid,
+            loan.amountPaid,
 
             loan.paidAmount,
 
-            loan.amountPaid
+            loan.totalPaid
 
         );
 
@@ -552,26 +731,16 @@ function getLoanPending(loan) {
             0
 
         );
-
     }
 
 
-    // --------------------------------------------------------
-    // 4. NO VALID VALUE
-    // --------------------------------------------------------
-
     return 0;
-
 }
+
 
 // ============================================================
 // SAFE COLLECTION LOADER
 // ============================================================
-//
-// Important:
-// One collection permission problem should NOT break
-// the complete staff dashboard.
-//
 
 async function safeGetCollection(
     collectionName
@@ -587,30 +756,27 @@ async function safeGetCollection(
                 )
             );
 
-        const records = [];
 
-        snapshot.forEach(
-            docSnap => {
+        return snapshot.docs.map(
+            docSnap => ({
 
-                records.push({
+                id:
+                    docSnap.id,
 
-                    id:
-                        docSnap.id,
+                ...docSnap.data()
 
-                    ...docSnap.data()
-
-                });
-
-            }
+            })
         );
 
-        return records;
 
     } catch (error) {
 
         console.error(
+
             `Staff dashboard: ${collectionName} load failed:`,
+
             error
+
         );
 
         return [];
@@ -619,49 +785,281 @@ async function safeGetCollection(
 
 
 // ============================================================
-// LOAD ALL STAFF-VISIBLE DATA
+// STAFF DOCUMENT VALIDATION
 // ============================================================
-//
-// V1 RULE:
-// One staff only.
-// Staff can view ALL customer and loan information.
-//
-// Assignment filtering is intentionally NOT used.
-//
-// Version 2:
-// Staff-wise assignment can be introduced later.
-//
+
+async function loadAndValidateStaff(
+    user,
+    session
+) {
+
+    if (
+        !session?.staffDocumentId
+    ) {
+
+        throw new Error(
+            "Staff document ID is missing."
+        );
+    }
+
+
+    const staffRef =
+        doc(
+
+            db,
+
+            "staff",
+
+            session.staffDocumentId
+
+        );
+
+
+    const staffSnapshot =
+        await getDoc(
+            staffRef
+        );
+
+
+    if (
+        !staffSnapshot.exists()
+    ) {
+
+        throw new Error(
+            "Staff document not found."
+        );
+    }
+
+
+    const staffData =
+        staffSnapshot.data();
+
+
+    // ========================================================
+    // STATUS
+    // ========================================================
+
+    const status =
+        String(
+            staffData.status ||
+            "active"
+        )
+            .trim()
+            .toLowerCase();
+
+
+    if (
+        [
+
+            "inactive",
+            "disabled",
+            "blocked",
+            "deleted"
+
+        ].includes(status)
+    ) {
+
+        throw new Error(
+            "Your staff account is inactive."
+        );
+    }
+
+
+    if (
+        staffData.active === false
+    ) {
+
+        throw new Error(
+            "Your staff account is inactive."
+        );
+    }
+
+
+    // ========================================================
+    // AUTH UID
+    // ========================================================
+
+    if (
+        staffData.authUid &&
+        staffData.authUid !==
+        user.uid
+    ) {
+
+        throw new Error(
+            "Staff authentication mismatch."
+        );
+    }
+
+
+    // ========================================================
+    // EMAIL
+    // ========================================================
+
+    const staffEmail =
+        String(
+            staffData.email ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const authEmail =
+        String(
+            user.email ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    if (
+        staffEmail &&
+        authEmail &&
+        staffEmail !== authEmail
+    ) {
+
+        throw new Error(
+            "Staff email verification failed."
+        );
+    }
+
+
+    // ========================================================
+    // TRUSTED STAFF OBJECT
+    // ========================================================
+
+    currentStaff = {
+
+        id:
+            staffSnapshot.id,
+
+        ...staffData,
+
+        staffDocumentId:
+            staffSnapshot.id,
+
+        authUid:
+            user.uid,
+
+        email:
+            staffData.email ||
+            user.email ||
+            "",
+
+        role:
+            "staff"
+
+    };
+
+
+    // ========================================================
+    // UPDATE SESSION
+    // ========================================================
+
+    const updatedSession = {
+
+        ...session,
+
+        staffDocumentId:
+            staffSnapshot.id,
+
+        staffId:
+
+            staffData.staffId ||
+
+            staffData.staffCode ||
+
+            staffData.employeeId ||
+
+            session.staffId ||
+
+            "",
+
+        staffName:
+
+            staffData.staffName ||
+
+            staffData.name ||
+
+            staffData.fullName ||
+
+            session.staffName ||
+
+            "Staff",
+
+        email:
+
+            staffData.email ||
+
+            user.email ||
+
+            "",
+
+        uid:
+            user.uid,
+
+        authUid:
+            user.uid,
+
+        role:
+            "staff"
+
+    };
+
+
+    saveStaffSession(
+        updatedSession
+    );
+
+
+    renderStaffInfo();
+}
+
+
+// ============================================================
+// LOAD DASHBOARD DATA
+// ============================================================
 
 async function loadDashboardData() {
 
     showLoading(true);
 
+
     try {
 
-        // ------------------------------------------------------
-        // Load collections independently.
-        // This prevents one permission error from stopping
-        // the entire dashboard.
-        // ------------------------------------------------------
-
         const [
+
             customers,
+
             loans,
-            payments,
+
+            collections,
+
             deposits
+
         ] = await Promise.all([
+
 
             safeGetCollection(
                 "customers"
             ),
 
+
             safeGetCollection(
                 "loans"
             ),
 
+
+            // =================================================
+            // IMPORTANT:
+            // FINAL PAYMENT COLLECTION
+            // =================================================
+
             safeGetCollection(
-                "payments"
+                "collections"
             ),
+
 
             safeGetCollection(
                 "depositRequests"
@@ -670,76 +1068,45 @@ async function loadDashboardData() {
         ]);
 
 
-        // ------------------------------------------------------
-        // CUSTOMERS
-        // ------------------------------------------------------
-
         allCustomers =
-            Array.isArray(customers)
+            Array.isArray(
+                customers
+            )
                 ? customers
                 : [];
 
 
-        // ------------------------------------------------------
-        // LOANS
-        // ------------------------------------------------------
-
         allLoans =
-            Array.isArray(loans)
+            Array.isArray(
+                loans
+            )
                 ? loans
                 : [];
 
 
-        // ------------------------------------------------------
-        // PAYMENTS
-        // ------------------------------------------------------
+        // =====================================================
+        // VALID COLLECTION TRANSACTIONS ONLY
+        // =====================================================
 
-        allPayments = [];
+        allCollections =
+            Array.isArray(
+                collections
+            )
 
-        payments.forEach(
-            payment => {
+                ? collections.filter(
+                    isValidCollection
+                )
 
-                const status =
-                    String(
-                        payment.status ||
-                        "success"
-                    )
-                        .toLowerCase()
-                        .trim();
-
-                // Ignore reversed/cancelled payments
-                if (
-                    [
-                        "cancelled",
-                        "canceled",
-                        "reversed",
-                        "deleted"
-                    ].includes(status)
-                ) {
-                    return;
-                }
-
-                allPayments.push(
-                    payment
-                );
-
-            }
-        );
-
-
-        // ------------------------------------------------------
-        // DEPOSITS
-        // ------------------------------------------------------
-
-        allDepositRequests =
-            Array.isArray(deposits)
-                ? deposits
                 : [];
 
 
-        // ------------------------------------------------------
-        // RENDER
-        // ------------------------------------------------------
+        allDepositRequests =
+            Array.isArray(
+                deposits
+            )
+                ? deposits
+                : [];
+
 
         renderDashboard();
 
@@ -747,14 +1114,16 @@ async function loadDashboardData() {
     } catch (error) {
 
         console.error(
+
             "Staff dashboard data error:",
+
             error
+
         );
 
-        // Even if something unexpected happens,
-        // show whatever data is already available.
 
         renderDashboard();
+
 
     } finally {
 
@@ -787,19 +1156,20 @@ function renderDashboard() {
                     customer
                 );
 
+
             if (id) {
 
                 uniqueCustomerIds.add(
                     id
                 );
-
             }
 
         }
     );
 
 
-    // Also identify customers through loans
+    // Also identify customer through loan
+
     allLoans.forEach(
         loan => {
 
@@ -808,12 +1178,12 @@ function renderDashboard() {
                     loan
                 );
 
+
             if (customerId) {
 
                 uniqueCustomerIds.add(
                     customerId
                 );
-
             }
 
         }
@@ -834,13 +1204,18 @@ function renderDashboard() {
 
                 const status =
                     firstValue(
+
                         loan,
+
                         [
                             "status",
                             "loanStatus"
                         ],
+
                         ""
+
                     );
+
 
                 return !isInactiveStatus(
                     status
@@ -851,13 +1226,22 @@ function renderDashboard() {
 
 
     // ========================================================
+    // DATE KEYS
+    // ========================================================
+
+    const todayKey =
+        getTodayKey();
+
+
+    const currentMonth =
+        getCurrentMonthKey();
+
+
+    // ========================================================
     // TODAY DUE
     // ========================================================
 
     let todayDue = 0;
-
-    const todayKey =
-        getTodayKey();
 
 
     activeLoans.forEach(
@@ -865,29 +1249,33 @@ function renderDashboard() {
 
             const dueDate =
                 firstValue(
+
                     loan,
+
                     [
+
                         "nextDueDate",
                         "dueDate",
                         "currentDueDate",
                         "emiDueDate"
+
                     ],
+
                     ""
+
                 );
 
 
             if (
                 getDateKey(
                     dueDate
-                ) ===
-                todayKey
+                ) === todayKey
             ) {
 
                 todayDue +=
                     getLoanDue(
                         loan
                     );
-
             }
 
         }
@@ -904,21 +1292,19 @@ function renderDashboard() {
 
     let totalCollection = 0;
 
-    const currentMonth =
-        getCurrentMonthKey();
 
-
-    allPayments.forEach(
-        payment => {
+    allCollections.forEach(
+        item => {
 
             const amount =
-                getPaymentAmount(
-                    payment
+                getCollectionAmount(
+                    item
                 );
 
-            const paymentDate =
-                getPaymentDate(
-                    payment
+
+            const collectionDate =
+                getCollectionDate(
+                    item
                 );
 
 
@@ -928,27 +1314,23 @@ function renderDashboard() {
 
             if (
                 getDateKey(
-                    paymentDate
-                ) ===
-                todayKey
+                    collectionDate
+                ) === todayKey
             ) {
 
                 todayCollection +=
                     amount;
-
             }
 
 
             if (
                 getMonthKey(
-                    paymentDate
-                ) ===
-                currentMonth
+                    collectionDate
+                ) === currentMonth
             ) {
 
                 monthCollection +=
                     amount;
-
             }
 
         }
@@ -988,43 +1370,56 @@ function renderDashboard() {
 
             const amount =
                 numberValue(
+
                     request.amount,
-                    request.depositAmount
+
+                    request.depositAmount,
+
+                    request.collectionAmount,
+
+                    request.totalAmount
+
                 );
 
 
             const status =
                 String(
+
                     request.status ||
                     "pending"
+
                 )
-                    .toLowerCase()
-                    .trim();
+                    .trim()
+                    .toLowerCase();
 
 
             if (
                 [
+
                     "accepted",
-                    "approved"
+                    "approved",
+                    "received",
+                    "completed"
+
                 ].includes(status)
             ) {
 
                 acceptedDeposit +=
                     amount;
-
             }
 
 
             if (
                 [
+
                     "pending",
                     "requested"
+
                 ].includes(status)
             ) {
 
                 pendingDeposit +=
                     amount;
-
             }
 
         }
@@ -1035,21 +1430,34 @@ function renderDashboard() {
     // CASH IN HAND
     // ========================================================
     //
-    // Current V1 calculation:
+    // IMPORTANT BUSINESS LOGIC:
     //
-    // Total collection
-    // - accepted deposit
-    // - pending deposit request
+    // Customer collection
+    //          ↓
+    // Staff Cash in Hand
     //
-    // Never allow negative cash.
+    // Pending deposit:
+    // Staff still physically holds the cash.
     //
+    // Approved / Received deposit:
+    // Cash is no longer with staff.
+    //
+    // Therefore:
+    //
+    // Cash in Hand =
+    // Total Collection - Approved/Received Deposit
+    //
+    // Pending deposit is NOT deducted.
+    // ========================================================
 
     const cashInHand =
         Math.max(
+
             totalCollection -
-            acceptedDeposit -
-            pendingDeposit,
+            acceptedDeposit,
+
             0
+
         );
 
 
@@ -1118,7 +1526,7 @@ function renderDashboard() {
 
 
     // ========================================================
-    // DEBUG INFORMATION
+    // DEBUG
     // ========================================================
 
     console.log(
@@ -1139,6 +1547,11 @@ function renderDashboard() {
     );
 
     console.log(
+        "Unique Customers:",
+        customerCount
+    );
+
+    console.log(
         "Loans:",
         allLoans.length
     );
@@ -1149,8 +1562,8 @@ function renderDashboard() {
     );
 
     console.log(
-        "Payments:",
-        allPayments.length
+        "Collections:",
+        allCollections.length
     );
 
     console.log(
@@ -1174,18 +1587,28 @@ function renderDashboard() {
     );
 
     console.log(
+        "Total Collection:",
+        totalCollection
+    );
+
+    console.log(
         "Total Pending:",
         totalPending
     );
 
     console.log(
-        "Cash In Hand:",
-        cashInHand
+        "Approved Deposit:",
+        acceptedDeposit
     );
 
     console.log(
-        "Deposit Pending:",
+        "Pending Deposit:",
         pendingDeposit
+    );
+
+    console.log(
+        "Cash In Hand:",
+        cashInHand
     );
 
     console.log(
@@ -1207,26 +1630,38 @@ function renderStaffInfo() {
 
     const staffName =
         firstValue(
+
             currentStaff,
+
             [
+
                 "staffName",
                 "name",
                 "fullName"
+
             ],
+
             "Staff"
+
         );
 
 
     const staffId =
         firstValue(
+
             currentStaff,
+
             [
+
                 "staffId",
                 "staffCode",
                 "employeeId",
                 "staffDocumentId"
+
             ],
+
             "-"
+
         );
 
 
@@ -1250,7 +1685,7 @@ function renderStaffInfo() {
 
 
 // ============================================================
-// NAVIGATION - MY CUSTOMERS
+// NAVIGATION
 // ============================================================
 
 if (customersBtn) {
@@ -1268,10 +1703,6 @@ if (customersBtn) {
 }
 
 
-// ============================================================
-// NAVIGATION - COLLECTION
-// ============================================================
-
 if (collectionBtn) {
 
     collectionBtn.addEventListener(
@@ -1286,10 +1717,6 @@ if (collectionBtn) {
 
 }
 
-
-// ============================================================
-// NAVIGATION - DEPOSIT
-// ============================================================
 
 if (depositBtn) {
 
@@ -1316,6 +1743,12 @@ if (logoutBtn) {
         "click",
         async () => {
 
+
+            if (logoutStarted) {
+                return;
+            }
+
+
             const confirmed =
                 confirm(
                     "Logout from staff portal?"
@@ -1325,6 +1758,17 @@ if (logoutBtn) {
             if (!confirmed) {
                 return;
             }
+
+
+            logoutStarted = true;
+
+
+            logoutBtn.disabled =
+                true;
+
+
+            logoutBtn.textContent =
+                "Logging out...";
 
 
             try {
@@ -1340,20 +1784,24 @@ if (logoutBtn) {
                     error
                 );
 
+            } finally {
+
+
+                // Clear ONLY staff session.
+                // Do NOT use sessionStorage.clear()
+                // because it may remove other ERP session data.
+
+                clearStaffSession();
+
+
+                // Replace prevents normal browser Back
+                // from returning to staff dashboard.
+
+                window.location.replace(
+                    COMMON_LOGIN_PAGE
+                );
+
             }
-
-
-            sessionStorage.removeItem(
-                "srStaffSession"
-            );
-
-            sessionStorage.removeItem(
-                "srStaffUid"
-            );
-
-
-            window.location.href =
-                "staff-login.html";
 
         }
     );
@@ -1362,32 +1810,17 @@ if (logoutBtn) {
 
 
 // ============================================================
-// SET TEXT
-// ============================================================
-
-function setText(
-    element,
-    value
-) {
-
-    if (element) {
-
-        element.textContent =
-            value;
-
-    }
-}
-
-
-// ============================================================
 // LOADING
 // ============================================================
 
-function showLoading(show) {
+function showLoading(
+    show
+) {
 
     if (!loadingOverlay) {
         return;
     }
+
 
     loadingOverlay.style.display =
         show
@@ -1397,378 +1830,182 @@ function showLoading(show) {
 
 
 // ============================================================
-// AUTH CHECK - STAFF ONLY
+// DENY STAFF ACCESS
 // ============================================================
 
-async function verifyStaffAccess(user) {
+async function denyStaffAccess(
+    message = "Staff login required."
+) {
+
+    console.warn(
+        message
+    );
+
+
+    currentStaff =
+        null;
+
+
+    clearStaffSession();
+
+
+    try {
+
+        await signOut(
+            auth
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Sign out during access denial failed:",
+            error
+        );
+
+    }
+
+
+    window.location.replace(
+        STAFF_LOGIN_PAGE
+    );
+}
+
+
+// ============================================================
+// STAFF ACCESS VALIDATION
+// ============================================================
+
+async function verifyStaffAccess(
+    user
+) {
+
+
+    if (
+        dashboardStarted ||
+        accessCheckRunning
+    ) {
+
+        return;
+    }
+
+
+    accessCheckRunning =
+        true;
+
 
     const session =
         getStaffSession();
 
 
-    // --------------------------------------------------------
-    // SESSION CHECK
-    // --------------------------------------------------------
-
-    if (
-        !session ||
-        String(
-            session.role || ""
-        )
-            .toLowerCase() !==
-        "staff"
-    ) {
-
-        window.location.href =
-            "staff-login.html";
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // FIREBASE LOGIN CHECK
-    // --------------------------------------------------------
-
-    if (!user) {
-
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
-
-        sessionStorage.removeItem(
-            "srStaffUid"
-        );
-
-        window.location.href =
-            "staff-login.html";
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // SESSION UID CHECK
-    // --------------------------------------------------------
-
-    if (
-        session.authUid &&
-        session.authUid !== user.uid
-    ) {
-
-        console.error(
-            "Staff UID mismatch."
-        );
-
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error(
-                "Sign out error:",
-                error
-            );
-        }
-
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
-
-        sessionStorage.removeItem(
-            "srStaffUid"
-        );
-
-        window.location.href =
-            "staff-login.html";
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // STAFF DOCUMENT ID
-    // --------------------------------------------------------
-
-    const staffDocumentId =
-        session.staffDocumentId;
-
-
-    if (!staffDocumentId) {
-
-        console.error(
-            "Staff document ID missing."
-        );
-
-        try {
-            await signOut(auth);
-        } catch (error) {
-            console.error(error);
-        }
-
-        sessionStorage.clear();
-
-        window.location.href =
-            "staff-login.html";
-
-        return false;
-    }
-
-
-    // --------------------------------------------------------
-    // LOAD STAFF DOCUMENT
-    // --------------------------------------------------------
-
     try {
 
-        const staffRef =
-            doc(
-                db,
-                "staff",
-                staffDocumentId
+
+        // ====================================================
+        // SESSION CHECK
+        // ====================================================
+
+        if (!session) {
+
+            await denyStaffAccess(
+                "No valid staff session found."
             );
 
-
-        const staffSnapshot =
-            await getDoc(
-                staffRef
-            );
-
-
-        if (
-            !staffSnapshot.exists()
-        ) {
-
-            console.error(
-                "Staff document not found."
-            );
-
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error(error);
-            }
-
-            sessionStorage.clear();
-
-            window.location.href =
-                "staff-login.html";
-
-            return false;
+            return;
         }
 
 
-        const staffData =
-            staffSnapshot.data();
+        // ====================================================
+        // FIREBASE AUTH CHECK
+        // ====================================================
 
+        if (!user) {
 
-        // ----------------------------------------------------
-        // AUTH UID
-        // ----------------------------------------------------
-
-        if (
-            staffData.authUid &&
-            staffData.authUid !== user.uid
-        ) {
-
-            console.error(
-                "Firebase UID does not match staff record."
+            await denyStaffAccess(
+                "Firebase authentication not found."
             );
 
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error(error);
-            }
-
-            sessionStorage.clear();
-
-            window.location.href =
-                "staff-login.html";
-
-            return false;
+            return;
         }
 
 
-        // ----------------------------------------------------
-        // EMAIL
-        // ----------------------------------------------------
+        // ====================================================
+        // ROLE CHECK
+        // ====================================================
 
-        const staffEmail =
+        if (
             String(
-                staffData.email || ""
+                session.role || ""
             )
                 .trim()
-                .toLowerCase();
-
-
-        const loginEmail =
-            String(
-                user.email || ""
-            )
-                .trim()
-                .toLowerCase();
-
-
-        if (
-            staffEmail &&
-            loginEmail &&
-            staffEmail !== loginEmail
+                .toLowerCase() !==
+            "staff"
         ) {
 
-            console.error(
-                "Staff email mismatch."
+            await denyStaffAccess(
+                "Staff access required."
             );
 
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error(error);
-            }
-
-            sessionStorage.clear();
-
-            window.location.href =
-                "staff-login.html";
-
-            return false;
+            return;
         }
 
 
-        // ----------------------------------------------------
-        // STATUS
-        // ----------------------------------------------------
+        // ====================================================
+        // UID CHECK
+        // ====================================================
 
-        const status =
+        const sessionUid =
             String(
-                staffData.status ||
-                "active"
-            )
-                .trim()
-                .toLowerCase();
 
+                session.authUid ||
 
-        const inactiveStatuses = [
-            "inactive",
-            "disabled",
-            "blocked",
-            "deleted"
-        ];
+                session.uid ||
+
+                sessionStorage.getItem(
+                    STAFF_UID_KEY
+                ) ||
+
+                ""
+
+            );
 
 
         if (
-            inactiveStatuses.includes(
-                status
-            )
+            !sessionUid ||
+            sessionUid !== user.uid
         ) {
 
-            alert(
-                "Your staff account is inactive. Please contact the owner."
+            await denyStaffAccess(
+                "Staff authentication mismatch."
             );
 
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error(error);
-            }
-
-            sessionStorage.clear();
-
-            window.location.href =
-                "staff-login.html";
-
-            return false;
+            return;
         }
 
 
-        // ----------------------------------------------------
-        // TRUSTED STAFF OBJECT
-        // ----------------------------------------------------
+        // ====================================================
+        // VALIDATE STAFF DOCUMENT
+        // ====================================================
 
-        currentStaff = {
-
-            id:
-                staffSnapshot.id,
-
-            ...staffData,
-
-            staffDocumentId:
-                staffSnapshot.id,
-
-            authUid:
-                user.uid,
-
-            email:
-                staffData.email ||
-                user.email ||
-                "",
-
-            role:
-                "staff"
-
-        };
-
-
-        // ----------------------------------------------------
-        // UPDATE SESSION
-        // ----------------------------------------------------
-
-        const updatedSession = {
-
-            ...session,
-
-            staffDocumentId:
-                staffSnapshot.id,
-
-            staffId:
-                staffData.staffId ||
-                staffData.staffCode ||
-                staffData.employeeId ||
-                session.staffId ||
-                "",
-
-            staffName:
-                staffData.staffName ||
-                staffData.name ||
-                staffData.fullName ||
-                session.staffName ||
-                "Staff",
-
-            email:
-                staffData.email ||
-                user.email ||
-                "",
-
-            authUid:
-                user.uid,
-
-            role:
-                "staff"
-
-        };
-
-
-        sessionStorage.setItem(
-            "srStaffSession",
-            JSON.stringify(
-                updatedSession
-            )
+        showLoading(
+            true
         );
 
 
-        // ----------------------------------------------------
-        // STAFF INFO
-        // ----------------------------------------------------
+        await loadAndValidateStaff(
+            user,
+            session
+        );
 
-        renderStaffInfo();
 
+        // ====================================================
+        // DASHBOARD START
+        // ====================================================
 
-        // ----------------------------------------------------
-        // LOAD DASHBOARD
-        // ----------------------------------------------------
+        dashboardStarted =
+            true;
+
 
         await loadDashboardData();
-
-
-        return true;
 
 
     } catch (error) {
@@ -1778,29 +2015,199 @@ async function verifyStaffAccess(user) {
             error
         );
 
-        try {
 
-            await signOut(
-                auth
-            );
+        dashboardStarted =
+            false;
 
-        } catch (signOutError) {
 
-            console.error(
-                "Sign out error:",
-                signOutError
-            );
+        await denyStaffAccess(
 
-        }
+            error?.message ||
 
-        sessionStorage.clear();
+            "Staff authorization failed."
 
-        window.location.href =
-            "staff-login.html";
+        );
 
-        return false;
+
+    } finally {
+
+        showLoading(
+            false
+        );
+
+
+        accessCheckRunning =
+            false;
     }
 }
+
+
+// ============================================================
+// BROWSER BACK PROTECTION
+// ============================================================
+//
+// If Staff logs out and browser Back is pressed,
+// the protected dashboard must not remain visible.
+//
+// ============================================================
+
+function protectDashboardHistory() {
+
+    try {
+
+        window.history.replaceState(
+            {
+                staffDashboard: true
+            },
+            "",
+            window.location.href
+        );
+
+
+        window.history.pushState(
+            {
+                staffDashboard: true
+            },
+            "",
+            window.location.href
+        );
+
+
+        window.addEventListener(
+            "popstate",
+            async () => {
+
+                const session =
+                    getStaffSession();
+
+
+                const user =
+                    auth.currentUser;
+
+
+                if (
+                    !session ||
+                    session.role !==
+                    "staff" ||
+                    !user
+                ) {
+
+                    clearStaffSession();
+
+
+                    try {
+
+                        await signOut(
+                            auth
+                        );
+
+                    } catch (error) {
+
+                        console.warn(
+                            "Back protection signout failed:",
+                            error
+                        );
+
+                    }
+
+
+                    window.location.replace(
+                        COMMON_LOGIN_PAGE
+                    );
+
+
+                    return;
+                }
+
+
+                /*
+                 * Staff is still logged in.
+                 * Keep the dashboard protected.
+                 */
+
+                window.history.pushState(
+                    {
+                        staffDashboard: true
+                    },
+                    "",
+                    window.location.href
+                );
+
+            }
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Dashboard history protection failed:",
+            error
+        );
+    }
+}
+
+
+// ============================================================
+// BFCACHE PROTECTION
+// ============================================================
+
+function protectBackForwardCache() {
+
+    window.addEventListener(
+        "pageshow",
+        async event => {
+
+            if (
+                event.persisted
+            ) {
+
+                const session =
+                    getStaffSession();
+
+                const user =
+                    auth.currentUser;
+
+
+                if (
+                    !session ||
+                    session.role !==
+                    "staff" ||
+                    !user
+                ) {
+
+                    clearStaffSession();
+
+                    window.location.replace(
+                        COMMON_LOGIN_PAGE
+                    );
+
+                    return;
+                }
+
+
+                /*
+                 * Valid staff session exists.
+                 * Revalidate dashboard instead of
+                 * blindly showing cached data.
+                 */
+
+                dashboardStarted =
+                    false;
+
+            }
+
+        }
+    );
+}
+
+
+// ============================================================
+// BEFORE UNLOAD
+// ============================================================
+//
+// No session is cleared here.
+// This is intentionally left untouched so that
+// browser refresh does NOT log Staff out.
+// ============================================================
 
 
 // ============================================================
@@ -1816,4 +2223,22 @@ onAuthStateChanged(
         );
 
     }
+);
+
+
+// ============================================================
+// INITIAL PAGE PROTECTION
+// ============================================================
+
+protectDashboardHistory();
+
+protectBackForwardCache();
+
+
+// ============================================================
+// PAGE READY LOG
+// ============================================================
+
+console.log(
+    "SR Auto Finance Staff Dashboard initialized."
 );
