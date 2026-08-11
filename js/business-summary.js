@@ -1560,7 +1560,7 @@ async function loadData() {
                     db,
                     "staff"
                 )
-            )
+            ),
          getDocs(
     collection(
         db,
@@ -3978,7 +3978,7 @@ viewButtons.forEach(
                 currentView =
                     this.dataset.view ||
                     "overall";
-                // ============================================================
+// ============================================================
 // STAFF WISE VIEW
 // ============================================================
 
@@ -4395,13 +4395,11 @@ function renderStaffWiseView() {
                 item => {
 
                     const balanceWithStaff =
-                        Math.max(
-                            item.totalCollected -
-                            item.depositAccepted -
-                            item.depositPending,
-                            0
-                        );
-
+    Math.max(
+        item.totalCollected -
+        item.depositAccepted,
+        0
+    );
 
                     return `
 
