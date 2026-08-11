@@ -1,12 +1,33 @@
 // =====================================================
 // SR AUTO FINANCE ERP
-// Collection Form Controller
-// File: js/collection-form.js
+// COLLECTION FORM CONTROLLER
+// FINAL STAFF + OWNER COLLECTION FLOW
+//
+// File:
+// js/collection-form.js
+//
+// STAFF:
+// - Can collect payment
+// - Cannot create/edit loan
+//
+// OWNER:
+// - Can use collection flow
+//
+// PAYMENT MASTER:
+// collections
+//
+// IMPORTANT:
+// - URL supports ?id=Firestore Loan Document ID
+// - Also supports ?loanId=Loan Business ID
+// - Full payment automatically closes loan
 // =====================================================
 
+
 import {
-    onAuthStateChanged
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 import {
     collection,
@@ -16,6 +37,7 @@ import {
     runTransaction,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
 
 import {
     auth,
@@ -28,64 +50,104 @@ import {
 // =====================================================
 
 const collectionForm =
-    document.getElementById("collectionForm");
+    document.getElementById(
+        "collectionForm"
+    );
 
 const loanSelect =
-    document.getElementById("loanSelect");
+    document.getElementById(
+        "loanSelect"
+    );
 
 const loanInfo =
-    document.getElementById("loanInfo");
+    document.getElementById(
+        "loanInfo"
+    );
 
 const selectedLoanId =
-    document.getElementById("selectedLoanId");
+    document.getElementById(
+        "selectedLoanId"
+    );
 
 const selectedCustomerName =
-    document.getElementById("selectedCustomerName");
+    document.getElementById(
+        "selectedCustomerName"
+    );
 
 const selectedCustomerMobile =
-    document.getElementById("selectedCustomerMobile");
+    document.getElementById(
+        "selectedCustomerMobile"
+    );
 
 const selectedFrequency =
-    document.getElementById("selectedFrequency");
+    document.getElementById(
+        "selectedFrequency"
+    );
 
 const paymentAmount =
-    document.getElementById("paymentAmount");
+    document.getElementById(
+        "paymentAmount"
+    );
 
 const paymentDate =
-    document.getElementById("paymentDate");
+    document.getElementById(
+        "paymentDate"
+    );
 
 const paymentMode =
-    document.getElementById("paymentMode");
+    document.getElementById(
+        "paymentMode"
+    );
 
 const referenceNumber =
-    document.getElementById("referenceNumber");
+    document.getElementById(
+        "referenceNumber"
+    );
 
 const remarks =
-    document.getElementById("remarks");
+    document.getElementById(
+        "remarks"
+    );
 
 const totalPayableElement =
-    document.getElementById("totalPayable");
+    document.getElementById(
+        "totalPayable"
+    );
 
 const alreadyPaidElement =
-    document.getElementById("alreadyPaid");
+    document.getElementById(
+        "alreadyPaid"
+    );
 
 const currentOutstandingElement =
-    document.getElementById("currentOutstanding");
+    document.getElementById(
+        "currentOutstanding"
+    );
 
 const thisPaymentElement =
-    document.getElementById("thisPayment");
+    document.getElementById(
+        "thisPayment"
+    );
 
 const balanceAfterElement =
-    document.getElementById("balanceAfter");
+    document.getElementById(
+        "balanceAfter"
+    );
 
 const loanStatusElement =
-    document.getElementById("loanStatus");
+    document.getElementById(
+        "loanStatus"
+    );
 
 const saveCollectionBtn =
-    document.getElementById("saveCollectionBtn");
+    document.getElementById(
+        "saveCollectionBtn"
+    );
 
 const message =
-    document.getElementById("message");
+    document.getElementById(
+        "message"
+    );
 
 
 // =====================================================
@@ -94,16 +156,59 @@ const message =
 
 let currentUser = null;
 
+let currentRole = "";
+
 let loans = [];
 
 let selectedLoan = null;
+
+let initialized = false;
+
+let saving = false;
+
+
+// =====================================================
+// STAFF SESSION
+// =====================================================
+
+function getStaffSession() {
+
+    const raw =
+        sessionStorage.getItem(
+            "srStaffSession"
+        );
+
+
+    if (!raw) {
+        return null;
+    }
+
+
+    try {
+
+        return JSON.parse(
+            raw
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Staff session parse error:",
+            error
+        );
+
+        return null;
+    }
+}
 
 
 // =====================================================
 // FORMAT CURRENCY
 // =====================================================
 
-function formatCurrency(value) {
+function formatCurrency(
+    value
+) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -123,14 +228,38 @@ function formatCurrency(value) {
 // ESCAPE HTML
 // =====================================================
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(
+        value ?? ""
+    )
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
@@ -144,8 +273,14 @@ function showMessage(
     type = "error"
 ) {
 
+    if (!message) {
+        return;
+    }
+
+
     message.textContent =
         text;
+
 
     message.className =
         `message ${type}`;
@@ -159,8 +294,14 @@ function showMessage(
 
 function clearMessage() {
 
+    if (!message) {
+        return;
+    }
+
+
     message.textContent =
         "";
+
 
     message.className =
         "message";
@@ -174,12 +315,20 @@ function clearMessage() {
 
 function setDefaultDate() {
 
+    if (!paymentDate) {
+        return;
+    }
+
+
     const today =
         new Date();
 
+
     const dateString =
-        today.toISOString()
+        today
+            .toISOString()
             .split("T")[0];
+
 
     paymentDate.value =
         dateString;
@@ -191,26 +340,39 @@ function setDefaultDate() {
 // GET LOAN AMOUNT
 // =====================================================
 
-function getLoanAmount(loan) {
+function getLoanAmount(
+    loan
+) {
+
+    if (!loan) {
+        return 0;
+    }
+
 
     return Number(
 
         loan.totalPayable ??
+
         loan.totalAmount ??
+
         (
+
             Number(
                 loan.loanAmount ??
                 loan.principalAmount ??
                 0
-            ) +
+            )
+
+            +
 
             Number(
                 loan.interestAmount ??
                 0
             )
+
         )
 
-    );
+    ) || 0;
 
 }
 
@@ -219,15 +381,26 @@ function getLoanAmount(loan) {
 // GET PAID AMOUNT
 // =====================================================
 
-function getPaidAmount(loan) {
+function getPaidAmount(
+    loan
+) {
+
+    if (!loan) {
+        return 0;
+    }
+
 
     return Number(
 
         loan.amountPaid ??
+
         loan.paidAmount ??
+
+        loan.totalPaid ??
+
         0
 
-    );
+    ) || 0;
 
 }
 
@@ -236,50 +409,157 @@ function getPaidAmount(loan) {
 // GET OUTSTANDING
 // =====================================================
 
-function getOutstanding(loan) {
+function getOutstanding(
+    loan
+) {
 
-    // 1. Current outstanding
+    if (!loan) {
+        return 0;
+    }
+
+
+    // -----------------------------------------------------
+    // 1. MASTER OUTSTANDING
+    // -----------------------------------------------------
+
     if (
-        loan.outstandingAmount !== undefined &&
-        loan.outstandingAmount !== null &&
-        loan.outstandingAmount !== ""
+        loan.outstandingAmount !==
+            undefined &&
+        loan.outstandingAmount !==
+            null &&
+        loan.outstandingAmount !==
+            ""
     ) {
 
         return Math.max(
+
             Number(
                 loan.outstandingAmount
             ) || 0,
+
             0
+
         );
 
     }
 
 
-    // 2. Current balance
+    // -----------------------------------------------------
+    // 2. BALANCE AMOUNT
+    // -----------------------------------------------------
+
     if (
-        loan.balanceAmount !== undefined &&
-        loan.balanceAmount !== null &&
-        loan.balanceAmount !== ""
+        loan.balanceAmount !==
+            undefined &&
+        loan.balanceAmount !==
+            null &&
+        loan.balanceAmount !==
+            ""
     ) {
 
         return Math.max(
+
             Number(
                 loan.balanceAmount
             ) || 0,
+
             0
+
         );
 
     }
 
 
-    // 3. Fallback calculation
+    // -----------------------------------------------------
+    // 3. FALLBACK
+    // -----------------------------------------------------
+
     return Math.max(
-        getLoanAmount(loan) -
-        getPaidAmount(loan),
+
+        getLoanAmount(
+            loan
+        ) -
+
+        getPaidAmount(
+            loan
+        ),
+
         0
+
     );
 
 }
+
+
+// =====================================================
+// GET LOAN BUSINESS ID
+// =====================================================
+
+function getLoanBusinessId(
+    loan
+) {
+
+    return String(
+
+        loan?.loanId ||
+
+        loan?.loanNumber ||
+
+        loan?.loanCode ||
+
+        loan?.id ||
+
+        ""
+
+    ).trim();
+
+}
+
+
+// =====================================================
+// GET URL LOAN IDENTIFIER
+// =====================================================
+
+function getUrlLoanIdentifier() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    /*
+     * FINAL STAFF CUSTOMERS PAGE
+     *
+     * ?id=Firestore Document ID
+     *
+     * Also support old:
+     *
+     * ?loanId=Loan ID
+     */
+
+    return {
+
+        documentId:
+            String(
+                params.get(
+                    "id"
+                ) ||
+                ""
+            ).trim(),
+
+        businessId:
+            String(
+                params.get(
+                    "loanId"
+                ) ||
+                ""
+            ).trim()
+
+    };
+
+}
+
 
 // =====================================================
 // LOAD ACTIVE LOANS
@@ -289,13 +569,19 @@ async function loadLoans() {
 
     try {
 
-        loanSelect.innerHTML = `
+        if (loanSelect) {
 
-            <option value="">
-                Loading active loans...
-            </option>
+            loanSelect.innerHTML = `
 
-        `;
+                <option value="">
+
+                    Loading active loans...
+
+                </option>
+
+            `;
+
+        }
 
 
         const loansRef =
@@ -323,9 +609,13 @@ async function loadLoans() {
 
                 const status =
                     String(
+
                         data.status ||
                         "Active"
-                    ).toLowerCase();
+
+                    )
+                        .trim()
+                        .toLowerCase();
 
 
                 const outstanding =
@@ -334,15 +624,21 @@ async function loadLoans() {
                     );
 
 
-                // Only active loans
-                // with balance
+                /*
+                 * Only active/running/open
+                 * loans with outstanding.
+                 */
 
                 if (
 
-                    (
-                        status === "active" ||
-                        status === "running" ||
-                        status === "open"
+                    [
+
+                        "active",
+                        "running",
+                        "open"
+
+                    ].includes(
+                        status
                     )
 
                     &&
@@ -366,22 +662,34 @@ async function loadLoans() {
         );
 
 
-        // Sort by customer name
+        // =====================================================
+        // SORT CUSTOMER NAME
+        // =====================================================
 
         loans.sort(
-            (a, b) => {
+
+            (
+                a,
+                b
+            ) => {
 
                 const nameA =
                     String(
+
                         a.customerName ||
+                        a.name ||
                         ""
+
                     ).toLowerCase();
 
 
                 const nameB =
                     String(
+
                         b.customerName ||
+                        b.name ||
                         ""
+
                     ).toLowerCase();
 
 
@@ -390,13 +698,21 @@ async function loadLoans() {
                 );
 
             }
+
         );
+
+
+        if (!loanSelect) {
+            return;
+        }
 
 
         loanSelect.innerHTML = `
 
             <option value="">
+
                 Select Loan Account
+
             </option>
 
         `;
@@ -406,13 +722,16 @@ async function loadLoans() {
             loan => {
 
                 const loanId =
-                    loan.loanId ||
-                    loan.loanNumber ||
-                    loan.id;
+                    getLoanBusinessId(
+                        loan
+                    );
 
 
                 const customerName =
                     loan.customerName ||
+
+                    loan.name ||
+
                     "Unknown Customer";
 
 
@@ -433,7 +752,10 @@ async function loadLoans() {
 
 
                 option.textContent =
-                    `${loanId} - ${customerName} - Outstanding ${formatCurrency(outstanding)}`;
+
+                    `${loanId} - ${customerName} - Outstanding ${formatCurrency(
+                        outstanding
+                    )}`;
 
 
                 loanSelect.appendChild(
@@ -449,7 +771,9 @@ async function loadLoans() {
             loanSelect.innerHTML = `
 
                 <option value="">
+
                     No active loans with outstanding balance
+
                 </option>
 
             `;
@@ -457,54 +781,75 @@ async function loadLoans() {
         }
 
 
-        // URL loanId support
+        // =====================================================
+        // URL AUTO SELECT
+        // =====================================================
 
-        const urlParams =
-            new URLSearchParams(
-                window.location.search
-            );
-
-
-        const urlLoanId =
-            urlParams.get(
-                "loanId"
-            );
+        const url =
+            getUrlLoanIdentifier();
 
 
-        if (urlLoanId) {
+        let matchingLoan =
+            null;
 
-            const matchingLoan =
+
+        // -----------------------------------------------------
+        // FIRST PRIORITY:
+        // Firestore document ID
+        // -----------------------------------------------------
+
+        if (
+            url.documentId
+        ) {
+
+            matchingLoan =
                 loans.find(
-                    loan => (
 
-                        loan.loanId ===
-                        urlLoanId
-
-                        ||
-
-                        loan.loanNumber ===
-                        urlLoanId
-
-                        ||
-
+                    loan =>
                         loan.id ===
-                        urlLoanId
+                        url.documentId
 
-                    )
                 );
 
-
-            if (matchingLoan) {
-
-                loanSelect.value =
-                    matchingLoan.id;
+        }
 
 
-                displaySelectedLoan(
-                    matchingLoan
+        // -----------------------------------------------------
+        // SECOND PRIORITY:
+        // Business Loan ID
+        // -----------------------------------------------------
+
+        if (
+            !matchingLoan &&
+            url.businessId
+        ) {
+
+            matchingLoan =
+                loans.find(
+
+                    loan =>
+
+                        getLoanBusinessId(
+                            loan
+                        ) ===
+                        url.businessId
+
                 );
 
-            }
+        }
+
+
+        if (
+            matchingLoan
+        ) {
+
+            loanSelect.value =
+                matchingLoan.id;
+
+
+            displaySelectedLoan(
+                matchingLoan
+            );
 
         }
 
@@ -517,13 +862,24 @@ async function loadLoans() {
         );
 
 
-        loanSelect.innerHTML = `
+        if (loanSelect) {
 
-            <option value="">
-                Unable to load loans
-            </option>
+            loanSelect.innerHTML = `
 
-        `;
+                <option value="">
+
+                    Unable to load loans
+
+                </option>
+
+            `;
+
+        }
+
+
+        showMessage(
+            "Unable to load loan accounts. Please refresh and try again."
+        );
 
     }
 
@@ -543,49 +899,77 @@ function displaySelectedLoan(
 
 
     const loanId =
-        loan.loanId ||
-        loan.loanNumber ||
-        loan.id ||
+        getLoanBusinessId(
+            loan
+        ) ||
         "-";
 
 
     const customerName =
         loan.customerName ||
+
         loan.name ||
+
         "-";
 
 
     const mobile =
         loan.customerMobile ||
+
         loan.mobile ||
+
         loan.phone ||
+
         "-";
 
 
     const frequency =
         loan.repaymentFrequency ||
+
+        loan.frequency ||
+
         "-";
 
 
-    selectedLoanId.textContent =
-        loanId;
+    if (selectedLoanId) {
+
+        selectedLoanId.textContent =
+            loanId;
+
+    }
 
 
-    selectedCustomerName.textContent =
-        customerName;
+    if (selectedCustomerName) {
+
+        selectedCustomerName.textContent =
+            customerName;
+
+    }
 
 
-    selectedCustomerMobile.textContent =
-        mobile;
+    if (selectedCustomerMobile) {
+
+        selectedCustomerMobile.textContent =
+            mobile;
+
+    }
 
 
-    selectedFrequency.textContent =
-        frequency;
+    if (selectedFrequency) {
+
+        selectedFrequency.textContent =
+            frequency;
+
+    }
 
 
-    loanInfo.classList.add(
-        "show"
-    );
+    if (loanInfo) {
+
+        loanInfo.classList.add(
+            "show"
+        );
+
+    }
 
 
     updatePaymentSummary();
@@ -597,59 +981,69 @@ function displaySelectedLoan(
 // LOAN SELECTION
 // =====================================================
 
-loanSelect.addEventListener(
-    "change",
-    function () {
+if (loanSelect) {
 
-        clearMessage();
+    loanSelect.addEventListener(
+        "change",
+        function () {
 
-
-        const selectedId =
-            this.value;
+            clearMessage();
 
 
-        if (!selectedId) {
-
-            selectedLoan =
-                null;
+            const selectedId =
+                this.value;
 
 
-            loanInfo.classList.remove(
-                "show"
+            if (!selectedId) {
+
+                selectedLoan =
+                    null;
+
+
+                if (loanInfo) {
+
+                    loanInfo.classList.remove(
+                        "show"
+                    );
+
+                }
+
+
+                resetSummary();
+
+                return;
+
+            }
+
+
+            const loan =
+                loans.find(
+
+                    item =>
+                        item.id ===
+                        selectedId
+
+                );
+
+
+            if (!loan) {
+
+                selectedLoan =
+                    null;
+
+                return;
+
+            }
+
+
+            displaySelectedLoan(
+                loan
             );
 
-
-            resetSummary();
-
-            return;
-
         }
+    );
 
-
-        const loan =
-            loans.find(
-                item =>
-                    item.id ===
-                    selectedId
-            );
-
-
-        if (!loan) {
-
-            selectedLoan =
-                null;
-
-            return;
-
-        }
-
-
-        displaySelectedLoan(
-            loan
-        );
-
-    }
-);
+}
 
 
 // =====================================================
@@ -687,25 +1081,31 @@ function updatePaymentSummary() {
 
     const payment =
         Number(
-            paymentAmount.value
+            paymentAmount?.value
         ) || 0;
 
 
     const safePayment =
         Math.min(
+
             Math.max(
                 payment,
                 0
             ),
+
             outstanding
+
         );
 
 
     const balanceAfter =
         Math.max(
+
             outstanding -
             safePayment,
+
             0
+
         );
 
 
@@ -714,8 +1114,9 @@ function updatePaymentSummary() {
 
 
     if (
-        balanceAfter <= 0 &&
-        outstanding > 0
+        outstanding > 0 &&
+        safePayment > 0 &&
+        balanceAfter <= 0
     ) {
 
         status =
@@ -724,38 +1125,72 @@ function updatePaymentSummary() {
     }
 
 
-    totalPayableElement.textContent =
-        formatCurrency(
-            totalPayable
-        );
+    if (
+        outstanding <= 0
+    ) {
+
+        status =
+            "Closed";
+
+    }
 
 
-    alreadyPaidElement.textContent =
-        formatCurrency(
-            paid
-        );
+    if (totalPayableElement) {
+
+        totalPayableElement.textContent =
+            formatCurrency(
+                totalPayable
+            );
+
+    }
 
 
-    currentOutstandingElement.textContent =
-        formatCurrency(
-            outstanding
-        );
+    if (alreadyPaidElement) {
+
+        alreadyPaidElement.textContent =
+            formatCurrency(
+                paid
+            );
+
+    }
 
 
-    thisPaymentElement.textContent =
-        formatCurrency(
-            safePayment
-        );
+    if (currentOutstandingElement) {
+
+        currentOutstandingElement.textContent =
+            formatCurrency(
+                outstanding
+            );
+
+    }
 
 
-    balanceAfterElement.textContent =
-        formatCurrency(
-            balanceAfter
-        );
+    if (thisPaymentElement) {
+
+        thisPaymentElement.textContent =
+            formatCurrency(
+                safePayment
+            );
+
+    }
 
 
-    loanStatusElement.textContent =
-        status;
+    if (balanceAfterElement) {
+
+        balanceAfterElement.textContent =
+            formatCurrency(
+                balanceAfter
+            );
+
+    }
+
+
+    if (loanStatusElement) {
+
+        loanStatusElement.textContent =
+            status;
+
+    }
 
 }
 
@@ -766,28 +1201,52 @@ function updatePaymentSummary() {
 
 function resetSummary() {
 
-    totalPayableElement.textContent =
-        "₹0";
+    if (totalPayableElement) {
+
+        totalPayableElement.textContent =
+            "₹0";
+
+    }
 
 
-    alreadyPaidElement.textContent =
-        "₹0";
+    if (alreadyPaidElement) {
+
+        alreadyPaidElement.textContent =
+            "₹0";
+
+    }
 
 
-    currentOutstandingElement.textContent =
-        "₹0";
+    if (currentOutstandingElement) {
+
+        currentOutstandingElement.textContent =
+            "₹0";
+
+    }
 
 
-    thisPaymentElement.textContent =
-        "₹0";
+    if (thisPaymentElement) {
+
+        thisPaymentElement.textContent =
+            "₹0";
+
+    }
 
 
-    balanceAfterElement.textContent =
-        "₹0";
+    if (balanceAfterElement) {
+
+        balanceAfterElement.textContent =
+            "₹0";
+
+    }
 
 
-    loanStatusElement.textContent =
-        "-";
+    if (loanStatusElement) {
+
+        loanStatusElement.textContent =
+            "-";
+
+    }
 
 }
 
@@ -796,46 +1255,63 @@ function resetSummary() {
 // PAYMENT INPUT
 // =====================================================
 
-paymentAmount.addEventListener(
-    "input",
-    function () {
+if (paymentAmount) {
 
-        clearMessage();
+    paymentAmount.addEventListener(
+        "input",
+        function () {
 
-        updatePaymentSummary();
+            clearMessage();
 
-    }
-);
+            updatePaymentSummary();
+
+        }
+    );
+
+}
 
 
 // =====================================================
 // PAYMENT MODE
 // =====================================================
 
-paymentMode.addEventListener(
-    "change",
-    function () {
+if (paymentMode) {
 
-        const mode =
-            this.value;
+    paymentMode.addEventListener(
+        "change",
+        function () {
+
+            const mode =
+                this.value;
 
 
-        if (
-            mode === "Cash"
-        ) {
+            if (
+                mode ===
+                "Cash"
+            ) {
 
-            referenceNumber.placeholder =
-                "Optional reference";
+                if (referenceNumber) {
 
-        } else {
+                    referenceNumber.placeholder =
+                        "Optional reference";
 
-            referenceNumber.placeholder =
-                "Enter transaction / cheque reference";
+                }
+
+            } else {
+
+                if (referenceNumber) {
+
+                    referenceNumber.placeholder =
+                        "Enter transaction / cheque reference";
+
+                }
+
+            }
 
         }
+    );
 
-    }
-);
+}
 
 
 // =====================================================
@@ -848,9 +1324,13 @@ async function generateReceiptNumber(
 
     const counterRef =
         doc(
+
             db,
+
             "counters",
+
             "receiptNo"
+
         );
 
 
@@ -876,9 +1356,13 @@ async function generateReceiptNumber(
             Number(
 
                 data.current ??
+
                 data.value ??
+
                 data.number ??
+
                 data.lastNumber ??
+
                 0
 
             ) + 1;
@@ -887,7 +1371,9 @@ async function generateReceiptNumber(
 
 
     transaction.set(
+
         counterRef,
+
         {
 
             current:
@@ -897,9 +1383,14 @@ async function generateReceiptNumber(
                 serverTimestamp()
 
         },
+
         {
-            merge: true
+
+            merge:
+                true
+
         }
+
     );
 
 
@@ -924,6 +1415,11 @@ async function generateReceiptNumber(
 
 async function saveCollection() {
 
+    if (saving) {
+        return;
+    }
+
+
     clearMessage();
 
 
@@ -940,8 +1436,24 @@ async function saveCollection() {
 
     const payment =
         Number(
-            paymentAmount.value
+            paymentAmount?.value
         ) || 0;
+
+
+    if (
+        payment <= 0
+    ) {
+
+        showMessage(
+            "Please enter a valid collection amount."
+        );
+
+
+        paymentAmount?.focus();
+
+        return;
+
+    }
 
 
     const outstanding =
@@ -950,33 +1462,43 @@ async function saveCollection() {
         );
 
 
-    if (payment <= 0) {
+    if (
+        outstanding <= 0
+    ) {
 
         showMessage(
-            "Please enter a valid collection amount."
+            "This loan has no outstanding balance."
         );
-
-        paymentAmount.focus();
 
         return;
 
     }
 
 
-    if (payment > outstanding) {
+    if (
+        payment >
+        outstanding
+    ) {
 
         showMessage(
-            `Collection amount cannot exceed outstanding balance of ${formatCurrency(outstanding)}.`
+
+            `Collection amount cannot exceed outstanding balance of ${formatCurrency(
+                outstanding
+            )}.`
+
         );
 
-        paymentAmount.focus();
+
+        paymentAmount?.focus();
 
         return;
 
     }
 
 
-    if (!paymentDate.value) {
+    if (
+        !paymentDate?.value
+    ) {
 
         showMessage(
             "Please select payment date."
@@ -987,7 +1509,9 @@ async function saveCollection() {
     }
 
 
-    if (!paymentMode.value) {
+    if (
+        !paymentMode?.value
+    ) {
 
         showMessage(
             "Please select payment mode."
@@ -998,42 +1522,56 @@ async function saveCollection() {
     }
 
 
-    saveCollectionBtn.disabled =
+    saving =
         true;
 
-    saveCollectionBtn.textContent =
-        "Saving Collection...";
+
+    if (saveCollectionBtn) {
+
+        saveCollectionBtn.disabled =
+            true;
+
+        saveCollectionBtn.textContent =
+            "Saving Collection...";
+
+    }
 
 
     try {
 
         const loanRef =
             doc(
+
                 db,
+
                 "loans",
+
                 selectedLoan.id
+
             );
 
 
         const collectionRef =
             doc(
+
                 collection(
                     db,
                     "collections"
                 )
+
             );
 
 
         const result =
             await runTransaction(
-                db,
-                async (
-                    transaction
-                ) => {
 
-                    // ---------------------------------
+                db,
+
+                async transaction => {
+
+                    // =========================================
                     // READ LATEST LOAN
-                    // ---------------------------------
+                    // =========================================
 
                     const loanSnap =
                         await transaction.get(
@@ -1063,7 +1601,8 @@ async function saveCollection() {
 
 
                     if (
-                        currentOutstanding <= 0
+                        currentOutstanding <=
+                        0
                     ) {
 
                         throw new Error(
@@ -1079,7 +1618,9 @@ async function saveCollection() {
                     ) {
 
                         throw new Error(
+
                             "Collection amount exceeds the latest outstanding balance."
+
                         );
 
                     }
@@ -1098,19 +1639,36 @@ async function saveCollection() {
 
                     const newOutstanding =
                         Math.max(
+
                             currentOutstanding -
                             payment,
+
                             0
+
                         );
 
 
+                    // =========================================
+                    // FINAL LOAN STATUS
+                    // =========================================
+
                     const newStatus =
-    "Active";
+
+                        newOutstanding <= 0
+
+                            ? "Closed"
+
+                            : "Active";
 
 
-                    // ---------------------------------
+                    const newActive =
+                        newStatus ===
+                        "Active";
+
+
+                    // =========================================
                     // RECEIPT NUMBER
-                    // ---------------------------------
+                    // =========================================
 
                     const receiptNo =
                         await generateReceiptNumber(
@@ -1118,12 +1676,14 @@ async function saveCollection() {
                         );
 
 
-                    // ---------------------------------
-                    // COLLECTION DATA
-                    // ---------------------------------
+                    // =========================================
+                    // COLLECTION DOCUMENT
+                    // =========================================
 
                     transaction.set(
+
                         collectionRef,
+
                         {
 
                             receiptNo:
@@ -1133,24 +1693,36 @@ async function saveCollection() {
                                 loanSnap.id,
 
                             loanId:
+
                                 loan.loanId ||
+
                                 loan.loanNumber ||
+
+                                loan.loanCode ||
+
                                 loanSnap.id,
 
                             customerId:
+
                                 loan.customerId ||
                                 "",
 
                             customerDocumentId:
+
                                 loan.customerDocumentId ||
                                 "",
 
                             customerName:
+
                                 loan.customerName ||
+                                loan.name ||
                                 "",
 
                             customerMobile:
+
                                 loan.customerMobile ||
+                                loan.mobile ||
+                                loan.phone ||
                                 "",
 
                             amount:
@@ -1158,8 +1730,12 @@ async function saveCollection() {
 
                             paidAmount:
                                 payment,
+
+                            balanceBeforePayment:
+                                currentOutstanding,
+
                             balanceAfterPayment:
-    newOutstanding,
+                                newOutstanding,
 
                             paymentDate:
                                 paymentDate.value,
@@ -1168,10 +1744,16 @@ async function saveCollection() {
                                 paymentMode.value,
 
                             referenceNumber:
-                                referenceNumber.value.trim(),
+
+                                referenceNumber?.value
+                                    ?.trim() ||
+                                "",
 
                             remarks:
-                                remarks.value.trim(),
+
+                                remarks?.value
+                                    ?.trim() ||
+                                "",
 
                             status:
                                 "Success",
@@ -1183,18 +1765,24 @@ async function saveCollection() {
                                 serverTimestamp(),
 
                             createdBy:
-                                currentUser.uid
+                                currentUser.uid,
+
+                            createdByRole:
+                                currentRole || "staff"
 
                         }
+
                     );
 
 
-                    // ---------------------------------
+                    // =========================================
                     // UPDATE LOAN
-                    // ---------------------------------
+                    // =========================================
 
                     transaction.update(
+
                         loanRef,
+
                         {
 
                             amountPaid:
@@ -1213,8 +1801,7 @@ async function saveCollection() {
                                 newStatus,
 
                             active:
-                                newStatus ===
-                                "Active",
+                                newActive,
 
                             lastPaymentAmount:
                                 payment,
@@ -1229,9 +1816,13 @@ async function saveCollection() {
                                 serverTimestamp(),
 
                             updatedBy:
-                                currentUser.uid
+                                currentUser.uid,
+
+                            updatedByRole:
+                                currentRole || "staff"
 
                         }
+
                     );
 
 
@@ -1241,9 +1832,17 @@ async function saveCollection() {
                             receiptNo,
 
                         loanId:
+
                             loan.loanId ||
+
                             loan.loanNumber ||
+
+                            loan.loanCode ||
+
                             loanSnap.id,
+
+                        newPaid:
+                            newPaid,
 
                         newOutstanding:
                             newOutstanding,
@@ -1254,21 +1853,41 @@ async function saveCollection() {
                     };
 
                 }
+
             );
 
 
+        // =====================================================
+        // SUCCESS
+        // =====================================================
+
         showMessage(
+
             `Collection saved successfully. Receipt: ${result.receiptNo}`,
+
             "success"
+
         );
 
 
-        collectionForm.reset();
+        // =====================================================
+        // CLEAR FORM
+        // =====================================================
+
+        if (collectionForm) {
+
+            collectionForm.reset();
+
+        }
 
 
-        loanInfo.classList.remove(
-            "show"
-        );
+        if (loanInfo) {
+
+            loanInfo.classList.remove(
+                "show"
+            );
+
+        }
 
 
         selectedLoan =
@@ -1281,20 +1900,24 @@ async function saveCollection() {
         setDefaultDate();
 
 
-        /*
-         * Redirect after successful save
-         */
+        // =====================================================
+        // REDIRECT TO RECEIPT
+        // =====================================================
 
         setTimeout(
+
             function () {
 
                 window.location.href =
+
                     `collection-view.html?id=${encodeURIComponent(
                         result.receiptNo
                     )}`;
 
             },
-            1200
+
+            1000
+
         );
 
 
@@ -1307,18 +1930,29 @@ async function saveCollection() {
 
 
         showMessage(
+
             error.message ||
+
             "Unable to save collection. Please try again."
+
         );
 
 
     } finally {
 
-        saveCollectionBtn.disabled =
+        saving =
             false;
 
-        saveCollectionBtn.textContent =
-            "Save Collection";
+
+        if (saveCollectionBtn) {
+
+            saveCollectionBtn.disabled =
+                false;
+
+            saveCollectionBtn.textContent =
+                "Save Collection";
+
+        }
 
     }
 
@@ -1329,42 +1963,49 @@ async function saveCollection() {
 // FORM SUBMIT
 // =====================================================
 
-collectionForm.addEventListener(
-    "submit",
-    async function(event) {
+if (collectionForm) {
 
-        event.preventDefault();
+    collectionForm.addEventListener(
+        "submit",
+        async function (event) {
+
+            event.preventDefault();
 
 
-        if (!currentUser) {
+            if (!currentUser) {
 
-            showMessage(
-                "Session expired. Please login again."
-            );
+                showMessage(
+                    "Session expired. Please login again."
+                );
 
-            return;
+                return;
+
+            }
+
+
+            await saveCollection();
 
         }
+    );
 
-
-        await saveCollection();
-
-    }
-);
+}
 
 
 // =====================================================
-// AUTH
+// AUTH + ROLE CHECK
 // =====================================================
 
 onAuthStateChanged(
+
     auth,
-    async function(user) {
+
+    async function (user) {
 
         if (!user) {
 
-            window.location.href =
-                "login.html";
+            window.location.replace(
+                "login.html"
+            );
 
             return;
 
@@ -1375,11 +2016,58 @@ onAuthStateChanged(
             user;
 
 
+        // =====================================================
+        // DETERMINE ROLE
+        // =====================================================
+
+        const staffSession =
+            getStaffSession();
+
+
+        if (
+            staffSession &&
+            String(
+                staffSession.role ||
+                ""
+            ).toLowerCase() ===
+            "staff"
+        ) {
+
+            currentRole =
+                "staff";
+
+        } else {
+
+            /*
+             * Owner/admin can continue
+             * through existing authenticated flow.
+             */
+
+            currentRole =
+                String(
+                    staffSession?.role ||
+                    "owner"
+                ).toLowerCase();
+
+        }
+
+
+        if (initialized) {
+            return;
+        }
+
+
+        initialized =
+            true;
+
+
         setDefaultDate();
 
         resetSummary();
 
+
         await loadLoans();
 
     }
+
 );
