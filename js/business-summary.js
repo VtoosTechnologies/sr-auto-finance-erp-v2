@@ -3800,188 +3800,6 @@ function renderLoanWiseView() {
             .join("");
 
 }
-
-
-// ============================================================
-// CURRENT VIEW
-// ============================================================
-
-function renderCurrentView() {
-
-    renderSummaryCards();
-
-
-    switch (
-        currentView
-    ) {
-
-        case "month":
-
-            renderMonthWiseView();
-
-            break;
-
-
-        case "tenure":
-
-            renderTenureWiseView();
-
-            break;
-
-
-        case "customer":
-
-            renderCustomerWiseView();
-
-            break;
-
-
-        case "loan":
-
-            renderLoanWiseView();
-
-            break;
-        case "staff":
-
-            renderStaffWiseView();
-
-            break;
-
-        default:
-
-            renderOverallView();
-
-            break;
-
-    }
-
-}
-
-
-// ============================================================
-// UI HELPERS
-// ============================================================
-
-function setText(
-    id,
-    value
-) {
-
-    const element =
-        document.getElementById(
-            id
-        );
-
-
-    if (
-        element
-    ) {
-
-        element.textContent =
-            value;
-
-    }
-
-}
-
-
-function setLoading(
-    loading
-) {
-
-    const body =
-        document.getElementById(
-            "reportBody"
-        );
-
-
-    if (
-        loading &&
-        body
-    ) {
-
-        body.innerHTML = `
-            <tr>
-                <td
-                    colspan="12"
-                    class="empty"
-                >
-                    Loading Business Summary...
-                </td>
-            </tr>
-        `;
-
-    }
-
-}
-
-
-function showError(
-    message
-) {
-
-    const body =
-        document.getElementById(
-            "reportBody"
-        );
-
-
-    if (
-        body
-    ) {
-
-        body.innerHTML = `
-            <tr>
-                <td
-                    colspan="12"
-                    class="empty"
-                >
-                    ${escapeHTML(
-                        message
-                    )}
-                </td>
-            </tr>
-        `;
-
-    }
-
-}
-
-
-// ============================================================
-// EVENTS
-// ============================================================
-
-viewButtons.forEach(
-    button => {
-
-        button.addEventListener(
-            "click",
-            function () {
-
-                viewButtons.forEach(
-                    item => {
-
-                        item.classList.remove(
-                            "active"
-                        );
-
-                    }
-                );
-
-
-                this.classList.add(
-                    "active"
-                );
-
-
-                currentView =
-                    this.dataset.view ||
-                    "overall";
-// ============================================================
-// STAFF WISE VIEW
-// ============================================================
-
 function renderStaffWiseView() {
 
     const head =
@@ -4537,6 +4355,187 @@ function renderStaffWiseView() {
             .join("");
 
 }
+
+// ============================================================
+// CURRENT VIEW
+// ============================================================
+
+function renderCurrentView() {
+
+    renderSummaryCards();
+
+
+    switch (
+        currentView
+    ) {
+
+        case "month":
+
+            renderMonthWiseView();
+
+            break;
+
+
+        case "tenure":
+
+            renderTenureWiseView();
+
+            break;
+
+
+        case "customer":
+
+            renderCustomerWiseView();
+
+            break;
+
+
+        case "loan":
+
+            renderLoanWiseView();
+
+            break;
+        case "staff":
+
+            renderStaffWiseView();
+
+            break;
+
+        default:
+
+            renderOverallView();
+
+            break;
+
+    }
+
+}
+
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+
+function setText(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (
+        element
+    ) {
+
+        element.textContent =
+            value;
+
+    }
+
+}
+
+
+function setLoading(
+    loading
+) {
+
+    const body =
+        document.getElementById(
+            "reportBody"
+        );
+
+
+    if (
+        loading &&
+        body
+    ) {
+
+        body.innerHTML = `
+            <tr>
+                <td
+                    colspan="12"
+                    class="empty"
+                >
+                    Loading Business Summary...
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
+
+function showError(
+    message
+) {
+
+    const body =
+        document.getElementById(
+            "reportBody"
+        );
+
+
+    if (
+        body
+    ) {
+
+        body.innerHTML = `
+            <tr>
+                <td
+                    colspan="12"
+                    class="empty"
+                >
+                    ${escapeHTML(
+                        message
+                    )}
+                </td>
+            </tr>
+        `;
+
+    }
+
+}
+
+
+// ============================================================
+// EVENTS
+// ============================================================
+
+viewButtons.forEach(
+    button => {
+
+        button.addEventListener(
+            "click",
+            function () {
+
+                viewButtons.forEach(
+                    item => {
+
+                        item.classList.remove(
+                            "active"
+                        );
+
+                    }
+                );
+
+
+                this.classList.add(
+                    "active"
+                );
+
+
+                currentView =
+                    this.dataset.view ||
+                    "overall";
+// ============================================================
+// STAFF WISE VIEW
+// ============================================================
+
 
 
                 renderCurrentView();
