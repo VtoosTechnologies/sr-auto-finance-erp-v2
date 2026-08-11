@@ -797,9 +797,6 @@ function getPaymentAmount(
 
 }
 
-}
-
-
 function getPaymentPenalty(
     payment
 ) {
