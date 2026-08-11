@@ -2272,6 +2272,12 @@ async function saveLoan() {
 
 interestRatePeriod:
     "Yearly",
+                       interestRateMonthly:
+    (
+        Number(
+            interestRate.value
+        ) || 0
+    ) / 12,     
 
 interestType:
     interestType.value,
@@ -2335,8 +2341,8 @@ interestAmount:
                             documentsCreated:
                                 true,
 
-                            documentsStatus:
-                                "Pending / Received",
+                           documentsStatus:
+    "Pending",
 
                             // =========================
                             // META
