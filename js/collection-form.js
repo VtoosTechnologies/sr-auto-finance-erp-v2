@@ -238,21 +238,16 @@ function getPaidAmount(loan) {
 
 function getOutstanding(loan) {
 
-    const storedOutstanding =
-        loan.outstandingAmount ??
-        loan.balanceAmount ??
-        loan.pendingAmount ??
-        loan.remainingAmount;
-
-
+    // 1. Current outstanding
     if (
-        storedOutstanding !== undefined &&
-        storedOutstanding !== null
+        loan.outstandingAmount !== undefined &&
+        loan.outstandingAmount !== null &&
+        loan.outstandingAmount !== ""
     ) {
 
         return Math.max(
             Number(
-                storedOutstanding
+                loan.outstandingAmount
             ) || 0,
             0
         );
@@ -260,17 +255,31 @@ function getOutstanding(loan) {
     }
 
 
-    return Math.max(
+    // 2. Current balance
+    if (
+        loan.balanceAmount !== undefined &&
+        loan.balanceAmount !== null &&
+        loan.balanceAmount !== ""
+    ) {
 
+        return Math.max(
+            Number(
+                loan.balanceAmount
+            ) || 0,
+            0
+        );
+
+    }
+
+
+    // 3. Fallback calculation
+    return Math.max(
         getLoanAmount(loan) -
         getPaidAmount(loan),
-
         0
-
     );
 
 }
-
 
 // =====================================================
 // LOAD ACTIVE LOANS
@@ -1096,9 +1105,7 @@ async function saveCollection() {
 
 
                     const newStatus =
-                        newOutstanding <= 0
-                            ? "Closed"
-                            : "Active";
+    "Active";
 
 
                     // ---------------------------------
@@ -1151,6 +1158,8 @@ async function saveCollection() {
 
                             paidAmount:
                                 payment,
+                            balanceAfterPayment:
+    newOutstanding,
 
                             paymentDate:
                                 paymentDate.value,
