@@ -646,84 +646,26 @@ async function loadData() {
 // ============================================================
 // BUILD ASSIGNED DATA
 // ============================================================
-
 function buildAssignedData() {
 
-    // Staff assigned loans
-    assignedLoans =
-        allLoans.filter(
-            loan =>
-                matchesStaff(loan)
-        );
+    // ========================================================
+    // CURRENT VERSION:
+    // One staff only.
+    // Staff can view ALL customers and ALL loans.
+    //
+    // Later Version 2:
+    // Staff-wise customer/loan assignment can be enabled.
+    // ========================================================
 
+    assignedCustomers = [
+        ...allCustomers
+    ];
 
-    // Customer IDs from assigned loans
-    const customerIds =
-        new Set();
+    assignedLoans = [
+        ...allLoans
+    ];
 
-    assignedLoans.forEach(
-        loan => {
-
-            const customerId =
-                getLoanCustomerId(
-                    loan
-                );
-
-            if (customerId) {
-
-                customerIds.add(
-                    customerId
-                );
-            }
-        }
-    );
-
-
-    // Customers connected through loans
-    assignedCustomers =
-        allCustomers.filter(
-            customer => {
-
-                const id =
-                    getCustomerId(
-                        customer
-                    );
-
-                return customerIds.has(id);
-            }
-        );
-
-
-    // Fallback:
-    // customer document itself may contain staff assignment
-    allCustomers.forEach(
-        customer => {
-
-            if (
-                matchesStaff(
-                    customer
-                )
-            ) {
-
-                const exists =
-                    assignedCustomers.some(
-                        item =>
-                            item.id ===
-                            customer.id
-                    );
-
-                if (!exists) {
-
-                    assignedCustomers.push(
-                        customer
-                    );
-                }
-            }
-        }
-    );
-
-
-    // Sort by customer name
+    // Sort customers by name
     assignedCustomers.sort(
         (a, b) =>
             getCustomerName(a)
@@ -732,7 +674,6 @@ function buildAssignedData() {
                 )
     );
 }
-
 
 // ============================================================
 // RENDER CUSTOMER LIST
