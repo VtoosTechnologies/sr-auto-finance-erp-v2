@@ -385,22 +385,7 @@ function getOutstanding(
 
 
     if (
-        loan.pendingAmount !==
-        undefined &&
-        loan.pendingAmount !==
-        null
-    ) {
-
-        return Math.max(
-            Number(
-                loan.pendingAmount
-            ) || 0,
-            0
-        );
-
-    }
-
-
+       
     return Math.max(
 
         getLoanTotal(
