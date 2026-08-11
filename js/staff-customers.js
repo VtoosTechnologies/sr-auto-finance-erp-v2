@@ -1,27 +1,45 @@
 // ============================================================
 // SR AUTO FINANCE ERP
 // STAFF - MY CUSTOMERS
-// File: js/staff-customers.js
+// FINAL ROLE VERSION
 //
-// STAFF CAN VIEW:
-// Customer
-// Loan
-// Repayment / Collection History
+// STAFF PERMISSION:
+// 1. View customer details required for collection
+// 2. View loan details required for collection
+// 3. Collect payment
 //
-// COLLECTION:
-// Existing collection-form.html is opened with
-// Firestore Loan Document ID in ?id=
+// STAFF CANNOT:
+// - Create customer
+// - Edit customer
+// - Create loan
+// - Edit loan
+// - Close loan
+// - Reopen loan
+// - Delete anything
+// - Manage staff
+// - Change loan terms
+//
+// PAYMENT MASTER COLLECTION:
+// collections
+//
+// File:
+// js/staff-customers.js
 // ============================================================
+
 
 import {
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+
 import {
     collection,
+    doc,
+    getDoc,
     getDocs
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
 
 import {
     auth,
@@ -30,32 +48,71 @@ import {
 
 
 // ============================================================
+// CONSTANTS
+// ============================================================
+
+const STAFF_SESSION_KEY =
+    "srStaffSession";
+
+const STAFF_UID_KEY =
+    "srStaffUid";
+
+const STAFF_LOGIN_PAGE =
+    "staff-login.html";
+
+const STAFF_DASHBOARD_PAGE =
+    "staff-dashboard.html";
+
+const COLLECTION_PAGE =
+    "collection-form.html";
+
+const COMMON_LOGIN_PAGE =
+    "login.html";
+
+
+// ============================================================
 // ELEMENTS
 // ============================================================
 
 const customerList =
-    document.getElementById("customerList");
+    document.getElementById(
+        "customerList"
+    );
 
 const customerDetails =
-    document.getElementById("customerDetails");
+    document.getElementById(
+        "customerDetails"
+    );
 
 const searchInput =
-    document.getElementById("searchInput");
+    document.getElementById(
+        "searchInput"
+    );
 
 const searchBtn =
-    document.getElementById("searchBtn");
+    document.getElementById(
+        "searchBtn"
+    );
 
 const clearBtn =
-    document.getElementById("clearBtn");
+    document.getElementById(
+        "clearBtn"
+    );
 
 const backBtn =
-    document.getElementById("backBtn");
+    document.getElementById(
+        "backBtn"
+    );
 
 const logoutBtn =
-    document.getElementById("logoutBtn");
+    document.getElementById(
+        "logoutBtn"
+    );
 
 const loadingOverlay =
-    document.getElementById("loadingOverlay");
+    document.getElementById(
+        "loadingOverlay"
+    );
 
 
 // ============================================================
@@ -68,13 +125,17 @@ let allCustomers = [];
 
 let allLoans = [];
 
-let allPayments = [];
+let allCollections = [];
 
 let assignedCustomers = [];
 
 let assignedLoans = [];
 
 let selectedCustomerId = "";
+
+let pageInitialized = false;
+
+let logoutStarted = false;
 
 
 // ============================================================
@@ -85,16 +146,37 @@ function getStaffSession() {
 
     const raw =
         sessionStorage.getItem(
-            "srStaffSession"
+            STAFF_SESSION_KEY
         );
+
 
     if (!raw) {
         return null;
     }
 
+
     try {
 
-        return JSON.parse(raw);
+        const session =
+            JSON.parse(raw);
+
+
+        if (
+            !session ||
+            String(
+                session.role || ""
+            ).toLowerCase() !==
+            "staff"
+        ) {
+
+            clearStaffSession();
+
+            return null;
+        }
+
+
+        return session;
+
 
     } catch (error) {
 
@@ -103,12 +185,27 @@ function getStaffSession() {
             error
         );
 
-        sessionStorage.removeItem(
-            "srStaffSession"
-        );
+
+        clearStaffSession();
 
         return null;
     }
+}
+
+
+// ============================================================
+// CLEAR STAFF SESSION
+// ============================================================
+
+function clearStaffSession() {
+
+    sessionStorage.removeItem(
+        STAFF_SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+        STAFF_UID_KEY
+    );
 }
 
 
@@ -126,10 +223,14 @@ function firstValue(
         return fallback;
     }
 
-    for (const field of fields) {
+
+    for (
+        const field of fields
+    ) {
 
         const value =
             object[field];
+
 
         if (
             value !== undefined &&
@@ -140,6 +241,7 @@ function firstValue(
             return value;
         }
     }
+
 
     return fallback;
 }
@@ -153,23 +255,34 @@ function numberValue(
     ...values
 ) {
 
-    for (const value of values) {
+    for (
+        const value of values
+    ) {
 
         if (
             value === null ||
             value === undefined ||
             value === ""
         ) {
+
             continue;
         }
+
 
         const number =
             Number(value);
 
-        if (Number.isFinite(number)) {
+
+        if (
+            Number.isFinite(
+                number
+            )
+        ) {
+
             return number;
         }
     }
+
 
     return 0;
 }
@@ -179,7 +292,9 @@ function numberValue(
 // CURRENCY
 // ============================================================
 
-function formatCurrency(value) {
+function formatCurrency(
+    value
+) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -198,11 +313,14 @@ function formatCurrency(value) {
 // DATE PARSER
 // ============================================================
 
-function parseDate(value) {
+function parseDate(
+    value
+) {
 
     if (!value) {
         return null;
     }
+
 
     if (
         typeof value.toDate ===
@@ -212,24 +330,43 @@ function parseDate(value) {
         return value.toDate();
     }
 
-    if (value instanceof Date) {
+
+    if (
+        value instanceof Date
+    ) {
 
         return new Date(
             value.getTime()
         );
     }
 
+
+    if (
+        typeof value ===
+        "object" &&
+        value.seconds !== undefined
+    ) {
+
+        return new Date(
+            Number(value.seconds) *
+            1000
+        );
+    }
+
+
     const date =
         new Date(value);
 
+
     if (
-        isNaN(
+        Number.isNaN(
             date.getTime()
         )
     ) {
 
         return null;
     }
+
 
     return date;
 }
@@ -239,14 +376,18 @@ function parseDate(value) {
 // DATE FORMAT
 // ============================================================
 
-function formatDate(value) {
+function formatDate(
+    value
+) {
 
     const date =
         parseDate(value);
 
+
     if (!date) {
         return "-";
     }
+
 
     return new Intl.DateTimeFormat(
         "en-IN",
@@ -255,87 +396,204 @@ function formatDate(value) {
             month: "2-digit",
             year: "numeric"
         }
-    ).format(date);
+    ).format(
+        date
+    );
 }
 
 
 // ============================================================
-// STAFF MATCH
+// STAFF DOCUMENT VALIDATION
 // ============================================================
 
-function matchesStaff(record) {
+async function validateStaff(
+    user,
+    session
+) {
 
     if (
-        !record ||
-        !currentStaff
+        !user ||
+        !session
     ) {
 
-        return false;
+        throw new Error(
+            "Staff login required."
+        );
     }
 
-    const sessionDocumentId =
-        String(
-            currentStaff.staffDocumentId ||
-            ""
-        );
-
-    const sessionStaffId =
-        String(
-            currentStaff.staffId ||
-            ""
-        );
-
-    const recordStaffId =
-        String(
-            firstValue(
-                record,
-                [
-                    "staffId",
-                    "assignedStaffId",
-                    "collectorStaffId",
-                    "collectedByStaffId",
-                    "staffCode",
-                    "employeeId"
-                ],
-                ""
-            )
-        );
-
-    const recordDocumentId =
-        String(
-            firstValue(
-                record,
-                [
-                    "staffDocumentId",
-                    "assignedStaffDocumentId"
-                ],
-                ""
-            )
-        );
 
     if (
-        recordStaffId &&
-        (
-            recordStaffId ===
-            sessionStaffId ||
-            recordStaffId ===
-            sessionDocumentId
+        String(
+            session.role || ""
+        ).toLowerCase() !==
+        "staff"
+    ) {
+
+        throw new Error(
+            "Staff access required."
+        );
+    }
+
+
+    const sessionUid =
+        String(
+
+            session.authUid ||
+
+            session.uid ||
+
+            sessionStorage.getItem(
+                STAFF_UID_KEY
+            ) ||
+
+            ""
+
+        );
+
+
+    if (
+        !sessionUid ||
+        sessionUid !== user.uid
+    ) {
+
+        throw new Error(
+            "Staff authentication mismatch."
+        );
+    }
+
+
+    if (
+        !session.staffDocumentId
+    ) {
+
+        throw new Error(
+            "Staff document ID not found."
+        );
+    }
+
+
+    const staffRef =
+        doc(
+            db,
+            "staff",
+            session.staffDocumentId
+        );
+
+
+    const staffSnapshot =
+        await getDoc(
+            staffRef
+        );
+
+
+    if (
+        !staffSnapshot.exists()
+    ) {
+
+        throw new Error(
+            "Staff account not found."
+        );
+    }
+
+
+    const staffData =
+        staffSnapshot.data();
+
+
+    const status =
+        String(
+            staffData.status ||
+            "active"
         )
-    ) {
+            .trim()
+            .toLowerCase();
 
-        return true;
-    }
 
     if (
-        recordDocumentId &&
-        recordDocumentId ===
-        sessionDocumentId
+        [
+            "inactive",
+            "disabled",
+            "blocked",
+            "deleted"
+        ].includes(status)
     ) {
 
-        return true;
+        throw new Error(
+            "Your staff account is inactive."
+        );
     }
 
-    return false;
+
+    if (
+        staffData.active === false
+    ) {
+
+        throw new Error(
+            "Your staff account is inactive."
+        );
+    }
+
+
+    const staffEmail =
+        String(
+            staffData.email ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const authEmail =
+        String(
+            user.email ||
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+
+    if (
+        staffEmail &&
+        authEmail &&
+        staffEmail !== authEmail
+    ) {
+
+        throw new Error(
+            "Staff email verification failed."
+        );
+    }
+
+
+    currentStaff = {
+
+        ...session,
+
+        ...staffData,
+
+        staffDocumentId:
+            staffSnapshot.id,
+
+        authUid:
+            user.uid,
+
+        role:
+            "staff"
+
+    };
+
+
+    sessionStorage.setItem(
+        STAFF_SESSION_KEY,
+        JSON.stringify(
+            currentStaff
+        )
+    );
+
+
+    sessionStorage.setItem(
+        STAFF_UID_KEY,
+        user.uid
+    );
 }
 
 
@@ -343,16 +601,22 @@ function matchesStaff(record) {
 // CUSTOMER ID
 // ============================================================
 
-function getCustomerId(customer) {
+function getCustomerId(
+    customer
+) {
 
     return String(
         firstValue(
+
             customer,
+
             [
                 "customerId",
                 "customerCode"
             ],
+
             customer?.id || ""
+
         )
     );
 }
@@ -362,17 +626,23 @@ function getCustomerId(customer) {
 // CUSTOMER NAME
 // ============================================================
 
-function getCustomerName(customer) {
+function getCustomerName(
+    customer
+) {
 
     return String(
         firstValue(
+
             customer,
+
             [
                 "customerName",
                 "name",
                 "fullName"
             ],
+
             "Customer"
+
         )
     );
 }
@@ -382,18 +652,24 @@ function getCustomerName(customer) {
 // CUSTOMER MOBILE
 // ============================================================
 
-function getCustomerMobile(customer) {
+function getCustomerMobile(
+    customer
+) {
 
     return String(
         firstValue(
+
             customer,
+
             [
                 "mobile",
                 "phone",
                 "mobileNumber",
                 "contactNumber"
             ],
+
             "-"
+
         )
     );
 }
@@ -403,17 +679,23 @@ function getCustomerMobile(customer) {
 // CUSTOMER ADDRESS
 // ============================================================
 
-function getCustomerAddress(customer) {
+function getCustomerAddress(
+    customer
+) {
 
     return String(
         firstValue(
+
             customer,
+
             [
                 "address",
                 "customerAddress",
                 "fullAddress"
             ],
+
             "-"
+
         )
     );
 }
@@ -423,72 +705,69 @@ function getCustomerAddress(customer) {
 // LOAN CUSTOMER ID
 // ============================================================
 
-function getLoanCustomerId(loan) {
+function getLoanCustomerId(
+    loan
+) {
 
     return String(
         firstValue(
+
             loan,
+
             [
                 "customerId",
                 "customerDocumentId"
             ],
+
             ""
+
         )
     );
 }
 
 
 // ============================================================
-// LOAN BUSINESS ID
+// LOAN BUSINESS NUMBER
 // ============================================================
 
-function getLoanId(loan) {
+function getLoanId(
+    loan
+) {
 
     return String(
         firstValue(
+
             loan,
+
             [
                 "loanId",
                 "loanNumber",
                 "loanCode"
             ],
+
             loan?.id || ""
+
         )
     );
 }
 
 
 // ============================================================
-// PAYMENT LOAN ID
+// ACTIVE LOAN
 // ============================================================
 
-function getPaymentLoanId(payment) {
-
-    return String(
-        firstValue(
-            payment,
-            [
-                "loanId",
-                "loanNumber",
-                "loanCode"
-            ],
-            ""
-        )
-    );
-}
-
-
-// ============================================================
-// ACTIVE LOAN CHECK
-// ============================================================
-
-function isActiveLoan(loan) {
+function isActiveLoan(
+    loan
+) {
 
     const status =
         String(
             loan?.status ||
             "active"
-        ).toLowerCase();
+        )
+            .trim()
+            .toLowerCase();
+
 
     return ![
         "closed",
@@ -500,124 +779,297 @@ function isActiveLoan(loan) {
 
 
 // ============================================================
-// LOAD DATA
+// LOAN OUTSTANDING
+// ============================================================
+//
+// MASTER SOURCE:
+// outstandingAmount
+// ↓
+// balanceAmount
+// ↓
+// totalPayable - amountPaid
+//
+// ============================================================
+
+function getLoanPending(
+    loan
+) {
+
+    if (!loan) {
+        return 0;
+    }
+
+
+    if (
+        loan.outstandingAmount !==
+        undefined &&
+        loan.outstandingAmount !==
+        null &&
+        loan.outstandingAmount !==
+        ""
+    ) {
+
+        return Math.max(
+
+            numberValue(
+                loan.outstandingAmount
+            ),
+
+            0
+
+        );
+    }
+
+
+    if (
+        loan.balanceAmount !==
+        undefined &&
+        loan.balanceAmount !==
+        null &&
+        loan.balanceAmount !==
+        ""
+    ) {
+
+        return Math.max(
+
+            numberValue(
+                loan.balanceAmount
+            ),
+
+            0
+
+        );
+    }
+
+
+    const payable =
+        numberValue(
+
+            loan.totalPayable,
+
+            loan.totalAmount
+
+        );
+
+
+    const paid =
+        numberValue(
+
+            loan.amountPaid,
+
+            loan.paidAmount,
+
+            loan.totalPaid
+
+        );
+
+
+    return Math.max(
+        payable - paid,
+        0
+    );
+}
+
+
+// ============================================================
+// LOAN PAID
+// ============================================================
+
+function getLoanPaid(
+    loan
+) {
+
+    return numberValue(
+
+        loan.amountPaid,
+
+        loan.paidAmount,
+
+        loan.totalPaid
+
+    );
+}
+
+
+// ============================================================
+// SAFE FIRESTORE LOAD
+// ============================================================
+
+async function safeGetCollection(
+    collectionName
+) {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    collectionName
+                )
+            );
+
+
+        return snapshot.docs.map(
+            docSnap => ({
+
+                id:
+                    docSnap.id,
+
+                ...docSnap.data()
+
+            })
+        );
+
+
+    } catch (error) {
+
+        console.error(
+
+            `${collectionName} loading error:`,
+
+            error
+
+        );
+
+
+        return [];
+    }
+}
+
+
+// ============================================================
+// LOAD PAGE DATA
+// ============================================================
+//
+// IMPORTANT:
+//
+// customers = READ ONLY
+// loans = READ ONLY
+// collections = READ ONLY
+//
+// Staff cannot create/update these here.
+//
+// Actual collection transaction is maintained by
+// collection-form.js.
 // ============================================================
 
 async function loadData() {
 
     showLoading(true);
 
+
     try {
 
         const [
-            customersSnapshot,
-            loansSnapshot,
-            paymentsSnapshot
+
+            customers,
+
+            loans,
+
+            collections
+
         ] = await Promise.all([
 
-            getDocs(
-                collection(
-                    db,
-                    "customers"
-                )
+            safeGetCollection(
+                "customers"
             ),
 
-            getDocs(
-                collection(
-                    db,
-                    "loans"
-                )
+            safeGetCollection(
+                "loans"
             ),
 
-            getDocs(
-                collection(
-                    db,
-                    "payments"
-                )
+            // FINALIZED PAYMENT MASTER
+            safeGetCollection(
+                "collections"
             )
 
         ]);
 
 
+        allCustomers =
+            Array.isArray(
+                customers
+            )
+                ? customers
+                : [];
+
+
+        allLoans =
+            Array.isArray(
+                loans
+            )
+                ? loans
+                : [];
+
+
+        allCollections =
+            Array.isArray(
+                collections
+            )
+
+                ? collections.filter(
+                    item => {
+
+                        const status =
+                            String(
+                                item.status ||
+                                "Success"
+                            )
+                                .trim()
+                                .toLowerCase();
+
+
+                        return ![
+                            "cancelled",
+                            "canceled",
+                            "reversed",
+                            "deleted",
+                            "failed"
+                        ].includes(
+                            status
+                        );
+
+                    }
+                )
+
+                : [];
+
+
         // ====================================================
-        // CUSTOMERS
+        // STAFF CAN VIEW REQUIRED CUSTOMER / LOAN DATA
         // ====================================================
 
-        allCustomers = [];
+        assignedCustomers =
+            [
+                ...allCustomers
+            ];
 
-        customersSnapshot.forEach(
-            docSnap => {
 
-                allCustomers.push({
-                    id: docSnap.id,
-                    ...docSnap.data()
-                });
+        assignedLoans =
+            [
+                ...allLoans
+            ];
 
-            }
+
+        // ====================================================
+        // SORT CUSTOMER NAME
+        // ====================================================
+
+        assignedCustomers.sort(
+
+            (a, b) =>
+
+                getCustomerName(a)
+                    .localeCompare(
+                        getCustomerName(b)
+                    )
+
         );
 
-
-        // ====================================================
-        // LOANS
-        // ====================================================
-
-        allLoans = [];
-
-        loansSnapshot.forEach(
-            docSnap => {
-
-                allLoans.push({
-                    id: docSnap.id,
-                    ...docSnap.data()
-                });
-
-            }
-        );
-
-
-        // ====================================================
-        // PAYMENTS
-        // ====================================================
-
-        allPayments = [];
-
-        paymentsSnapshot.forEach(
-            docSnap => {
-
-                const payment = {
-                    id: docSnap.id,
-                    ...docSnap.data()
-                };
-
-                const status =
-                    String(
-                        payment.status ||
-                        "success"
-                    ).toLowerCase();
-
-                if (
-                    [
-                        "cancelled",
-                        "canceled",
-                        "reversed",
-                        "deleted"
-                    ].includes(status)
-                ) {
-
-                    return;
-                }
-
-                allPayments.push(
-                    payment
-                );
-
-            }
-        );
-
-
-        buildAssignedData();
 
         renderCustomerList();
+
 
     } catch (error) {
 
@@ -626,54 +1078,32 @@ async function loadData() {
             error
         );
 
+
         if (customerList) {
 
             customerList.innerHTML = `
+
                 <div class="empty">
-                    Unable to load customers.
-                    Check browser console.
+
+                    Unable to load customer details.
+
+                    <br>
+
+                    Please refresh and try again.
+
                 </div>
+
             `;
         }
+
 
     } finally {
 
         showLoading(false);
+
     }
 }
 
-
-// ============================================================
-// BUILD ASSIGNED DATA
-// ============================================================
-function buildAssignedData() {
-
-    // ========================================================
-    // CURRENT VERSION:
-    // One staff only.
-    // Staff can view ALL customers and ALL loans.
-    //
-    // Later Version 2:
-    // Staff-wise customer/loan assignment can be enabled.
-    // ========================================================
-
-    assignedCustomers = [
-        ...allCustomers
-    ];
-
-    assignedLoans = [
-        ...allLoans
-    ];
-
-    // Sort customers by name
-    assignedCustomers.sort(
-        (a, b) =>
-            getCustomerName(a)
-                .localeCompare(
-                    getCustomerName(b)
-                )
-    );
-}
 
 // ============================================================
 // RENDER CUSTOMER LIST
@@ -687,35 +1117,52 @@ function renderCustomerList(
         return;
     }
 
-    if (!customers.length) {
+
+    if (
+        !customers.length
+    ) {
 
         customerList.innerHTML = `
+
             <div class="empty">
-                No customers assigned to this staff.
+
+                No customers found.
+
             </div>
+
         `;
+
 
         if (customerDetails) {
 
             customerDetails.innerHTML = `
+
                 <div class="empty">
-                    No assigned customer selected.
+
+                    No customer selected.
+
                 </div>
+
             `;
         }
+
 
         return;
     }
 
 
     customerList.innerHTML =
+
         customers
+
             .map(
                 customer =>
+
                     createCustomerListItem(
                         customer
                     )
             )
+
             .join("");
 
 
@@ -741,13 +1188,33 @@ function renderCustomerList(
         );
 
 
-    if (!selectedCustomerId) {
+    if (
+        !selectedCustomerId ||
+        !customers.some(
+            customer =>
+                String(
+                    getCustomerId(
+                        customer
+                    )
+                ) ===
+                String(
+                    selectedCustomerId
+                )
+        )
+    ) {
 
         selectCustomer(
             getCustomerId(
                 customers[0]
             )
         );
+
+    } else {
+
+        selectCustomer(
+            selectedCustomerId
+        );
+
     }
 }
 
@@ -765,67 +1232,93 @@ function createCustomerListItem(
             customer
         );
 
+
     const customerLoans =
         assignedLoans.filter(
+
             loan =>
+
                 getLoanCustomerId(
                     loan
-                ) === customerId
+                ) ===
+                customerId
+
         );
+
 
     const activeLoans =
         customerLoans.filter(
-            loan =>
-                isActiveLoan(loan)
+            isActiveLoan
         );
+
 
     const mobile =
         getCustomerMobile(
             customer
         );
 
+
     return `
+
         <button
+
             type="button"
+
             class="customer-item ${
-                String(selectedCustomerId) ===
-                String(customerId)
+                String(
+                    selectedCustomerId
+                ) ===
+                String(
+                    customerId
+                )
                     ? "active"
                     : ""
             }"
+
             data-customer-id="${escapeHtml(
                 customerId
             )}"
+
         >
 
             <div class="customer-name">
+
                 ${escapeHtml(
                     getCustomerName(
                         customer
                     )
                 )}
+
             </div>
+
 
             <div class="customer-meta">
 
                 <span class="badge blue">
+
                     ${activeLoans.length}
+
                     Active Loan${
                         activeLoans.length === 1
                             ? ""
                             : "s"
                     }
+
                 </span>
 
+
                 <span class="badge">
+
                     ${escapeHtml(
                         mobile
                     )}
+
                 </span>
 
             </div>
 
         </button>
+
     `;
 }
 
@@ -840,7 +1333,7 @@ function selectCustomer(
 
     selectedCustomerId =
         String(
-            customerId
+            customerId || ""
         );
 
 
@@ -852,11 +1345,14 @@ function selectCustomer(
             button => {
 
                 button.classList.toggle(
+
                     "active",
+
                     String(
                         button.dataset.customerId
                     ) ===
                     selectedCustomerId
+
                 );
 
             }
@@ -865,11 +1361,16 @@ function selectCustomer(
 
     const customer =
         assignedCustomers.find(
+
             item =>
-                getCustomerId(
-                    item
+
+                String(
+                    getCustomerId(
+                        item
+                    )
                 ) ===
                 selectedCustomerId
+
         );
 
 
@@ -878,11 +1379,16 @@ function selectCustomer(
         if (customerDetails) {
 
             customerDetails.innerHTML = `
+
                 <div class="empty">
+
                     Customer details not found.
+
                 </div>
+
             `;
         }
+
 
         return;
     }
@@ -902,23 +1408,35 @@ function renderCustomerDetails(
     customer
 ) {
 
+    if (!customerDetails) {
+        return;
+    }
+
+
     const customerId =
         getCustomerId(
             customer
         );
 
+
     const customerLoans =
         assignedLoans.filter(
+
             loan =>
+
                 getLoanCustomerId(
                     loan
-                ) === customerId
+                ) ===
+                customerId
+
         );
+
 
     const mobile =
         getCustomerMobile(
             customer
         );
+
 
     const address =
         getCustomerAddress(
@@ -932,22 +1450,26 @@ function renderCustomerDetails(
 
     const totalLoanAmount =
         customerLoans.reduce(
+
             (
                 total,
                 loan
-            ) => {
+            ) =>
 
-                return (
-                    total +
-                    numberValue(
-                        loan.loanAmount,
-                        loan.principalAmount,
-                        loan.amount
-                    )
-                );
+                total +
 
-            },
+                numberValue(
+
+                    loan.loanAmount,
+
+                    loan.principalAmount,
+
+                    loan.amount
+
+                ),
+
             0
+
         );
 
 
@@ -957,22 +1479,19 @@ function renderCustomerDetails(
 
     const totalPaid =
         customerLoans.reduce(
+
             (
                 total,
                 loan
-            ) => {
+            ) =>
 
-                return (
-                    total +
-                    numberValue(
-                        loan.totalPaid,
-                        loan.paidAmount,
-                        loan.amountPaid
-                    )
-                );
+                total +
+                getLoanPaid(
+                    loan
+                ),
 
-            },
             0
+
         );
 
 
@@ -981,101 +1500,26 @@ function renderCustomerDetails(
     // ========================================================
 
     const totalPending =
-    customerLoans.reduce(
-        (
-            total,
-            loan
-        ) => {
+        customerLoans.reduce(
 
-            // ====================================================
-            // CURRENT OUTSTANDING
-            // ====================================================
+            (
+                total,
+                loan
+            ) =>
 
-            if (
-                loan.outstandingAmount !==
-                    undefined &&
-                loan.outstandingAmount !==
-                    null &&
-                loan.outstandingAmount !==
-                    ""
-            ) {
-
-                return (
-                    total +
-                    Math.max(
-                        numberValue(
-                            loan.outstandingAmount
-                        ),
-                        0
-                    )
-                );
-
-            }
-
-
-            // ====================================================
-            // BALANCE AMOUNT
-            // ====================================================
-
-            if (
-                loan.balanceAmount !==
-                    undefined &&
-                loan.balanceAmount !==
-                    null &&
-                loan.balanceAmount !==
-                    ""
-            ) {
-
-                return (
-                    total +
-                    Math.max(
-                        numberValue(
-                            loan.balanceAmount
-                        ),
-                        0
-                    )
-                );
-
-            }
-
-
-            // ====================================================
-            // FALLBACK
-            // ====================================================
-
-            const payable =
-                numberValue(
-                    loan.totalPayable,
-                    loan.totalAmount
-                );
-
-
-            const paid =
-                numberValue(
-                    loan.totalPaid,
-                    loan.paidAmount,
-                    loan.amountPaid
-                );
-
-
-            return (
                 total +
-                Math.max(
-                    payable -
-                    paid,
-                    0
-                )
-            );
+                getLoanPending(
+                    loan
+                ),
 
-        },
-        0
-    );
+            0
+
+        );
 
 
-    if (!customerDetails) {
-        return;
-    }
-
+    // ========================================================
+    // RENDER
+    // ========================================================
 
     customerDetails.innerHTML = `
 
@@ -1086,12 +1530,15 @@ function renderCustomerDetails(
                 <div>
 
                     <h2 class="customer-main-name">
+
                         ${escapeHtml(
                             getCustomerName(
                                 customer
                             )
                         )}
+
                     </h2>
+
 
                     <div class="customer-main-meta">
 
@@ -1113,11 +1560,17 @@ function renderCustomerDetails(
 
 
                 <button
+
                     type="button"
+
                     class="collect-main-btn"
+
                     data-action="collect"
+
                 >
+
                     Collect Payment
+
                 </button>
 
             </div>
@@ -1138,11 +1591,15 @@ function renderCustomerDetails(
                 <div class="info-card">
 
                     <div class="info-label">
+
                         Total Loans
+
                     </div>
 
                     <div class="info-value">
+
                         ${customerLoans.length}
+
                     </div>
 
                 </div>
@@ -1151,13 +1608,17 @@ function renderCustomerDetails(
                 <div class="info-card">
 
                     <div class="info-label">
+
                         Loan Amount
+
                     </div>
 
                     <div class="info-value">
+
                         ${formatCurrency(
                             totalLoanAmount
                         )}
+
                     </div>
 
                 </div>
@@ -1166,13 +1627,17 @@ function renderCustomerDetails(
                 <div class="info-card">
 
                     <div class="info-label">
+
                         Total Paid
+
                     </div>
 
                     <div class="info-value">
+
                         ${formatCurrency(
                             totalPaid
                         )}
+
                     </div>
 
                 </div>
@@ -1181,13 +1646,17 @@ function renderCustomerDetails(
                 <div class="info-card">
 
                     <div class="info-label">
+
                         Total Pending
+
                     </div>
 
                     <div class="info-value">
+
                         ${formatCurrency(
                             totalPending
                         )}
+
                     </div>
 
                 </div>
@@ -1201,18 +1670,26 @@ function renderCustomerDetails(
 
             ${
                 customerLoans.length
+
                     ? customerLoans
+
                         .map(
                             loan =>
                                 renderLoan(
                                     loan
                                 )
                         )
+
                         .join("")
+
                     : `
+
                         <div class="empty">
-                            No loans assigned for this customer.
+
+                            No loans found for this customer.
+
                         </div>
+
                     `
             }
 
@@ -1222,7 +1699,7 @@ function renderCustomerDetails(
 
 
     // ========================================================
-    // CUSTOMER LEVEL COLLECT BUTTON
+    // CUSTOMER LEVEL COLLECT
     // ========================================================
 
     const collectButton =
@@ -1239,14 +1716,13 @@ function renderCustomerDetails(
 
                 const activeLoans =
                     customerLoans.filter(
-                        loan =>
-                            isActiveLoan(
-                                loan
-                            )
+                        isActiveLoan
                     );
 
 
-                if (!activeLoans.length) {
+                if (
+                    !activeLoans.length
+                ) {
 
                     alert(
                         "This customer has no active loan."
@@ -1256,10 +1732,9 @@ function renderCustomerDetails(
                 }
 
 
-                // One active loan:
-                // Directly open collection
                 if (
-                    activeLoans.length === 1
+                    activeLoans.length ===
+                    1
                 ) {
 
                     openCollectionPage(
@@ -1270,18 +1745,20 @@ function renderCustomerDetails(
                 }
 
 
-                // Multiple active loans
                 alert(
+
                     "This customer has multiple active loans. Please use the Collect Payment button under the required loan."
+
                 );
 
             }
         );
+
     }
 
 
     // ========================================================
-    // LOAN-WISE COLLECT BUTTON
+    // LOAN-WISE COLLECT
     // ========================================================
 
     customerDetails
@@ -1299,7 +1776,9 @@ function renderCustomerDetails(
                             button.dataset.loanId;
 
 
-                        if (!loanDocumentId) {
+                        if (
+                            !loanDocumentId
+                        ) {
 
                             alert(
                                 "Loan document ID not found."
@@ -1321,7 +1800,7 @@ function renderCustomerDetails(
 
 
     // ========================================================
-    // PAYMENT HISTORY COLLECT BUTTON
+    // COLLECTION HISTORY COLLECT
     // ========================================================
 
     customerDetails
@@ -1331,6 +1810,14 @@ function renderCustomerDetails(
         .forEach(
             button => {
 
+                if (
+                    button.disabled
+                ) {
+
+                    return;
+                }
+
+
                 button.addEventListener(
                     "click",
                     () => {
@@ -1339,7 +1826,9 @@ function renderCustomerDetails(
                             button.dataset.loanId;
 
 
-                        if (!loanDocumentId) {
+                        if (
+                            !loanDocumentId
+                        ) {
 
                             alert(
                                 "Loan document ID not found."
@@ -1365,9 +1854,13 @@ function renderCustomerDetails(
 // OPEN COLLECTION PAGE
 // ============================================================
 //
-// Existing collection.js expects:
-// collection-form.html?id=LOAN_DOCUMENT_ID
+// STAFF ONLY ACTION:
 //
+// collection-form.html
+// ?id=Firestore Loan Document ID
+//
+// collection-form.js performs the actual transaction:
+// collections + loans update.
 // ============================================================
 
 function openCollectionPage(
@@ -1392,7 +1885,8 @@ function openCollectionPage(
 
 
     window.location.href =
-        `collection-form.html?id=${encodeURIComponent(
+
+        `${COLLECTION_PAGE}?id=${encodeURIComponent(
             id
         )}`;
 }
@@ -1420,112 +1914,119 @@ function renderLoan(
 
 
     const statusLower =
-        status.toLowerCase();
+        status
+            .trim()
+            .toLowerCase();
 
 
     const loanAmount =
         numberValue(
+
             loan.loanAmount,
+
             loan.principalAmount,
+
             loan.amount
+
         );
 
 
     const principal =
         numberValue(
+
             loan.principalAmount,
+
             loan.principal,
+
             loan.loanAmount
+
         );
 
 
     const interest =
         numberValue(
+
             loan.interestAmount,
+
             loan.totalInterest,
+
             loan.interest
+
+        );
+
+
+    const totalPayable =
+        numberValue(
+
+            loan.totalPayable,
+
+            loan.totalAmount,
+
+            principal +
+            interest
+
         );
 
 
     const tenure =
         numberValue(
+
             loan.tenure,
+
             loan.tenureMonths,
+
             loan.duration
+
         );
 
 
     const emi =
         numberValue(
+
             loan.installmentAmount,
+
             loan.emiAmount,
+
             loan.monthlyInstallment
+
         );
 
 
-  const pending =
-    (
-        loan.outstandingAmount !==
-            undefined &&
-        loan.outstandingAmount !==
-            null &&
-        loan.outstandingAmount !==
-            ""
-    )
-        ? Math.max(
-            numberValue(
-                loan.outstandingAmount
-            ),
-            0
-        )
-        : (
-            loan.balanceAmount !==
-                undefined &&
-            loan.balanceAmount !==
-                null &&
-            loan.balanceAmount !==
-                ""
-        )
-            ? Math.max(
-                numberValue(
-                    loan.balanceAmount
-                ),
-                0
-            )
-            : Math.max(
-                numberValue(
-                    loan.totalPayable,
-                    loan.totalAmount
-                ) -
-                numberValue(
-                    loan.totalPaid,
-                    loan.paidAmount,
-                    loan.amountPaid
-                ),
-                0
-            );
+    const paid =
+        getLoanPaid(
+            loan
+        );
 
 
-    const paymentRows =
-        getLoanPayments(
+    const pending =
+        getLoanPending(
             loan
         );
 
 
     const closedLoan =
         [
+
             "closed",
             "completed",
             "cancelled",
             "canceled"
+
         ].includes(
             statusLower
+        );
+
+
+    const collectionHistory =
+        getLoanCollections(
+            loan
         );
 
 
     return `
 
         <div class="loan-card">
+
 
             <div class="loan-header">
 
@@ -1549,9 +2050,11 @@ function renderLoan(
                         }
                     "
                 >
+
                     ${escapeHtml(
                         status
                     )}
+
                 </span>
 
             </div>
@@ -1561,17 +2064,27 @@ function renderLoan(
 
                 ${
                     closedLoan
+
                         ? ""
+
                         : `
+
                             <button
+
                                 type="button"
+
                                 class="collect-btn"
+
                                 data-loan-id="${escapeHtml(
                                     loan.id
                                 )}"
+
                             >
+
                                 Collect Payment
+
                             </button>
+
                         `
                 }
 
@@ -1580,16 +2093,21 @@ function renderLoan(
 
             <div class="loan-summary">
 
+
                 <div class="loan-stat">
 
                     <div class="loan-stat-label">
+
                         Loan Amount
+
                     </div>
 
                     <div class="loan-stat-value">
+
                         ${formatCurrency(
                             loanAmount
                         )}
+
                     </div>
 
                 </div>
@@ -1598,13 +2116,17 @@ function renderLoan(
                 <div class="loan-stat">
 
                     <div class="loan-stat-label">
+
                         Principal
+
                     </div>
 
                     <div class="loan-stat-value">
+
                         ${formatCurrency(
                             principal
                         )}
+
                     </div>
 
                 </div>
@@ -1613,13 +2135,17 @@ function renderLoan(
                 <div class="loan-stat">
 
                     <div class="loan-stat-label">
+
                         Interest
+
                     </div>
 
                     <div class="loan-stat-value">
+
                         ${formatCurrency(
                             interest
                         )}
+
                     </div>
 
                 </div>
@@ -1628,26 +2154,17 @@ function renderLoan(
                 <div class="loan-stat">
 
                     <div class="loan-stat-label">
-                        Tenure
+
+                        Total Payable
+
                     </div>
 
                     <div class="loan-stat-value">
-                        ${tenure || "-"}
-                    </div>
 
-                </div>
-
-
-                <div class="loan-stat">
-
-                    <div class="loan-stat-label">
-                        EMI
-                    </div>
-
-                    <div class="loan-stat-value">
                         ${formatCurrency(
-                            emi
+                            totalPayable
                         )}
+
                     </div>
 
                 </div>
@@ -1656,24 +2173,90 @@ function renderLoan(
                 <div class="loan-stat">
 
                     <div class="loan-stat-label">
-                        Pending
+
+                        Paid
+
                     </div>
 
                     <div class="loan-stat-value">
+
+                        ${formatCurrency(
+                            paid
+                        )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="loan-stat">
+
+                    <div class="loan-stat-label">
+
+                        Pending
+
+                    </div>
+
+                    <div class="loan-stat-value">
+
                         ${formatCurrency(
                             pending
                         )}
+
                     </div>
 
                 </div>
+
+
+                <div class="loan-stat">
+
+                    <div class="loan-stat-label">
+
+                        Tenure
+
+                    </div>
+
+                    <div class="loan-stat-value">
+
+                        ${
+                            tenure ||
+                            "-"
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <div class="loan-stat">
+
+                    <div class="loan-stat-label">
+
+                        EMI
+
+                    </div>
+
+                    <div class="loan-stat-value">
+
+                        ${formatCurrency(
+                            emi
+                        )}
+
+                    </div>
+
+                </div>
+
 
             </div>
 
 
             <div class="schedule-section">
 
+
                 <div class="schedule-title">
-                    Repayment / Collection History
+
+                    Collection History
+
                 </div>
 
 
@@ -1688,27 +2271,19 @@ function renderLoan(
                                 <th>#</th>
 
                                 <th>
-                                    Due Date
+                                    Receipt
                                 </th>
 
                                 <th>
-                                    Due Amount
+                                    Collection Date
                                 </th>
 
                                 <th>
-                                    Paid Date
+                                    Amount
                                 </th>
 
                                 <th>
-                                    Paid Amount
-                                </th>
-
-                                <th>
-                                    Penalty
-                                </th>
-
-                                <th>
-                                    Pending
+                                    Mode
                                 </th>
 
                                 <th>
@@ -1727,35 +2302,48 @@ function renderLoan(
                         <tbody>
 
                             ${
-                                paymentRows.length
-                                    ? paymentRows
+                                collectionHistory.length
+
+                                    ? collectionHistory
+
                                         .map(
                                             (
-                                                payment,
+                                                item,
                                                 index
                                             ) =>
-                                                renderPaymentRow(
-                                                    payment,
+
+                                                renderCollectionRow(
+
+                                                    item,
+
                                                     index + 1,
+
                                                     loan.id
+
                                                 )
                                         )
+
                                         .join("")
+
                                     : `
+
                                         <tr>
 
                                             <td
-                                                colspan="9"
+                                                colspan="7"
                                                 style="
                                                     text-align:center;
                                                     color:#64748b;
                                                     padding:25px;
                                                 "
                                             >
-                                                No repayment records found.
+
+                                                No collection records found.
+
                                             </td>
 
                                         </tr>
+
                                     `
                             }
 
@@ -1767,6 +2355,7 @@ function renderLoan(
 
             </div>
 
+
         </div>
 
     `;
@@ -1774,10 +2363,21 @@ function renderLoan(
 
 
 // ============================================================
-// GET LOAN PAYMENTS
+// GET LOAN COLLECTIONS
+// ============================================================
+//
+// FINALIZED MASTER:
+// collections
+//
+// Match by:
+// loanDocumentId
+// loanId
+// loanNumber
+// loanCode
+//
 // ============================================================
 
-function getLoanPayments(
+function getLoanCollections(
     loan
 ) {
 
@@ -1794,44 +2394,72 @@ function getLoanPayments(
         );
 
 
-    return allPayments
+    return allCollections
+
         .filter(
-            payment => {
+            item => {
 
-                const paymentLoanId =
-                    getPaymentLoanId(
-                        payment
-                    );
-
-
-                const paymentLoanDocumentId =
+                const itemLoanDocumentId =
                     String(
                         firstValue(
-                            payment,
+
+                            item,
+
                             [
                                 "loanDocumentId"
                             ],
+
                             ""
+
+                        )
+                    );
+
+
+                const itemLoanId =
+                    String(
+                        firstValue(
+
+                            item,
+
+                            [
+                                "loanId",
+                                "loanNumber",
+                                "loanCode"
+
+                            ],
+
+                            ""
+
                         )
                     );
 
 
                 return (
-                    paymentLoanId ===
-                    loanBusinessId ||
 
-                    paymentLoanId ===
-                    loanDocumentId ||
+                    itemLoanDocumentId ===
+                    loanDocumentId
 
-                    paymentLoanDocumentId ===
-                    loanDocumentId ||
+                ) || (
 
-                    paymentLoanDocumentId ===
+                    itemLoanDocumentId ===
                     loanBusinessId
+
+                ) || (
+
+                    itemLoanId ===
+                    loanBusinessId
+
+                ) || (
+
+                    itemLoanId ===
+                    loanDocumentId
+
                 );
 
             }
         )
+
+
         .sort(
             (
                 a,
@@ -1840,201 +2468,211 @@ function getLoanPayments(
 
                 const dateA =
                     parseDate(
+
                         firstValue(
+
                             a,
+
                             [
                                 "paymentDate",
-                                "paidDate",
                                 "collectionDate",
-                                "date"
+                                "paidDate",
+                                "date",
+                                "createdAt"
+
                             ],
+
                             ""
+
                         )
+
                     );
 
 
                 const dateB =
                     parseDate(
+
                         firstValue(
+
                             b,
+
                             [
                                 "paymentDate",
-                                "paidDate",
                                 "collectionDate",
-                                "date"
+                                "paidDate",
+                                "date",
+                                "createdAt"
+
                             ],
+
                             ""
+
                         )
+
                     );
 
 
                 return (
-                    (
-                        dateA?.getTime() ||
-                        0
-                    ) -
+
                     (
                         dateB?.getTime() ||
                         0
+                    ) -
+
+                    (
+                        dateA?.getTime() ||
+                        0
                     )
+
                 );
+
             }
         );
 }
 
 
 // ============================================================
-// RENDER PAYMENT ROW
+// RENDER COLLECTION ROW
 // ============================================================
 
-function renderPaymentRow(
-    payment,
+function renderCollectionRow(
+    item,
     index,
     loanDocumentId
 ) {
 
-    const dueDate =
+    const receiptNo =
         firstValue(
-            payment,
+
+            item,
+
             [
-                "dueDate",
-                "emiDueDate",
-                "installmentDueDate"
+                "receiptNo",
+                "receiptNumber"
             ],
-            ""
+
+            "-"
+
         );
 
 
-    const paymentDate =
+    const collectionDate =
         firstValue(
-            payment,
+
+            item,
+
             [
                 "paymentDate",
-                "paidDate",
                 "collectionDate",
-                "date"
+                "paidDate",
+                "date",
+                "createdAt"
+
             ],
+
             ""
+
         );
 
 
-    const dueAmount =
+    const amount =
         numberValue(
-            payment.dueAmount,
-            payment.installmentAmount,
-            payment.emiAmount
+
+            item.amount,
+
+            item.paidAmount,
+
+            item.amountReceived,
+
+            item.emiPaid,
+
+            item.collectionAmount
+
         );
 
 
-    const paidAmount =
-        numberValue(
-            payment.paidAmount,
-            payment.amountReceived,
-            payment.emiPaid,
-            payment.totalReceived
+    const paymentMode =
+        firstValue(
+
+            item,
+
+            [
+                "paymentMode",
+                "mode"
+            ],
+
+            "-"
+
         );
-
-
-    const penalty =
-        numberValue(
-            payment.penalty,
-            payment.penaltyAmount,
-            payment.penaltyCollected
-        );
-
-
-    let pending =
-        numberValue(
-            payment.pendingAmount,
-            payment.emiPending
-        );
-
-
-    if (
-        pending === 0 &&
-        dueAmount > 0
-    ) {
-
-        pending =
-            Math.max(
-                dueAmount -
-                paidAmount,
-                0
-            );
-    }
 
 
     const status =
-        getPaymentStatus(
-            payment,
-            dueDate,
-            dueAmount,
-            paidAmount,
-            pending
+        String(
+
+            item.status ||
+            "Success"
+
         );
-
-
-    const actionAllowed =
-        status.key !== "paid";
 
 
     return `
 
         <tr>
 
+
             <td>
+
                 ${index}
+
             </td>
 
 
             <td>
+
+                ${escapeHtml(
+                    receiptNo
+                )}
+
+            </td>
+
+
+            <td>
+
                 ${formatDate(
-                    dueDate
+                    collectionDate
                 )}
+
             </td>
 
 
             <td>
+
                 ${formatCurrency(
-                    dueAmount
+                    amount
                 )}
+
             </td>
 
 
             <td>
-                ${formatDate(
-                    paymentDate
+
+                ${escapeHtml(
+                    paymentMode
                 )}
-            </td>
 
-
-            <td>
-                ${formatCurrency(
-                    paidAmount
-                )}
-            </td>
-
-
-            <td>
-                ${formatCurrency(
-                    penalty
-                )}
-            </td>
-
-
-            <td>
-                ${formatCurrency(
-                    pending
-                )}
             </td>
 
 
             <td>
 
                 <span
-                    class="status ${status.key}"
+                    class="status paid"
                 >
-                    ${status.label}
+
+                    ${escapeHtml(
+                        status
+                    )}
+
                 </span>
 
             </td>
@@ -2042,155 +2680,28 @@ function renderPaymentRow(
 
             <td>
 
-                ${
-                    actionAllowed
-                        ? `
-                            <button
-                                type="button"
-                                class="payment-collect-btn"
-                                data-loan-id="${escapeHtml(
-                                    loanDocumentId
-                                )}"
-                            >
-                                Collect
-                            </button>
-                        `
-                        : `
-                            <button
-                                type="button"
-                                class="payment-collect-btn"
-                                disabled
-                            >
-                                Paid
-                            </button>
-                        `
-                }
+                <button
+
+                    type="button"
+
+                    class="payment-collect-btn"
+
+                    data-loan-id="${escapeHtml(
+                        loanDocumentId
+                    )}"
+
+                >
+
+                    Collect
+
+                </button>
 
             </td>
+
 
         </tr>
 
     `;
-}
-
-
-// ============================================================
-// PAYMENT STATUS
-// ============================================================
-
-function getPaymentStatus(
-    payment,
-    dueDate,
-    dueAmount,
-    paidAmount,
-    pending
-) {
-
-    const existingStatus =
-        String(
-            payment?.status ||
-            ""
-        ).toLowerCase();
-
-
-    if (
-        [
-            "paid",
-            "success",
-            "completed"
-        ].includes(
-            existingStatus
-        ) &&
-        pending <= 0 &&
-        paidAmount > 0
-    ) {
-
-        return {
-            key: "paid",
-            label: "Paid"
-        };
-    }
-
-
-    if (
-        pending <= 0 &&
-        paidAmount > 0
-    ) {
-
-        return {
-            key: "paid",
-            label: "Paid"
-        };
-    }
-
-
-    if (
-        paidAmount > 0 &&
-        pending > 0
-    ) {
-
-        return {
-            key: "partial",
-            label: "Partial"
-        };
-    }
-
-
-    const due =
-        parseDate(
-            dueDate
-        );
-
-
-    if (due) {
-
-        const today =
-            new Date();
-
-        today.setHours(
-            0,
-            0,
-            0,
-            0
-        );
-
-        due.setHours(
-            0,
-            0,
-            0,
-            0
-        );
-
-
-        if (
-            due.getTime() <
-            today.getTime()
-        ) {
-
-            return {
-                key: "overdue",
-                label: "Overdue"
-            };
-        }
-
-
-        if (
-            due.getTime() ===
-            today.getTime()
-        ) {
-
-            return {
-                key: "due",
-                label: "Due Today"
-            };
-        }
-    }
-
-
-    return {
-        key: "upcoming",
-        label: "Upcoming"
-    };
 }
 
 
@@ -2202,8 +2713,10 @@ function searchCustomers() {
 
     const value =
         String(
+
             searchInput?.value ||
             ""
+
         )
             .trim()
             .toLowerCase();
@@ -2214,9 +2727,11 @@ function searchCustomers() {
         selectedCustomerId =
             "";
 
+
         renderCustomerList(
             assignedCustomers
         );
+
 
         return;
     }
@@ -2224,6 +2739,7 @@ function searchCustomers() {
 
     const filtered =
         assignedCustomers.filter(
+
             customer => {
 
                 const customerId =
@@ -2249,13 +2765,21 @@ function searchCustomers() {
 
                 const loanMatch =
                     assignedLoans.some(
+
                         loan => {
 
-                            if (
+                            const sameCustomer =
+
                                 getLoanCustomerId(
                                     loan
-                                ) !==
-                                customerId
+                                ) ===
+                                getCustomerId(
+                                    customer
+                                );
+
+
+                            if (
+                                !sameCustomer
                             ) {
 
                                 return false;
@@ -2269,11 +2793,14 @@ function searchCustomers() {
                                 .includes(
                                     value
                                 );
+
                         }
+
                     );
 
 
                 return (
+
                     name.includes(
                         value
                     ) ||
@@ -2287,8 +2814,11 @@ function searchCustomers() {
                     ) ||
 
                     loanMatch
+
                 );
+
             }
+
         );
 
 
@@ -2306,27 +2836,34 @@ function searchCustomers() {
 // ESCAPE HTML
 // ============================================================
 
-function escapeHtml(value) {
+function escapeHtml(
+    value
+) {
 
     return String(
         value ?? ""
     )
+
         .replace(
             /&/g,
             "&amp;"
         )
+
         .replace(
             /</g,
             "&lt;"
         )
+
         .replace(
             />/g,
             "&gt;"
         )
+
         .replace(
             /"/g,
             "&quot;"
         )
+
         .replace(
             /'/g,
             "&#039;"
@@ -2338,11 +2875,14 @@ function escapeHtml(value) {
 // LOADING
 // ============================================================
 
-function showLoading(show) {
+function showLoading(
+    show
+) {
 
     if (!loadingOverlay) {
         return;
     }
+
 
     loadingOverlay.style.display =
         show
@@ -2352,42 +2892,7 @@ function showLoading(show) {
 
 
 // ============================================================
-// LOGOUT
-// ============================================================
-
-async function logoutStaff() {
-
-    try {
-
-        await signOut(
-            auth
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Logout error:",
-            error
-        );
-    }
-
-
-    sessionStorage.removeItem(
-        "srStaffSession"
-    );
-
-    sessionStorage.removeItem(
-        "srStaffUid"
-    );
-
-
-    window.location.href =
-        "staff-login.html";
-}
-
-
-// ============================================================
-// BACK TO DASHBOARD
+// BACK TO STAFF DASHBOARD
 // ============================================================
 
 if (backBtn) {
@@ -2396,8 +2901,9 @@ if (backBtn) {
         "click",
         () => {
 
-            window.location.href =
-                "staff-dashboard.html";
+            window.location.replace(
+                STAFF_DASHBOARD_PAGE
+            );
 
         }
     );
@@ -2405,8 +2911,76 @@ if (backBtn) {
 
 
 // ============================================================
-// LOGOUT BUTTON
+// LOGOUT
 // ============================================================
+
+async function logoutStaff() {
+
+    if (logoutStarted) {
+        return;
+    }
+
+
+    const confirmed =
+        confirm(
+            "Logout from Staff Portal?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    logoutStarted =
+        true;
+
+
+    if (logoutBtn) {
+
+        logoutBtn.disabled =
+            true;
+
+        logoutBtn.textContent =
+            "Logging out...";
+    }
+
+
+    try {
+
+        await signOut(
+            auth
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Staff logout error:",
+            error
+        );
+
+
+    } finally {
+
+        clearStaffSession();
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Staff logout goes to COMMON LOGIN.
+         *
+         * It must NOT go to Owner dashboard.
+         */
+
+        window.location.replace(
+            COMMON_LOGIN_PAGE
+        );
+
+    }
+}
+
 
 if (logoutBtn) {
 
@@ -2448,14 +3022,16 @@ if (searchInput) {
                 event.preventDefault();
 
                 searchCustomers();
+
             }
+
         }
     );
 }
 
 
 // ============================================================
-// SEARCH LIVE
+// LIVE SEARCH
 // ============================================================
 
 if (searchInput) {
@@ -2470,15 +3046,19 @@ if (searchInput) {
                     ""
                 ).trim();
 
+
             if (!value) {
 
                 selectedCustomerId =
                     "";
 
+
                 renderCustomerList(
                     assignedCustomers
                 );
+
             }
+
         }
     );
 }
@@ -2498,10 +3078,13 @@ if (clearBtn) {
 
                 searchInput.value =
                     "";
+
             }
+
 
             selectedCustomerId =
                 "";
+
 
             renderCustomerList(
                 assignedCustomers
@@ -2513,6 +3096,163 @@ if (clearBtn) {
 
 
 // ============================================================
+// HISTORY / BACK PROTECTION
+// ============================================================
+
+function protectHistory() {
+
+    try {
+
+        window.history.replaceState(
+
+            {
+                staffCustomers: true
+            },
+
+            "",
+
+            window.location.href
+
+        );
+
+
+        window.history.pushState(
+
+            {
+                staffCustomers: true
+            },
+
+            "",
+
+            window.location.href
+
+        );
+
+
+        window.addEventListener(
+            "popstate",
+            async () => {
+
+                const session =
+                    getStaffSession();
+
+
+                const user =
+                    auth.currentUser;
+
+
+                if (
+                    !session ||
+                    session.role !==
+                    "staff" ||
+                    !user
+                ) {
+
+                    clearStaffSession();
+
+
+                    try {
+
+                        await signOut(
+                            auth
+                        );
+
+                    } catch (error) {
+
+                        console.warn(
+                            "History signout failed:",
+                            error
+                        );
+
+                    }
+
+
+                    window.location.replace(
+                        COMMON_LOGIN_PAGE
+                    );
+
+
+                    return;
+                }
+
+
+                /*
+                 * Staff is still authenticated.
+                 *
+                 * Keep this page inside Staff portal.
+                 */
+
+                window.history.pushState(
+
+                    {
+                        staffCustomers: true
+                    },
+
+                    "",
+
+                    window.location.href
+
+                );
+
+            }
+        );
+
+
+    } catch (error) {
+
+        console.warn(
+            "History protection error:",
+            error
+        );
+    }
+}
+
+
+// ============================================================
+// PAGE CACHE PROTECTION
+// ============================================================
+
+window.addEventListener(
+    "pageshow",
+    async event => {
+
+        if (
+            !event.persisted
+        ) {
+
+            return;
+        }
+
+
+        const session =
+            getStaffSession();
+
+
+        const user =
+            auth.currentUser;
+
+
+        if (
+            !session ||
+            session.role !==
+            "staff" ||
+            !user
+        ) {
+
+            clearStaffSession();
+
+
+            window.location.replace(
+                COMMON_LOGIN_PAGE
+            );
+
+        }
+
+    }
+);
+
+
+// ============================================================
 // AUTH CHECK
 // ============================================================
 
@@ -2520,9 +3260,21 @@ onAuthStateChanged(
     auth,
     async user => {
 
+        if (
+            pageInitialized
+        ) {
+
+            return;
+        }
+
+
         const session =
             getStaffSession();
 
+
+        // ====================================================
+        // NO STAFF SESSION
+        // ====================================================
 
         if (
             !session ||
@@ -2530,27 +3282,102 @@ onAuthStateChanged(
             "staff"
         ) {
 
-            window.location.href =
-                "staff-login.html";
+            window.location.replace(
+                STAFF_LOGIN_PAGE
+            );
 
             return;
         }
 
+
+        // ====================================================
+        // NO FIREBASE USER
+        // ====================================================
 
         if (!user) {
 
-            window.location.href =
-                "staff-login.html";
+            clearStaffSession();
+
+
+            window.location.replace(
+                STAFF_LOGIN_PAGE
+            );
 
             return;
         }
 
 
-        currentStaff =
-            session;
+        try {
+
+            // ==================================================
+            // FINAL STAFF VALIDATION
+            // ==================================================
+
+            await validateStaff(
+                user,
+                session
+            );
 
 
-        await loadData();
+            pageInitialized =
+                true;
+
+
+            // ==================================================
+            // LOAD DATA
+            // ==================================================
+
+            await loadData();
+
+
+        } catch (error) {
+
+            console.error(
+                "Staff customer authorization error:",
+                error
+            );
+
+
+            clearStaffSession();
+
+
+            try {
+
+                await signOut(
+                    auth
+                );
+
+            } catch (signOutError) {
+
+                console.warn(
+                    "Signout failed:",
+                    signOutError
+                );
+
+            }
+
+
+            window.location.replace(
+                STAFF_LOGIN_PAGE
+            );
+
+        }
 
     }
+);
+
+
+// ============================================================
+// INITIAL HISTORY PROTECTION
+// ============================================================
+
+protectHistory();
+
+
+// ============================================================
+// INITIAL LOG
+// ============================================================
+
+console.log(
+    "SR Auto Finance - Staff Customers initialized."
 );
