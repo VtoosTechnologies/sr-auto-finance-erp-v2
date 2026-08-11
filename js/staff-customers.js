@@ -981,54 +981,95 @@ function renderCustomerDetails(
     // ========================================================
 
     const totalPending =
-        customerLoans.reduce(
-            (
-                total,
-                loan
-            ) => {
+    customerLoans.reduce(
+        (
+            total,
+            loan
+        ) => {
 
-                const direct =
-                    numberValue(
-                        loan.pendingAmount,
-                        loan.outstandingAmount,
-                        loan.outstanding,
-                        loan.balanceAmount
-                    );
+            // ====================================================
+            // CURRENT OUTSTANDING
+            // ====================================================
 
-                if (direct > 0) {
-
-                    return (
-                        total +
-                        direct
-                    );
-                }
-
-
-                const payable =
-                    numberValue(
-                        loan.totalPayable,
-                        loan.totalAmount
-                    );
-
-                const paid =
-                    numberValue(
-                        loan.totalPaid,
-                        loan.paidAmount,
-                        loan.amountPaid
-                    );
+            if (
+                loan.outstandingAmount !==
+                    undefined &&
+                loan.outstandingAmount !==
+                    null &&
+                loan.outstandingAmount !==
+                    ""
+            ) {
 
                 return (
                     total +
                     Math.max(
-                        payable -
-                        paid,
+                        numberValue(
+                            loan.outstandingAmount
+                        ),
                         0
                     )
                 );
 
-            },
-            0
-        );
+            }
+
+
+            // ====================================================
+            // BALANCE AMOUNT
+            // ====================================================
+
+            if (
+                loan.balanceAmount !==
+                    undefined &&
+                loan.balanceAmount !==
+                    null &&
+                loan.balanceAmount !==
+                    ""
+            ) {
+
+                return (
+                    total +
+                    Math.max(
+                        numberValue(
+                            loan.balanceAmount
+                        ),
+                        0
+                    )
+                );
+
+            }
+
+
+            // ====================================================
+            // FALLBACK
+            // ====================================================
+
+            const payable =
+                numberValue(
+                    loan.totalPayable,
+                    loan.totalAmount
+                );
+
+
+            const paid =
+                numberValue(
+                    loan.totalPaid,
+                    loan.paidAmount,
+                    loan.amountPaid
+                );
+
+
+            return (
+                total +
+                Math.max(
+                    payable -
+                    paid,
+                    0
+                )
+            );
+
+        },
+        0
+    );
 
 
     if (!customerDetails) {
@@ -1422,13 +1463,47 @@ function renderLoan(
         );
 
 
-    const pending =
-        numberValue(
-            loan.pendingAmount,
-            loan.outstandingAmount,
-            loan.outstanding,
-            loan.balanceAmount
-        );
+  const pending =
+    (
+        loan.outstandingAmount !==
+            undefined &&
+        loan.outstandingAmount !==
+            null &&
+        loan.outstandingAmount !==
+            ""
+    )
+        ? Math.max(
+            numberValue(
+                loan.outstandingAmount
+            ),
+            0
+        )
+        : (
+            loan.balanceAmount !==
+                undefined &&
+            loan.balanceAmount !==
+                null &&
+            loan.balanceAmount !==
+                ""
+        )
+            ? Math.max(
+                numberValue(
+                    loan.balanceAmount
+                ),
+                0
+            )
+            : Math.max(
+                numberValue(
+                    loan.totalPayable,
+                    loan.totalAmount
+                ) -
+                numberValue(
+                    loan.totalPaid,
+                    loan.paidAmount,
+                    loan.amountPaid
+                ),
+                0
+            );
 
 
     const paymentRows =
