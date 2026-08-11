@@ -1,13 +1,33 @@
 // ============================================================
 // SR AUTO FINANCE ERP
 // STAFF DEPOSIT MODULE
-// File: js/staff-deposit.js
+//
+// File:
+// js/staff-deposit.js
+//
+// STAFF ACCESS:
+// - View own collection
+// - Submit deposit request
+// - View own deposit history
+//
+// STAFF CANNOT:
+// - Approve deposit
+// - Edit approved deposit
+// - Directly update cash ledger
+// - Modify loan
+// - Modify customer
+//
+// OWNER:
+// - Will approve / reject deposit request
+// - Owner approval module will update financial records
 // ============================================================
+
 
 import {
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 import {
     collection,
@@ -15,6 +35,7 @@ import {
     addDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
 
 import {
     auth,
@@ -94,6 +115,8 @@ const loadingOverlay =
 // GLOBAL DATA
 // ============================================================
 
+let currentUser = null;
+
 let currentStaff = null;
 
 let allPayments = [];
@@ -108,9 +131,11 @@ let pendingDepositRequests = 0;
 
 let cashInHand = 0;
 
+let isSubmitting = false;
+
 
 // ============================================================
-// SESSION
+// STAFF SESSION
 // ============================================================
 
 function getStaffSession() {
@@ -120,9 +145,11 @@ function getStaffSession() {
             "srStaffSession"
         );
 
+
     if (!raw) {
         return null;
     }
+
 
     try {
 
@@ -130,11 +157,23 @@ function getStaffSession() {
             raw
         );
 
-    } catch {
+    } catch (error) {
+
+        console.error(
+            "Staff session error:",
+            error
+        );
+
 
         sessionStorage.removeItem(
             "srStaffSession"
         );
+
+
+        sessionStorage.removeItem(
+            "srStaffUid"
+        );
+
 
         return null;
 
@@ -157,12 +196,14 @@ function firstValue(
         return fallback;
     }
 
+
     for (
         const field of fields
     ) {
 
         const value =
             object[field];
+
 
         if (
             value !== undefined &&
@@ -175,6 +216,7 @@ function firstValue(
         }
 
     }
+
 
     return fallback;
 
@@ -203,8 +245,10 @@ function numberValue(
 
         }
 
+
         const number =
             Number(value);
+
 
         if (
             Number.isFinite(number)
@@ -215,6 +259,7 @@ function numberValue(
         }
 
     }
+
 
     return 0;
 
@@ -255,6 +300,7 @@ function parseDate(
         return null;
     }
 
+
     if (
         typeof value.toDate ===
         "function"
@@ -263,6 +309,7 @@ function parseDate(
         return value.toDate();
 
     }
+
 
     if (
         value instanceof Date
@@ -274,8 +321,10 @@ function parseDate(
 
     }
 
+
     const date =
         new Date(value);
+
 
     if (
         isNaN(
@@ -286,6 +335,7 @@ function parseDate(
         return null;
 
     }
+
 
     return date;
 
@@ -303,9 +353,11 @@ function formatDate(
     const date =
         parseDate(value);
 
+
     if (!date) {
         return "-";
     }
+
 
     return new Intl.DateTimeFormat(
         "en-IN",
@@ -320,7 +372,7 @@ function formatDate(
 
 
 // ============================================================
-// TODAY INPUT VALUE
+// TODAY
 // ============================================================
 
 function getTodayInputValue() {
@@ -328,14 +380,19 @@ function getTodayInputValue() {
     const date =
         new Date();
 
+
     return (
+
         `${date.getFullYear()}-` +
+
         `${String(
             date.getMonth() + 1
         ).padStart(2, "0")}-` +
+
         `${String(
             date.getDate()
         ).padStart(2, "0")}`
+
     );
 
 }
@@ -350,30 +407,19 @@ function getPaymentAmount(
 ) {
 
     return numberValue(
+
         payment.totalCollection,
+
         payment.amountReceived,
+
         payment.amountCollected,
+
         payment.paidAmount,
+
         payment.emiPaid,
+
         payment.amount
-    );
 
-}
-
-
-// ============================================================
-// PAYMENT PENALTY
-// ============================================================
-
-function getPaymentPenalty(
-    payment
-) {
-
-    return numberValue(
-        payment.penaltyCollected,
-        payment.penaltyAmount,
-        payment.penalty,
-        payment.penaltyPaid
     );
 
 }
@@ -387,30 +433,39 @@ function paymentBelongsToStaff(
     payment
 ) {
 
-    if (
-        !currentStaff
-    ) {
-
+    if (!currentStaff) {
         return false;
-
     }
+
 
     const sessionStaffId =
         String(
             currentStaff.staffId ||
             ""
-        );
+        ).trim();
+
 
     const sessionDocumentId =
         String(
             currentStaff.staffDocumentId ||
             ""
-        );
+        ).trim();
+
+
+    const sessionUid =
+        String(
+            currentUser?.uid ||
+            ""
+        ).trim();
+
 
     const paymentStaffId =
         String(
+
             firstValue(
+
                 payment,
+
                 [
                     "staffId",
                     "collectorStaffId",
@@ -418,41 +473,104 @@ function paymentBelongsToStaff(
                     "staffCode",
                     "employeeId"
                 ],
+
                 ""
+
             )
-        );
+
+        ).trim();
+
 
     const paymentStaffDocumentId =
         String(
+
             firstValue(
+
                 payment,
+
                 [
                     "staffDocumentId",
                     "collectorStaffDocumentId"
                 ],
+
                 ""
+
             )
-        );
+
+        ).trim();
 
 
-    return (
+    const paymentCreatedBy =
+        String(
+
+            firstValue(
+
+                payment,
+
+                [
+                    "createdBy",
+                    "createdByUid",
+                    "collectorUid"
+                ],
+
+                ""
+
+            )
+
+        ).trim();
+
+
+    // ---------------------------------------------------------
+    // STAFF ID MATCH
+    // ---------------------------------------------------------
+
+    if (
+        paymentStaffId &&
         (
-            paymentStaffId &&
-            (
-                paymentStaffId ===
+            paymentStaffId ===
                 sessionStaffId ||
 
-                paymentStaffId ===
+            paymentStaffId ===
                 sessionDocumentId
-            )
-        ) ||
-
-        (
-            paymentStaffDocumentId &&
-            paymentStaffDocumentId ===
-            sessionDocumentId
         )
-    );
+    ) {
+
+        return true;
+
+    }
+
+
+    // ---------------------------------------------------------
+    // STAFF DOCUMENT MATCH
+    // ---------------------------------------------------------
+
+    if (
+        paymentStaffDocumentId &&
+        paymentStaffDocumentId ===
+        sessionDocumentId
+    ) {
+
+        return true;
+
+    }
+
+
+    // ---------------------------------------------------------
+    // AUTH UID MATCH
+    // ---------------------------------------------------------
+
+    if (
+        sessionUid &&
+        paymentCreatedBy ===
+        sessionUid
+    ) {
+
+        return true;
+
+    }
+
+
+    return false;
 
 }
 
@@ -465,69 +583,140 @@ function depositBelongsToStaff(
     request
 ) {
 
-    if (
-        !currentStaff
-    ) {
-
+    if (!currentStaff) {
         return false;
-
     }
+
 
     const sessionStaffId =
         String(
             currentStaff.staffId ||
             ""
-        );
+        ).trim();
+
 
     const sessionDocumentId =
         String(
             currentStaff.staffDocumentId ||
             ""
-        );
+        ).trim();
+
+
+    const sessionUid =
+        String(
+            currentUser?.uid ||
+            ""
+        ).trim();
+
 
     const requestStaffId =
         String(
+
             firstValue(
+
                 request,
+
                 [
                     "staffId",
                     "staffCode",
                     "employeeId"
                 ],
+
                 ""
+
             )
-        );
+
+        ).trim();
+
 
     const requestStaffDocumentId =
         String(
+
             firstValue(
+
                 request,
+
                 [
                     "staffDocumentId"
                 ],
+
                 ""
+
             )
-        );
+
+        ).trim();
 
 
-    return (
+    const requestCreatedBy =
+        String(
+
+            firstValue(
+
+                request,
+
+                [
+                    "createdBy",
+                    "createdByUid"
+                ],
+
+                ""
+
+            )
+
+        ).trim();
+
+
+    // ---------------------------------------------------------
+    // STAFF ID MATCH
+    // ---------------------------------------------------------
+
+    if (
+        requestStaffId &&
         (
-            requestStaffId &&
-            (
-                requestStaffId ===
+            requestStaffId ===
                 sessionStaffId ||
 
-                requestStaffId ===
+            requestStaffId ===
                 sessionDocumentId
-            )
-        ) ||
-
-        (
-            requestStaffDocumentId &&
-            requestStaffDocumentId ===
-            sessionDocumentId
         )
-    );
+    ) {
+
+        return true;
+
+    }
+
+
+    // ---------------------------------------------------------
+    // DOCUMENT ID MATCH
+    // ---------------------------------------------------------
+
+    if (
+        requestStaffDocumentId &&
+        requestStaffDocumentId ===
+        sessionDocumentId
+    ) {
+
+        return true;
+
+    }
+
+
+    // ---------------------------------------------------------
+    // AUTH UID MATCH
+    // ---------------------------------------------------------
+
+    if (
+        sessionUid &&
+        requestCreatedBy ===
+        sessionUid
+    ) {
+
+        return true;
+
+    }
+
+
+    return false;
 
 }
 
@@ -539,6 +728,7 @@ function depositBelongsToStaff(
 async function loadData() {
 
     showLoading(true);
+
 
     try {
 
@@ -564,11 +754,12 @@ async function loadData() {
         ]);
 
 
-        // ====================================================
+        // =====================================================
         // PAYMENTS
-        // ====================================================
+        // =====================================================
 
         allPayments = [];
+
 
         paymentsSnapshot.forEach(
             docSnap => {
@@ -585,12 +776,16 @@ async function loadData() {
 
                 const status =
                     String(
+
                         payment.status ||
                         "success"
+
                     ).toLowerCase();
 
 
+                // Ignore cancelled/reversed
                 if (
+
                     [
                         "cancelled",
                         "canceled",
@@ -599,6 +794,7 @@ async function loadData() {
                     ].includes(
                         status
                     )
+
                 ) {
 
                     return;
@@ -622,11 +818,12 @@ async function loadData() {
         );
 
 
-        // ====================================================
+        // =====================================================
         // DEPOSIT REQUESTS
-        // ====================================================
+        // =====================================================
 
         allDepositRequests = [];
+
 
         depositsSnapshot.forEach(
             docSnap => {
@@ -657,16 +854,23 @@ async function loadData() {
         );
 
 
+        // =====================================================
+        // CALCULATE
+        // =====================================================
+
         calculateBalances();
+
+
+        // =====================================================
+        // RENDER
+        // =====================================================
 
         renderSummary();
 
         renderHistory();
 
 
-    } catch (
-        error
-    ) {
+    } catch (error) {
 
         console.error(
             "Staff deposit loading error:",
@@ -675,16 +879,27 @@ async function loadData() {
 
 
         showMessage(
+
             `Unable to load deposit details: ${error.message}`
+
         );
 
 
-        historyListElement.innerHTML =
-            `
-            <div class="empty">
-                Unable to load deposit requests.
-            </div>
+        if (
+            historyListElement
+        ) {
+
+            historyListElement.innerHTML = `
+
+                <div class="empty">
+
+                    Unable to load deposit requests.
+
+                </div>
+
             `;
+
+        }
 
     } finally {
 
@@ -703,26 +918,30 @@ function calculateBalances() {
 
     // ========================================================
     // TOTAL COLLECTION
-    //
-    // Payment amount + penalty
     // ========================================================
 
     totalCollected =
         allPayments.reduce(
+
             (
                 total,
                 payment
             ) => {
 
                 return (
+
                     total +
+
                     getPaymentAmount(
                         payment
                     )
+
                 );
 
             },
+
             0
+
         );
 
 
@@ -732,6 +951,7 @@ function calculateBalances() {
 
     acceptedDeposits =
         allDepositRequests.reduce(
+
             (
                 total,
                 request
@@ -739,8 +959,10 @@ function calculateBalances() {
 
                 const status =
                     String(
+
                         request.status ||
                         "pending"
+
                     ).toLowerCase();
 
 
@@ -750,11 +972,17 @@ function calculateBalances() {
                 ) {
 
                     return (
+
                         total +
+
                         numberValue(
+
                             request.amount,
+
                             request.depositAmount
+
                         )
+
                     );
 
                 }
@@ -763,16 +991,19 @@ function calculateBalances() {
                 return total;
 
             },
+
             0
+
         );
 
 
     // ========================================================
-    // PENDING REQUESTS
+    // PENDING DEPOSITS
     // ========================================================
 
     pendingDepositRequests =
         allDepositRequests.reduce(
+
             (
                 total,
                 request
@@ -780,8 +1011,10 @@ function calculateBalances() {
 
                 const status =
                     String(
+
                         request.status ||
                         "pending"
+
                     ).toLowerCase();
 
 
@@ -791,11 +1024,17 @@ function calculateBalances() {
                 ) {
 
                     return (
+
                         total +
+
                         numberValue(
+
                             request.amount,
+
                             request.depositAmount
+
                         )
+
                     );
 
                 }
@@ -804,7 +1043,9 @@ function calculateBalances() {
                 return total;
 
             },
+
             0
+
         );
 
 
@@ -813,19 +1054,22 @@ function calculateBalances() {
     //
     // Total collection
     // - accepted deposits
-    // - pending deposit requests
+    // - pending deposits
     //
-    // Pending requests are already committed
-    // for deposit, so they are not counted
-    // as available cash.
+    // Pending request is already committed.
     // ========================================================
 
     cashInHand =
         Math.max(
+
             totalCollected -
+
             acceptedDeposits -
+
             pendingDepositRequests,
+
             0
+
         );
 
 }
@@ -838,34 +1082,46 @@ function calculateBalances() {
 function renderSummary() {
 
     setText(
+
         totalCollectedElement,
+
         formatCurrency(
             totalCollected
         )
+
     );
 
 
     setText(
+
         alreadyDepositedElement,
+
         formatCurrency(
             acceptedDeposits
         )
+
     );
 
 
     setText(
+
         pendingDepositElement,
+
         formatCurrency(
             pendingDepositRequests
         )
+
     );
 
 
     setText(
+
         cashInHandElement,
+
         formatCurrency(
             cashInHand
         )
+
     );
 
 
@@ -882,65 +1138,94 @@ function updatePreview() {
 
     const depositAmount =
         numberValue(
+
             depositAmountInput?.value
+
         );
 
 
     const after =
         Math.max(
+
             cashInHand -
             depositAmount,
+
             0
+
         );
 
 
     setText(
+
         previewCashInHandElement,
+
         formatCurrency(
             cashInHand
         )
+
     );
 
 
     setText(
+
         previewDepositElement,
+
         formatCurrency(
             depositAmount
         )
+
     );
 
 
     setText(
+
         previewAfterElement,
+
         formatCurrency(
             after
         )
+
     );
 
+
+    // ========================================================
+    // VALIDATE AMOUNT
+    // ========================================================
 
     if (
         depositAmount >
         cashInHand
     ) {
 
-        submitBtn.disabled =
-            true;
+        if (submitBtn) {
+
+            submitBtn.disabled =
+                true;
+
+        }
 
 
         showMessage(
+
             `Deposit amount cannot exceed available cash in hand (${formatCurrency(
                 cashInHand
             )}).`
+
         );
+
 
     } else {
 
-        submitBtn.disabled =
-            false;
+        if (submitBtn && !isSubmitting) {
+
+            submitBtn.disabled =
+                false;
+
+        }
 
 
         if (
-            messageElement.classList.contains(
+            messageElement?.classList.contains(
                 "error"
             )
         ) {
@@ -963,7 +1248,9 @@ function renderHistory() {
     if (
         !historyListElement
     ) {
+
         return;
+
     }
 
 
@@ -971,12 +1258,16 @@ function renderHistory() {
         !allDepositRequests.length
     ) {
 
-        historyListElement.innerHTML =
-            `
+        historyListElement.innerHTML = `
+
             <div class="empty">
+
                 No deposit requests yet.
+
             </div>
-            `;
+
+        `;
+
 
         return;
 
@@ -985,6 +1276,7 @@ function renderHistory() {
 
     const sortedRequests =
         [...allDepositRequests].sort(
+
             (
                 a,
                 b
@@ -992,55 +1284,79 @@ function renderHistory() {
 
                 const dateA =
                     parseDate(
+
                         firstValue(
+
                             a,
+
                             [
                                 "depositDate",
                                 "requestDate",
                                 "createdAt"
                             ],
+
                             ""
+
                         )
+
                     );
 
 
                 const dateB =
                     parseDate(
+
                         firstValue(
+
                             b,
+
                             [
                                 "depositDate",
                                 "requestDate",
                                 "createdAt"
                             ],
+
                             ""
+
                         )
+
                     );
 
 
                 return (
+
                     (
                         dateB?.getTime() ||
                         0
-                    ) -
+                    )
+
+                    -
+
                     (
                         dateA?.getTime() ||
                         0
                     )
+
                 );
 
             }
+
         );
 
 
     historyListElement.innerHTML =
+
         sortedRequests
+
             .map(
+
                 request =>
+
                     createHistoryItem(
                         request
                     )
+
             )
+
             .join("");
 
 }
@@ -1056,55 +1372,73 @@ function createHistoryItem(
 
     const amount =
         numberValue(
+
             request.amount,
+
             request.depositAmount
+
         );
 
 
     const status =
         String(
+
             request.status ||
             "pending"
+
         ).toLowerCase();
 
 
     const mode =
         firstValue(
+
             request,
+
             [
                 "depositMode",
                 "paymentMode",
                 "mode"
             ],
+
             "-"
+
         );
 
 
     const reference =
         firstValue(
+
             request,
+
             [
                 "referenceNumber",
                 "referenceNo",
                 "transactionId"
             ],
+
             ""
+
         );
 
 
     const date =
         firstValue(
+
             request,
+
             [
                 "depositDate",
                 "requestDate",
                 "createdAt"
             ],
+
             ""
+
         );
 
 
     const statusClass =
+
         [
             "pending",
             "accepted",
@@ -1113,48 +1447,69 @@ function createHistoryItem(
         ].includes(
             status
         )
+
             ? status
+
             : "pending";
 
 
     const statusLabel =
+
         status.charAt(0).toUpperCase() +
+
         status.slice(1);
 
 
     return `
+
         <div class="history-item">
 
             <div>
 
                 <div class="history-date">
+
                     ${formatDate(date)}
+
                 </div>
 
                 <div class="history-meta">
-                    Mode: ${escapeHtml(mode)}
+
+                    Mode:
+                    ${escapeHtml(mode)}
+
                     ${
                         reference
-                            ? ` | Ref: ${escapeHtml(reference)}`
+
+                            ? ` | Ref: ${escapeHtml(
+                                reference
+                            )}`
+
                             : ""
+
                     }
+
                 </div>
 
             </div>
 
 
             <div class="history-amount">
+
                 ${formatCurrency(amount)}
+
             </div>
 
 
             <span
                 class="status ${statusClass}"
             >
+
                 ${statusLabel}
+
             </span>
 
         </div>
+
     `;
 
 }
@@ -1171,26 +1526,67 @@ async function submitDeposit(
     event.preventDefault();
 
 
-    const amount =
-        numberValue(
-            depositAmountInput.value
+    if (isSubmitting) {
+
+        return;
+
+    }
+
+
+    clearMessage();
+
+
+    // ========================================================
+    // SESSION CHECK
+    // ========================================================
+
+    if (
+        !currentUser ||
+        !currentStaff
+    ) {
+
+        showMessage(
+            "Staff session expired. Please login again."
         );
 
 
+        return;
+
+    }
+
+
+    // ========================================================
+    // AMOUNT
+    // ========================================================
+
+    const amount =
+        numberValue(
+
+            depositAmountInput?.value
+
+        );
+
+
+    // ========================================================
+    // FORM VALUES
+    // ========================================================
+
     const depositDate =
-        depositDateInput.value;
+        depositDateInput?.value || "";
 
 
     const depositMode =
-        depositModeInput.value;
+        depositModeInput?.value || "";
 
 
     const referenceNumber =
-        referenceNumberInput.value.trim();
+        referenceNumberInput?.value
+            ?.trim() || "";
 
 
     const remarks =
-        depositRemarksInput.value.trim();
+        depositRemarksInput?.value
+            ?.trim() || "";
 
 
     // ========================================================
@@ -1205,12 +1601,19 @@ async function submitDeposit(
             "Please enter a valid deposit amount."
         );
 
-        depositAmountInput.focus();
+
+        depositAmountInput?.focus();
+
 
         return;
 
     }
 
+
+    // ========================================================
+    // IMPORTANT:
+    // DO NOT ALLOW MORE THAN CASH IN HAND
+    // ========================================================
 
     if (
         amount >
@@ -1218,10 +1621,13 @@ async function submitDeposit(
     ) {
 
         showMessage(
-            `Deposit amount cannot exceed cash in hand (${formatCurrency(
+
+            `Deposit amount cannot exceed available cash in hand (${formatCurrency(
                 cashInHand
             )}).`
+
         );
+
 
         return;
 
@@ -1236,6 +1642,7 @@ async function submitDeposit(
             "Please select deposit date."
         );
 
+
         return;
 
     }
@@ -1249,6 +1656,7 @@ async function submitDeposit(
             "Please select deposit mode."
         );
 
+
         return;
 
     }
@@ -1260,27 +1668,34 @@ async function submitDeposit(
 
     const confirmed =
         confirm(
+
             `Submit deposit request for ${formatCurrency(
                 amount
             )}?`
+
         );
 
 
-    if (
-        !confirmed
-    ) {
+    if (!confirmed) {
 
         return;
 
     }
 
 
-    submitBtn.disabled =
+    isSubmitting =
         true;
 
 
-    submitBtn.textContent =
-        "Submitting...";
+    if (submitBtn) {
+
+        submitBtn.disabled =
+            true;
+
+        submitBtn.textContent =
+            "Submitting...";
+
+    }
 
 
     showLoading(true);
@@ -1288,29 +1703,69 @@ async function submitDeposit(
 
     try {
 
-        const staffId =
-            currentStaff.staffId ||
-            currentStaff.staffDocumentId;
+        // ====================================================
+        // STAFF IDENTIFIERS
+        // ====================================================
 
+        const staffId =
+
+            currentStaff.staffId ||
+
+            currentStaff.staffDocumentId ||
+
+            currentUser.uid;
+
+
+        const staffDocumentId =
+
+            currentStaff.staffDocumentId ||
+
+            "";
+
+
+        const staffName =
+
+            currentStaff.staffName ||
+
+            currentStaff.name ||
+
+            "Staff";
+
+
+        // ====================================================
+        // CREATE PENDING REQUEST
+        // ====================================================
 
         const requestData = {
 
+            // ------------------------------------------------
+            // STAFF
+            // ------------------------------------------------
+
             staffId:
-                staffId,
+                String(staffId),
 
             staffDocumentId:
-                currentStaff.staffDocumentId ||
-                "",
+                String(staffDocumentId),
 
             staffName:
-                currentStaff.staffName ||
-                "",
+                String(staffName),
+
+
+            // ------------------------------------------------
+            // AMOUNT
+            // ------------------------------------------------
 
             amount:
                 amount,
 
             depositAmount:
                 amount,
+
+
+            // ------------------------------------------------
+            // DEPOSIT DETAILS
+            // ------------------------------------------------
 
             depositDate:
                 depositDate,
@@ -1324,11 +1779,21 @@ async function submitDeposit(
             remarks:
                 remarks,
 
+
+            // ------------------------------------------------
+            // STATUS
+            // ------------------------------------------------
+
             status:
                 "pending",
 
             requestType:
                 "staff_collection_deposit",
+
+
+            // ------------------------------------------------
+            // SNAPSHOT AT REQUEST TIME
+            // ------------------------------------------------
 
             totalCollectedAtRequest:
                 totalCollected,
@@ -1342,6 +1807,17 @@ async function submitDeposit(
             cashInHandAtRequest:
                 cashInHand,
 
+
+            // ------------------------------------------------
+            // AUDIT
+            // ------------------------------------------------
+
+            createdBy:
+                currentUser.uid,
+
+            createdByRole:
+                "staff",
+
             createdAt:
                 serverTimestamp(),
 
@@ -1351,13 +1827,20 @@ async function submitDeposit(
         };
 
 
+        // ====================================================
+        // CREATE REQUEST
+        // ====================================================
+
         const depositRef =
             await addDoc(
+
                 collection(
                     db,
                     "depositRequests"
                 ),
+
                 requestData
+
             );
 
 
@@ -1367,36 +1850,59 @@ async function submitDeposit(
         );
 
 
+        // ====================================================
+        // SUCCESS
+        // ====================================================
+
         showMessage(
+
             `Deposit request submitted successfully. Request ID: ${depositRef.id}`,
+
             "success"
+
         );
 
 
         // ====================================================
-        // RESET
+        // RESET FORM
         // ====================================================
 
-        depositAmountInput.value =
-            "";
+        if (depositAmountInput) {
 
-        referenceNumberInput.value =
-            "";
+            depositAmountInput.value =
+                "";
 
-        depositRemarksInput.value =
-            "";
+        }
+
+
+        if (referenceNumberInput) {
+
+            referenceNumberInput.value =
+                "";
+
+        }
+
+
+        if (depositRemarksInput) {
+
+            depositRemarksInput.value =
+                "";
+
+        }
 
 
         // ====================================================
-        // RELOAD
+        // IMPORTANT
+        //
+        // After creating pending request,
+        // pending amount increases,
+        // therefore cash-in-hand decreases.
         // ====================================================
 
         await loadData();
 
 
-    } catch (
-        error
-    ) {
+    } catch (error) {
 
         console.error(
             "Deposit request error:",
@@ -1405,18 +1911,33 @@ async function submitDeposit(
 
 
         showMessage(
+
             `Unable to submit deposit request: ${error.message}`
+
         );
+
 
     } finally {
 
         showLoading(false);
 
-        submitBtn.disabled =
+
+        isSubmitting =
             false;
 
-        submitBtn.textContent =
-            "Submit Deposit Request";
+
+        if (submitBtn) {
+
+            submitBtn.disabled =
+                false;
+
+            submitBtn.textContent =
+                "Submit Deposit Request";
+
+        }
+
+
+        updatePreview();
 
     }
 
@@ -1428,19 +1949,21 @@ async function submitDeposit(
 // ============================================================
 
 function showMessage(
-    message,
+    text,
     type = "error"
 ) {
 
     if (
         !messageElement
     ) {
+
         return;
+
     }
 
 
     messageElement.textContent =
-        message;
+        text;
 
 
     messageElement.className =
@@ -1458,7 +1981,9 @@ function clearMessage() {
     if (
         !messageElement
     ) {
+
         return;
+
     }
 
 
@@ -1504,22 +2029,27 @@ function escapeHtml(
     return String(
         value ?? ""
     )
+
         .replace(
             /&/g,
             "&amp;"
         )
+
         .replace(
             /</g,
             "&lt;"
         )
+
         .replace(
             />/g,
             "&gt;"
         )
+
         .replace(
             /"/g,
             "&quot;"
         )
+
         .replace(
             /'/g,
             "&#039;"
@@ -1539,20 +2069,25 @@ function showLoading(
     if (
         !loadingOverlay
     ) {
+
         return;
+
     }
 
 
     loadingOverlay.style.display =
+
         show
+
             ? "flex"
+
             : "none";
 
 }
 
 
 // ============================================================
-// INPUT EVENT
+// DEPOSIT AMOUNT INPUT
 // ============================================================
 
 if (
@@ -1560,15 +2095,47 @@ if (
 ) {
 
     depositAmountInput.addEventListener(
+
         "input",
-        updatePreview
+
+        function () {
+
+            clearMessage();
+
+            updatePreview();
+
+        }
+
     );
 
 }
 
 
 // ============================================================
-// FORM EVENT
+// DEPOSIT MODE
+// ============================================================
+
+if (
+    depositModeInput
+) {
+
+    depositModeInput.addEventListener(
+
+        "change",
+
+        function () {
+
+            clearMessage();
+
+        }
+
+    );
+
+}
+
+
+// ============================================================
+// FORM
 // ============================================================
 
 if (
@@ -1576,8 +2143,11 @@ if (
 ) {
 
     depositForm.addEventListener(
+
         "submit",
+
         submitDeposit
+
     );
 
 }
@@ -1592,13 +2162,16 @@ if (
 ) {
 
     cancelBtn.addEventListener(
+
         "click",
-        () => {
+
+        function () {
 
             window.location.href =
                 "staff-dashboard.html";
 
         }
+
     );
 
 }
@@ -1613,13 +2186,16 @@ if (
 ) {
 
     backBtn.addEventListener(
+
         "click",
-        () => {
+
+        function () {
 
             window.location.href =
                 "staff-dashboard.html";
 
         }
+
     );
 
 }
@@ -1627,6 +2203,11 @@ if (
 
 // ============================================================
 // LOGOUT
+//
+// Staff logout:
+// Firebase signOut
+// + clear staff session
+// + go common staff login
 // ============================================================
 
 if (
@@ -1634,8 +2215,21 @@ if (
 ) {
 
     logoutBtn.addEventListener(
+
         "click",
-        async () => {
+
+        async function () {
+
+            if (
+                !confirm(
+                    "Are you sure you want to logout?"
+                )
+            ) {
+
+                return;
+
+            }
+
 
             try {
 
@@ -1643,11 +2237,10 @@ if (
                     auth
                 );
 
-            } catch (
-                error
-            ) {
+            } catch (error) {
 
                 console.error(
+                    "Logout error:",
                     error
                 );
 
@@ -1664,10 +2257,12 @@ if (
             );
 
 
-            window.location.href =
-                "staff-login.html";
+            window.location.replace(
+                "staff-login.html"
+            );
 
         }
+
     );
 
 }
@@ -1678,53 +2273,104 @@ if (
 // ============================================================
 
 onAuthStateChanged(
+
     auth,
-    async user => {
+
+    async function (user) {
 
         const session =
             getStaffSession();
 
 
+        // =====================================================
+        // STAFF SESSION REQUIRED
+        // =====================================================
+
         if (
             !session ||
-            session.role !==
+            String(
+                session.role || ""
+            ).toLowerCase() !==
             "staff"
         ) {
 
-            window.location.href =
-                "staff-login.html";
+            window.location.replace(
+                "staff-login.html"
+            );
+
 
             return;
 
         }
 
 
-        if (
-            !user
-        ) {
+        // =====================================================
+        // FIREBASE LOGIN REQUIRED
+        // =====================================================
 
-            window.location.href =
-                "staff-login.html";
+        if (!user) {
+
+            window.location.replace(
+                "staff-login.html"
+            );
+
 
             return;
 
         }
+
+
+        // =====================================================
+        // SET GLOBAL SESSION
+        // =====================================================
+
+        currentUser =
+            user;
 
 
         currentStaff =
             session;
 
 
-        staffNameElement.value =
-            currentStaff.staffName ||
-            "Staff";
+        // =====================================================
+        // STAFF NAME
+        // =====================================================
+
+        if (
+            staffNameElement
+        ) {
+
+            staffNameElement.value =
+
+                currentStaff.staffName ||
+
+                currentStaff.name ||
+
+                "Staff";
+
+        }
 
 
-        depositDateInput.value =
-            getTodayInputValue();
+        // =====================================================
+        // DATE
+        // =====================================================
 
+        if (
+            depositDateInput
+        ) {
+
+            depositDateInput.value =
+                getTodayInputValue();
+
+        }
+
+
+        // =====================================================
+        // INITIAL LOAD
+        // =====================================================
 
         await loadData();
 
     }
+
 );
