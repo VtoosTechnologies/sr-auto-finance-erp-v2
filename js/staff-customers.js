@@ -1247,52 +1247,103 @@ function renderCustomerDetails(
         `;
 
 
-    const collectButton =
-        customerDetails.querySelector(
-            '[data-action="collect"]'
-        );
+  const collectButton =
+    customerDetails.querySelector(
+        '[data-action="collect"]'
+    );
 
+if (collectButton) {
 
-    if (
-        collectButton
-    ) {
+    collectButton.addEventListener(
+        "click",
+        () => {
 
-        collectButton.addEventListener(
-            "click",
-            () => {
+            const activeLoans =
+                customerLoans.filter(
+                    loan => {
 
-                alert(
-                    "Collection module will be connected next."
-                );
+                        const status =
+                            String(
+                                loan.status ||
+                                "active"
+                            ).toLowerCase();
 
-            }
-        );
-
-    }
-
-
-    customerDetails
-        .querySelectorAll(
-            ".collect-btn"
-        )
-        .forEach(
-            button => {
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        alert(
-                            "Collection module will be connected next."
+                        return (
+                            status !== "closed" &&
+                            status !== "completed"
                         );
-
                     }
                 );
 
-            }
-        );
+            // No active loan
+            if (
+                activeLoans.length === 0
+            ) {
+                alert(
+                    "This customer has no active loan."
+                );
 
+                return;
+            }
+
+            // One active loan
+            if (
+                activeLoans.length === 1
+            ) {
+
+                const loan =
+                    activeLoans[0];
+
+                const loanDocumentId =
+                    loan.id;
+
+                window.location.href =
+                    `collection-form.html?id=${encodeURIComponent(
+                        loanDocumentId
+                    )}`;
+
+                return;
+            }
+
+            // Multiple active loans
+            alert(
+                "This customer has multiple active loans. Please use the Collect button under the required loan."
+            );
+        }
+    );
 }
+
+customerDetails
+    .querySelectorAll(
+        ".collect-btn"
+    )
+    .forEach(
+        button => {
+
+            button.addEventListener(
+                "click",
+                () => {
+
+                    const loanId =
+                        button.dataset.loanId;
+
+                    if (!loanId) {
+                        alert(
+                            "Loan ID not found."
+                        );
+
+                        return;
+                    }
+
+                    window.location.href =
+                        `collection-form.html?id=${encodeURIComponent(
+                            loanId
+                        )}`;
+                }
+            );
+
+        }
+    );
 
 
 // ============================================================
@@ -1381,30 +1432,59 @@ function renderLoan(
 
 
             <div class="loan-header">
+<div class="loan-header">
 
-                <div class="loan-number">
-                    Loan:
-                    ${escapeHtml(
-                        loanId
-                    )}
-                </div>
+    <div>
+        <div class="loan-number">
+            Loan:
+            ${escapeHtml(
+                loanId
+            )}
+        </div>
 
+        <span
+            class="
+                loan-status
+                ${
+                    [
+                        "closed",
+                        "completed"
+                    ].includes(
+                        statusLower
+                    )
+                        ? "closed"
+                        : ""
+                }
+            "
+        >
+            ${escapeHtml(
+                status
+            )}
+        </span>
+    </div>
 
-                <span
-                    class="
-                        loan-status
-                        ${
-                            [
-                                "closed",
-                                "completed"
-                            ].includes(
-                                statusLower
-                            )
-                                ? "closed"
-                                : ""
-                        }
-                    "
+    ${
+        [
+            "closed",
+            "completed"
+        ].includes(
+            statusLower
+        )
+            ? ""
+            : `
+                <button
+                    type="button"
+                    class="collect-btn"
+                    data-loan-id="${escapeHtml(
+                        loan.id
+                    )}"
                 >
+                    Collect Payment
+                </button>
+            `
+    }
+
+</div>
                     ${escapeHtml(
                         status
                     )}
