@@ -5410,35 +5410,15 @@ function getLoanPaidAmount() {
 
 function getLoanOutstanding() {
 
-    const schedulePending =
-        repaymentSchedule.reduce(
-            (total, row) => {
+    const totalPayable =
+        getLoanTotalPayable();
 
-                return (
-                    total +
-                    getNumber(
-                        row.pendingAmount
-                    )
-                );
-
-            },
-            0
-        );
-
-
-    if (repaymentSchedule.length) {
-
-        return Math.max(
-            schedulePending,
-            0
-        );
-
-    }
-
+    const paidAmount =
+        getLoanPaidAmount();
 
     return Math.max(
-        getLoanTotalPayable() -
-        getLoanPaidAmount(),
+        totalPayable -
+        paidAmount,
         0
     );
 
