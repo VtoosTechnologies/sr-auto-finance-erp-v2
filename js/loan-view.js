@@ -5391,7 +5391,58 @@ function getLoanTotalPayable() {
     );
 
 }
+function getLoanPaidAmount() {
 
+    const paymentTotal =
+        getTotalCollection();
+
+    if (paymentTotal > 0) {
+        return paymentTotal;
+    }
+
+    return getNumber(
+        currentLoan?.amountPaid,
+        currentLoan?.paidAmount,
+        currentLoan?.totalPaid
+    );
+}
+
+
+function getLoanOutstanding() {
+
+    const schedulePending =
+        repaymentSchedule.reduce(
+            (total, row) => {
+
+                return (
+                    total +
+                    getNumber(
+                        row.pendingAmount
+                    )
+                );
+
+            },
+            0
+        );
+
+
+    if (repaymentSchedule.length) {
+
+        return Math.max(
+            schedulePending,
+            0
+        );
+
+    }
+
+
+    return Math.max(
+        getLoanTotalPayable() -
+        getLoanPaidAmount(),
+        0
+    );
+
+}
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
 // =====================================================
