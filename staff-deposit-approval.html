@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="description"
+        content="SR Auto Finance ERP - Staff Deposit Approval"
+    >
+
+    <title>
+        Staff Deposit Approval | SR Auto Finance ERP
+    </title>
+
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+
+        body {
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            background: #f1f5f9;
+
+            color: #1e293b;
+        }
+
+
+        /* =========================================
+           HEADER
+        ========================================= */
+
+        .header {
+
+            height: 70px;
+
+            background: #0f172a;
+
+            color: white;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 24px;
+
+            position: sticky;
+
+            top: 0;
+
+            z-index: 100;
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.15);
+
+        }
+
+
+        .brand-area {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+
+        }
+
+
+        .brand-logo {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 12px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-weight: 800;
+
+            font-size: 15px;
+
+        }
+
+
+        .brand-text h1 {
+
+            font-size: 17px;
+
+            font-weight: 800;
+
+        }
+
+
+        .brand-text p {
+
+            font-size: 11px;
+
+            color: #94a3b8;
+
+            margin-top: 2px;
+
+        }
+
+
+        .header-right {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 14px;
+
+        }
+
+
+        .user-info {
+
+            text-align: right;
+
+        }
+
+
+        .user-name {
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+        }
+
+
+        .user-role {
+
+            font-size: 10px;
+
+            color: #94a3b8;
+
+            text-transform: uppercase;
+
+        }
+
+
+        .back-btn {
+
+            border: 1px solid #475569;
+
+            background: transparent;
+
+            color: white;
+
+            padding: 9px 13px;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+        }
+
+
+        .back-btn:hover {
+
+            background: #1e293b;
+
+        }
+
+
+        .logout-btn {
+
+            border: 1px solid #475569;
+
+            background: transparent;
+
+            color: white;
+
+            padding: 9px 13px;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            font-size: 12px;
+
+        }
+
+
+        .logout-btn:hover {
+
+            background: #1e293b;
+
+        }
+
+
+        /* =========================================
+           MAIN
+        ========================================= */
+
+        .main {
+
+            max-width: 1400px;
+
+            margin: auto;
+
+            padding: 25px;
+
+        }
+
+
+        /* =========================================
+           PAGE HEADER
+        ========================================= */
+
+        .page-header {
+
+            display: flex;
+
+            align-items: flex-start;
+
+            justify-content: space-between;
+
+            gap: 20px;
+
+            margin-bottom: 22px;
+
+        }
+
+
+        .page-title {
+
+            font-size: 25px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .page-subtitle {
+
+            margin-top: 5px;
+
+            font-size: 13px;
+
+            color: #64748b;
+
+        }
+
+
+        .pending-top-badge {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            gap: 7px;
+
+            padding: 9px 14px;
+
+            border-radius: 20px;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border:
+                1px solid
+                #fecaca;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+        }
+
+
+        .pending-dot {
+
+            width: 8px;
+
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #ef4444;
+
+        }
+
+
+        /* =========================================
+           MESSAGE
+        ========================================= */
+
+        .message {
+
+            display: none;
+
+            margin-bottom: 18px;
+
+            padding: 12px 14px;
+
+            border-radius: 10px;
+
+            font-size: 12px;
+
+            line-height: 1.5;
+
+        }
+
+
+        .message.show {
+
+            display: block;
+
+        }
+
+
+        .message.success {
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+            border:
+                1px solid
+                #bbf7d0;
+
+        }
+
+
+        .message.error {
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+            border:
+                1px solid
+                #fecaca;
+
+        }
+
+
+        .message.info {
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+            border:
+                1px solid
+                #bfdbfe;
+
+        }
+
+
+        /* =========================================
+           SUMMARY CARDS
+        ========================================= */
+
+        .summary-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 16px;
+
+            margin-bottom: 24px;
+
+        }
+
+
+        .summary-card {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 16px;
+
+            padding: 19px;
+
+            box-shadow:
+                0 4px 12px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.04
+                );
+
+        }
+
+
+        .summary-top {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+        }
+
+
+        .summary-title {
+
+            font-size: 12px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .summary-icon {
+
+            width: 38px;
+
+            height: 38px;
+
+            border-radius: 10px;
+
+            background: #eff6ff;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 18px;
+
+        }
+
+
+        .summary-value {
+
+            margin-top: 12px;
+
+            font-size: 23px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .summary-note {
+
+            margin-top: 4px;
+
+            font-size: 10px;
+
+            color: #94a3b8;
+
+        }
+
+
+        /* =========================================
+           FILTER PANEL
+        ========================================= */
+
+        .filter-panel {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 16px;
+
+            padding: 20px;
+
+            margin-bottom: 20px;
+
+            box-shadow:
+                0 4px 12px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.04
+                );
+
+        }
+
+
+        .filter-title {
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+            margin-bottom: 15px;
+
+        }
+
+
+        .filter-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                1.2fr
+                1fr
+                1fr
+                1fr
+                auto;
+
+            gap: 12px;
+
+            align-items: end;
+
+        }
+
+
+        .form-group {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 7px;
+
+        }
+
+
+        .form-group label {
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            color: #475569;
+
+        }
+
+
+        .form-group input,
+
+        .form-group select {
+
+            width: 100%;
+
+            height: 42px;
+
+            border:
+                1px solid
+                #cbd5e1;
+
+            border-radius: 8px;
+
+            padding:
+                0 11px;
+
+            background: white;
+
+            color: #1e293b;
+
+            font-size: 12px;
+
+            outline: none;
+
+        }
+
+
+        .form-group input:focus,
+
+        .form-group select:focus {
+
+            border-color:
+                #2563eb;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(
+                    37,
+                    99,
+                    235,
+                    0.10
+                );
+
+        }
+
+
+        .filter-actions {
+
+            display: flex;
+
+            gap: 8px;
+
+        }
+
+
+        .primary-btn {
+
+            height: 42px;
+
+            padding:
+                0 15px;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-size: 12px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .primary-btn:hover {
+
+            background: #1d4ed8;
+
+        }
+
+
+        .secondary-btn {
+
+            height: 42px;
+
+            padding:
+                0 15px;
+
+            border:
+                1px solid
+                #cbd5e1;
+
+            border-radius: 8px;
+
+            background: white;
+
+            color: #475569;
+
+            font-size: 12px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .secondary-btn:hover {
+
+            background: #f8fafc;
+
+        }
+
+
+        /* =========================================
+           TABLE PANEL
+        ========================================= */
+
+        .panel {
+
+            background: white;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            box-shadow:
+                0 4px 12px
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.04
+                );
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .panel-header {
+
+            padding: 18px 20px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            border-bottom:
+                1px solid
+                #e2e8f0;
+
+        }
+
+
+        .panel-title {
+
+            font-size: 15px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .panel-subtitle {
+
+            margin-top: 4px;
+
+            font-size: 10px;
+
+            color: #94a3b8;
+
+        }
+
+
+        .panel-actions {
+
+            display: flex;
+
+            gap: 8px;
+
+        }
+
+
+        .report-btn {
+
+            height: 36px;
+
+            padding:
+                0 12px;
+
+            border:
+                1px solid
+                #cbd5e1;
+
+            background: white;
+
+            color: #334155;
+
+            border-radius: 8px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+        }
+
+
+        .report-btn:hover {
+
+            background: #f8fafc;
+
+        }
+
+
+        .table-wrap {
+
+            width: 100%;
+
+            overflow-x: auto;
+
+        }
+
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 1050px;
+
+        }
+
+
+        thead {
+
+            background: #f8fafc;
+
+        }
+
+
+        th {
+
+            padding:
+                12px 14px;
+
+            text-align: left;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            color: #64748b;
+
+            white-space: nowrap;
+
+            border-bottom:
+                1px solid
+                #e2e8f0;
+
+        }
+
+
+        td {
+
+            padding:
+                13px 14px;
+
+            font-size: 11px;
+
+            color: #334155;
+
+            white-space: nowrap;
+
+            border-bottom:
+                1px solid
+                #f1f5f9;
+
+        }
+
+
+        tbody tr:hover {
+
+            background: #f8fafc;
+
+        }
+
+
+        .staff-name {
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .amount {
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .pending-amount {
+
+            color: #b45309;
+
+            font-weight: 800;
+
+        }
+
+
+        .cash-amount {
+
+            color: #0369a1;
+
+            font-weight: 800;
+
+        }
+
+
+        .status-badge {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding:
+                5px 9px;
+
+            border-radius: 20px;
+
+            font-size: 9px;
+
+            font-weight: 800;
+
+        }
+
+
+        .status-pending {
+
+            background: #fff7ed;
+
+            color: #c2410c;
+
+        }
+
+
+        .status-approved {
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+        }
+
+
+        .status-rejected {
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+        }
+
+
+        .action-group {
+
+            display: flex;
+
+            gap: 6px;
+
+        }
+
+
+        .view-btn,
+
+        .approve-btn,
+
+        .reject-btn {
+
+            height: 31px;
+
+            padding:
+                0 9px;
+
+            border-radius: 7px;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+        }
+
+
+        .view-btn {
+
+            border:
+                1px solid
+                #bfdbfe;
+
+            background: #eff6ff;
+
+            color: #1d4ed8;
+
+        }
+
+
+        .approve-btn {
+
+            border:
+                1px solid
+                #bbf7d0;
+
+            background: #f0fdf4;
+
+            color: #15803d;
+
+        }
+
+
+        .reject-btn {
+
+            border:
+                1px solid
+                #fecaca;
+
+            background: #fef2f2;
+
+            color: #b91c1c;
+
+        }
+
+
+        .view-btn:hover,
+
+        .approve-btn:hover,
+
+        .reject-btn:hover {
+
+            opacity: 0.85;
+
+        }
+
+
+        /* =========================================
+           EMPTY / LOADING
+        ========================================= */
+
+        .table-empty {
+
+            text-align: center;
+
+            padding: 45px 20px;
+
+            color: #94a3b8;
+
+        }
+
+
+        .table-empty-icon {
+
+            font-size: 34px;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .table-empty-title {
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            color: #64748b;
+
+        }
+
+
+        .table-empty-text {
+
+            margin-top: 5px;
+
+            font-size: 11px;
+
+        }
+
+
+        .loading-state {
+
+            text-align: center;
+
+            padding: 35px;
+
+            color: #64748b;
+
+            font-size: 12px;
+
+        }
+
+
+        /* =========================================
+           DETAIL MODAL
+        ========================================= */
+
+        .modal-overlay {
+
+            position: fixed;
+
+            inset: 0;
+
+            background:
+                rgba(
+                    15,
+                    23,
+                    42,
+                    0.55
+                );
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            z-index: 1000;
+
+        }
+
+
+        .modal-overlay.show {
+
+            display: flex;
+
+        }
+
+
+        .modal {
+
+            width: 100%;
+
+            max-width: 900px;
+
+            max-height: 90vh;
+
+            overflow-y: auto;
+
+            background: white;
+
+            border-radius: 18px;
+
+            box-shadow:
+                0 25px 70px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.25
+                );
+
+        }
+
+
+        .modal-header {
+
+            padding: 18px 20px;
+
+            border-bottom:
+                1px solid
+                #e2e8f0;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+        }
+
+
+        .modal-title {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+        }
+
+
+        .modal-close {
+
+            width: 34px;
+
+            height: 34px;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            background: #f1f5f9;
+
+            color: #475569;
+
+            cursor: pointer;
+
+            font-size: 18px;
+
+        }
+
+
+        .modal-body {
+
+            padding: 20px;
+
+        }
+
+
+        .detail-summary {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 10px;
+
+            margin-bottom: 20px;
+
+        }
+
+
+        .detail-card {
+
+            padding: 13px;
+
+            background: #f8fafc;
+
+            border-radius: 10px;
+
+            border:
+                1px solid
+                #e2e8f0;
+
+        }
+
+
+        .detail-card-title {
+
+            font-size: 9px;
+
+            color: #64748b;
+
+            font-weight: 700;
+
+        }
+
+
+        .detail-card-value {
+
+            margin-top: 6px;
+
+            font-size: 14px;
+
+            color: #0f172a;
+
+            font-weight: 800;
+
+        }
+
+
+        .modal-section-title {
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            margin-bottom: 10px;
+
+            color: #0f172a;
+
+        }
+
+
+        .detail-table-wrap {
+
+            overflow-x: auto;
+
+        }
+
+
+        .detail-table {
+
+            min-width: 900px;
+
+        }
+
+
+        /* =========================================
+           FOOTER
+        ========================================= */
+
+        .app-footer {
+
+            text-align: center;
+
+            padding:
+                20px 15px 25px;
+
+            color: #94a3b8;
+
+            font-size: 11px;
+
+            line-height: 1.6;
+
+        }
+
+
+        .app-footer div:last-child {
+
+            color: #64748b;
+
+            font-weight: 600;
+
+            font-size: 10px;
+
+        }
+
+
+        /* =========================================
+           MOBILE
+        ========================================= */
+
+        @media (max-width: 1000px) {
+
+            .summary-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+
+            .filter-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+
+        @media (max-width: 700px) {
+
+            .header {
+
+                padding:
+                    0 14px;
+
+                height: 64px;
+
+            }
+
+
+            .brand-text h1 {
+
+                font-size: 14px;
+
+            }
+
+
+            .brand-text p {
+
+                display: none;
+
+            }
+
+
+            .user-info {
+
+                display: none;
+
+            }
+
+
+            .main {
+
+                padding:
+                    18px 14px;
+
+            }
+
+
+            .page-header {
+
+                flex-direction: column;
+
+            }
+
+
+            .page-title {
+
+                font-size: 21px;
+
+            }
+
+
+            .summary-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+                gap: 10px;
+
+            }
+
+
+            .summary-card {
+
+                padding: 14px;
+
+            }
+
+
+            .summary-value {
+
+                font-size: 18px;
+
+            }
+
+
+            .filter-grid {
+
+                grid-template-columns: 1fr;
+
+            }
+
+
+            .filter-actions {
+
+                width: 100%;
+
+            }
+
+
+            .filter-actions button {
+
+                flex: 1;
+
+            }
+
+
+            .panel-header {
+
+                align-items: flex-start;
+
+                flex-direction: column;
+
+            }
+
+
+            .panel-actions {
+
+                width: 100%;
+
+            }
+
+
+            .report-btn {
+
+                flex: 1;
+
+            }
+
+
+            .detail-summary {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     HEADER
+========================================= -->
+
+<header class="header">
+
+
+    <div class="brand-area">
+
+
+        <div class="brand-logo">
+            SR
+        </div>
+
+
+        <div class="brand-text">
+
+            <h1>
+                SR Auto Finance
+            </h1>
+
+            <p>
+                Finance Management ERP
+            </p>
+
+        </div>
+
+
+    </div>
+
+
+
+    <div class="header-right">
+
+
+        <div class="user-info">
+
+            <div
+                class="user-name"
+                id="userName"
+            >
+                Admin
+            </div>
+
+
+            <div
+                class="user-role"
+                id="userRole"
+            >
+                Owner
+            </div>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="back-btn"
+            id="backBtn"
+        >
+            ← Dashboard
+        </button>
+
+
+        <button
+            type="button"
+            class="logout-btn"
+            id="logoutBtn"
+        >
+            Logout
+        </button>
+
+
+    </div>
+
+
+</header>
+
+
+
+<!-- =========================================
+     MAIN
+========================================= -->
+
+<main class="main">
+
+
+    <!-- PAGE HEADER -->
+
+    <section class="page-header">
+
+
+        <div>
+
+            <div class="page-title">
+                Staff Deposit Approval
+            </div>
+
+
+            <div class="page-subtitle">
+                Review staff collections, deposits and cash position
+            </div>
+
+        </div>
+
+
+        <div
+            class="pending-top-badge"
+            id="pendingTopBadge"
+        >
+
+            <span class="pending-dot"></span>
+
+            <span id="pendingTopCount">
+                0 Pending
+            </span>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- MESSAGE -->
+
+    <div
+        id="message"
+        class="message"
+    ></div>
+
+
+
+    <!-- =========================================
+         SUMMARY
+    ========================================= -->
+
+    <section class="summary-grid">
+
+
+        <!-- Total Staff Collection -->
+
+        <div class="summary-card">
+
+
+            <div class="summary-top">
+
+                <div class="summary-title">
+                    Total Staff Collection
+                </div>
+
+
+                <div class="summary-icon">
+                    💰
+                </div>
+
+            </div>
+
+
+            <div
+                class="summary-value"
+                id="totalStaffCollection"
+            >
+                ₹0
+            </div>
+
+
+            <div class="summary-note">
+                From collections
+            </div>
+
+
+        </div>
+
+
+
+        <!-- Total Deposited -->
+
+        <div class="summary-card">
+
+
+            <div class="summary-top">
+
+                <div class="summary-title">
+                    Total Deposited
+                </div>
+
+
+                <div class="summary-icon">
+                    🏦
+                </div>
+
+            </div>
+
+
+            <div
+                class="summary-value"
+                id="totalDeposited"
+            >
+                ₹0
+            </div>
+
+
+            <div class="summary-note">
+                Approved deposits
+            </div>
+
+
+        </div>
+
+
+
+        <!-- Pending Approval -->
+
+        <div class="summary-card">
+
+
+            <div class="summary-top">
+
+                <div class="summary-title">
+                    Pending Approval
+                </div>
+
+
+                <div class="summary-icon">
+                    ⏳
+                </div>
+
+            </div>
+
+
+            <div
+                class="summary-value"
+                id="totalPendingApproval"
+            >
+                ₹0
+            </div>
+
+
+            <div class="summary-note">
+                Awaiting owner action
+            </div>
+
+
+        </div>
+
+
+
+        <!-- Cash With Staff -->
+
+        <div class="summary-card">
+
+
+            <div class="summary-top">
+
+                <div class="summary-title">
+                    Cash With Staff
+                </div>
+
+
+                <div class="summary-icon">
+                    💵
+                </div>
+
+            </div>
+
+
+            <div
+                class="summary-value"
+                id="totalCashWithStaff"
+            >
+                ₹0
+            </div>
+
+
+            <div class="summary-note">
+                Collection less approved deposit
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================================
+         FILTER
+    ========================================= -->
+
+    <section class="filter-panel">
+
+
+        <div class="filter-title">
+            Staff Collection & Deposit Filters
+        </div>
+
+
+        <div class="filter-grid">
+
+
+            <!-- Staff -->
+
+            <div class="form-group">
+
+                <label for="staffFilter">
+                    Staff
+                </label>
+
+
+                <select
+                    id="staffFilter"
+                >
+
+                    <option value="">
+                        All Staff
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- From Date -->
+
+            <div class="form-group">
+
+                <label for="fromDate">
+                    From Date
+                </label>
+
+
+                <input
+                    type="date"
+                    id="fromDate"
+                >
+
+            </div>
+
+
+
+            <!-- To Date -->
+
+            <div class="form-group">
+
+                <label for="toDate">
+                    To Date
+                </label>
+
+
+                <input
+                    type="date"
+                    id="toDate"
+                >
+
+            </div>
+
+
+
+            <!-- Month -->
+
+            <div class="form-group">
+
+                <label for="monthFilter">
+                    Month
+                </label>
+
+
+                <input
+                    type="month"
+                    id="monthFilter"
+                >
+
+            </div>
+
+
+
+            <!-- Buttons -->
+
+            <div class="filter-actions">
+
+                <button
+                    type="button"
+                    class="primary-btn"
+                    id="applyFilterBtn"
+                >
+                    Apply
+                </button>
+
+
+                <button
+                    type="button"
+                    class="secondary-btn"
+                    id="resetFilterBtn"
+                >
+                    Reset
+                </button>
+
+            </div>
+
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================================
+         PENDING DEPOSIT REQUESTS
+    ========================================= -->
+
+    <section class="panel">
+
+
+        <div class="panel-header">
+
+
+            <div>
+
+                <div class="panel-title">
+                    Pending Deposit Requests
+                </div>
+
+
+                <div class="panel-subtitle">
+                    Owner approval is required before deposit is finalized
+                </div>
+
+            </div>
+
+
+            <div class="panel-actions">
+
+
+                <button
+                    type="button"
+                    class="report-btn"
+                    id="refreshBtn"
+                >
+                    ↻ Refresh
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Staff
+                        </th>
+
+                        <th>
+                            Request Date
+                        </th>
+
+                        <th>
+                            Total Collection
+                        </th>
+
+                        <th>
+                            Already Deposited
+                        </th>
+
+                        <th>
+                            Pending Deposit
+                        </th>
+
+                        <th>
+                            Request Amount
+                        </th>
+
+                        <th>
+                            Mode
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="pendingRequestsBody"
+                >
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            class="loading-state"
+                        >
+                            Loading deposit requests...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    </section>
+
+
+
+    <!-- =========================================
+         STAFF-WISE POSITION
+    ========================================= -->
+
+    <section class="panel">
+
+
+        <div class="panel-header">
+
+
+            <div>
+
+                <div class="panel-title">
+                    Staff-wise Collection & Deposit Position
+                </div>
+
+
+                <div class="panel-subtitle">
+                    Click View to inspect detailed customer, loan and due-level collections
+                </div>
+
+            </div>
+
+
+            <div class="panel-actions">
+
+
+                <button
+                    type="button"
+                    class="report-btn"
+                    id="downloadExcelBtn"
+                >
+                    Excel
+                </button>
+
+
+                <button
+                    type="button"
+                    class="report-btn"
+                    id="downloadPdfBtn"
+                >
+                    PDF
+                </button>
+
+
+                <button
+                    type="button"
+                    class="report-btn"
+                    id="printReportBtn"
+                >
+                    Print
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Staff
+                        </th>
+
+                        <th>
+                            Total Collection
+                        </th>
+
+                        <th>
+                            Principal Collected
+                        </th>
+
+                        <th>
+                            Interest Collected
+                        </th>
+
+                        <th>
+                            Penalty
+                        </th>
+
+                        <th>
+                            Total Deposited
+                        </th>
+
+                        <th>
+                            Pending Deposit
+                        </th>
+
+                        <th>
+                            Cash With Staff
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="staffSummaryBody"
+                >
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            class="loading-state"
+                        >
+                            Loading staff summary...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =========================================
+     DETAIL MODAL
+========================================= -->
+
+<div
+    class="modal-overlay"
+    id="detailModal"
+>
+
+
+    <div class="modal">
+
+
+        <div class="modal-header">
+
+
+            <div>
+
+                <div
+                    class="modal-title"
+                    id="detailModalTitle"
+                >
+                    Staff Collection Details
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="modal-close"
+                id="closeDetailModalBtn"
+            >
+                ×
+            </button>
+
+
+        </div>
+
+
+
+        <div class="modal-body">
+
+
+            <!-- Detail Summary -->
+
+            <div class="detail-summary">
+
+
+                <div class="detail-card">
+
+                    <div class="detail-card-title">
+                        Total Collection
+                    </div>
+
+
+                    <div
+                        class="detail-card-value"
+                        id="detailTotalCollection"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+
+                <div class="detail-card">
+
+                    <div class="detail-card-title">
+                        Principal
+                    </div>
+
+
+                    <div
+                        class="detail-card-value"
+                        id="detailPrincipal"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+
+                <div class="detail-card">
+
+                    <div class="detail-card-title">
+                        Interest
+                    </div>
+
+
+                    <div
+                        class="detail-card-value"
+                        id="detailInterest"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+
+                <div class="detail-card">
+
+                    <div class="detail-card-title">
+                        Penalty
+                    </div>
+
+
+                    <div
+                        class="detail-card-value"
+                        id="detailPenalty"
+                    >
+                        ₹0
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- Collection Details -->
+
+            <div class="modal-section-title">
+                Collection Details
+            </div>
+
+
+            <div class="detail-table-wrap">
+
+                <table class="detail-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Customer
+                            </th>
+
+                            <th>
+                                Loan
+                            </th>
+
+                            <th>
+                                Due No
+                            </th>
+
+                            <th>
+                                Due Date
+                            </th>
+
+                            <th>
+                                Principal
+                            </th>
+
+                            <th>
+                                Interest
+                            </th>
+
+                            <th>
+                                Collected
+                            </th>
+
+                            <th>
+                                Collected Date
+                            </th>
+
+                            <th>
+                                Penalty
+                            </th>
+
+                            <th>
+                                Balance
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody
+                        id="collectionDetailBody"
+                    >
+
+                        <tr>
+
+                            <td
+                                colspan="11"
+                                class="loading-state"
+                            >
+                                Select a staff to view details.
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<!-- =========================================
+     FOOTER
+========================================= -->
+
+<footer class="app-footer">
+
+    <div>
+        © 2026 SR Auto Finance ERP
+    </div>
+
+
+    <div>
+        Powered by VTOOS Software Solutions
+    </div>
+
+</footer>
+
+
+
+<!-- =========================================
+     JAVASCRIPT
+========================================= -->
+
+<script
+    type="module"
+    src="js/staff-deposit-approval.js"
+></script>
+
+
+</body>
+
+</html>
