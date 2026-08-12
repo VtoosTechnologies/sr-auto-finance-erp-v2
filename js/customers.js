@@ -10,7 +10,9 @@ import {
 
 import {
     collection,
-    getDocs
+    getDocs,
+    deleteDoc,
+    doc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 import {
@@ -673,9 +675,11 @@ function renderCustomers(
                             <span
                                 class="customer-id"
                             >
+
                                 ${escapeHTML(
                                     customerId
                                 )}
+
                             </span>
 
                         </td>
@@ -688,9 +692,11 @@ function renderCustomers(
                             <span
                                 class="customer-name"
                             >
+
                                 ${escapeHTML(
                                     customerName
                                 )}
+
                             </span>
 
                         </td>
@@ -699,18 +705,22 @@ function renderCustomers(
                         <!-- MOBILE -->
 
                         <td>
+
                             ${escapeHTML(
                                 mobile
                             )}
+
                         </td>
 
 
                         <!-- LOCATION -->
 
                         <td>
+
                             ${escapeHTML(
                                 location
                             )}
+
                         </td>
 
 
@@ -744,6 +754,20 @@ function renderCustomers(
                                 onclick="viewCustomer(this.dataset.id)"
                             >
                                 View
+                            </button>
+
+
+                            <button
+                                class="action-btn delete-btn"
+                                data-id="${escapeHTML(
+                                    customer.id
+                                )}"
+                                data-name="${escapeHTML(
+                                    customerName
+                                )}"
+                                onclick="deleteCustomer(this.dataset.id, this.dataset.name)"
+                            >
+                                Delete
                             </button>
 
                         </td>
@@ -781,6 +805,94 @@ window.viewCustomer =
                     customerId
                 )
             }`;
+
+    };
+
+
+// =====================================================
+// DELETE CUSTOMER
+// =====================================================
+
+window.deleteCustomer =
+    async function(
+        customerId,
+        customerName
+    ) {
+
+        if (
+            !customerId
+        ) {
+
+            return;
+
+        }
+
+
+        const confirmed =
+            window.confirm(
+
+                `Delete customer "${customerName || "this customer"}"?\n\n` +
+
+                "This action cannot be undone. Continue?"
+
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        try {
+
+            await deleteDoc(
+
+                doc(
+                    db,
+                    "customers",
+                    customerId
+                )
+
+            );
+
+
+            customers =
+                customers.filter(
+                    customer =>
+                        String(
+                            customer.id
+                        ) !==
+                        String(
+                            customerId
+                        )
+                );
+
+
+            updateSummary();
+
+            applySearch();
+
+
+            alert(
+                "Customer deleted successfully."
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Customer delete error:",
+                error
+            );
+
+
+            alert(
+                "Unable to delete customer. Please try again."
+            );
+
+        }
 
     };
 
