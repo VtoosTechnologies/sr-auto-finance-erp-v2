@@ -5126,50 +5126,27 @@ function getLoanInterest() {
 
 function getLoanTotalPayable() {
 
-    const loan =
-        currentLoan || {};
+    const tenure =
+        getLoanTenure();
+
+    const emi =
+        getInstallmentAmount();
 
 
     /*
-     * PRIMARY SOURCE:
-     *
-     * EMI × Tenure
+     * Main calculation:
+     * EMI × Total Installments
      *
      * Example:
      * ₹2,750 × 24 = ₹66,000
      */
-    const installment =
-        getNumber(
-            loan.installmentAmount,
-            loan.monthlyEMI,
-            loan.emiAmount,
-            loan.installment
-        );
-
-
-    const tenure =
-        Math.max(
-            Math.round(
-                getNumber(
-                    loan.loanDuration,
-                    loan.tenure,
-                    loan.duration,
-                    loan.numberOfInstallments,
-                    loan.totalInstallments,
-                    loan.installments
-                )
-            ),
-            0
-        );
-
-
     if (
-        installment > 0 &&
-        tenure > 0
+        tenure > 0 &&
+        emi > 0
     ) {
 
         return (
-            installment *
+            emi *
             tenure
         );
 
@@ -5177,70 +5154,19 @@ function getLoanTotalPayable() {
 
 
     /*
-     * SECONDARY SOURCE:
-     *
-     * Use explicitly stored total payable
-     * only when EMI / tenure is unavailable.
+     * Fallback only when
+     * EMI / tenure is unavailable.
      */
-    const storedTotal =
-        getNumber(
-            loan.totalPayable,
-            loan.totalAmount,
-            loan.totalRepayable,
-            loan.totalRepayment,
-            loan.totalDueAmount
-        );
-
-
-    if (
-        storedTotal > 0
-    ) {
-
-        return storedTotal;
-
-    }
-
-
-    /*
-     * FINAL FALLBACK
-     */
-    return (
-        getLoanPrincipal() +
-        getLoanInterest()
-    );
-
-}
-function getLoanPaidAmount() {
-
-    const paymentTotal =
-        getTotalCollection();
-
-    if (paymentTotal > 0) {
-        return paymentTotal;
-    }
-
     return getNumber(
-        currentLoan?.amountPaid,
-        currentLoan?.paidAmount,
-        currentLoan?.totalPaid
+        currentLoan?.totalRepayable,
+        currentLoan?.totalRepayment,
+        currentLoan?.totalPayable,
+        currentLoan?.totalDueAmount,
+        currentLoan?.totalLoanPayable,
+        currentLoan?.totalAmountPayable
     );
 
 }
-function getLoanOutstanding() {
-
-    const totalPayable =
-        getLoanTotalPayable();
-
-    const paidAmount =
-        getLoanPaidAmount();
-
-    return Math.max(
-        totalPayable - paidAmount,
-        0
-    );
-
-}
-
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
 // =====================================================
