@@ -203,6 +203,147 @@ function getStaffSession() {
 
 
 // =====================================================
+// GET COLLECTION STAFF IDENTITY
+// =====================================================
+
+function getCollectionStaffIdentity() {
+
+    const session =
+        getStaffSession();
+
+    const user =
+        currentUser || {};
+
+
+    const staffName =
+        String(
+
+            session?.staffName ||
+
+            session?.employeeName ||
+
+            session?.displayName ||
+
+            session?.name ||
+
+            user?.displayName ||
+
+            user?.email ||
+
+            "Owner"
+
+        ).trim();
+
+
+    const staffDocumentId =
+        String(
+
+            session?.staffDocumentId ||
+
+            session?.staffDocId ||
+
+            session?.documentId ||
+
+            session?.staffDocID ||
+
+            session?.staffId ||
+
+            session?.id ||
+
+            ""
+
+        ).trim();
+
+
+    const staffId =
+        String(
+
+            session?.staffId ||
+
+            session?.employeeId ||
+
+            session?.staffCode ||
+
+            session?.employeeCode ||
+
+            session?.id ||
+
+            staffDocumentId ||
+
+            user?.uid ||
+
+            ""
+
+        ).trim();
+
+
+    const collectorUid =
+        String(
+
+            user?.uid ||
+
+            session?.uid ||
+
+            session?.userId ||
+
+            ""
+
+        ).trim();
+
+
+    const collectorEmail =
+        String(
+
+            session?.email ||
+
+            user?.email ||
+
+            ""
+
+        ).trim();
+
+
+    const role =
+        String(
+
+            session?.role ||
+
+            currentRole ||
+
+            "owner"
+
+        )
+            .trim()
+            .toLowerCase();
+
+
+    return {
+
+        staffId,
+
+        staffDocumentId,
+
+        staffName,
+
+        collectorName:
+            staffName,
+
+        collectorStaffId:
+            staffId,
+
+        collectorUid,
+
+        collectorEmail,
+
+        collectorRole:
+            role
+
+    };
+
+}
+
+
+// =====================================================
 // FORMAT CURRENCY
 // =====================================================
 
@@ -542,18 +683,24 @@ function getUrlLoanIdentifier() {
 
         documentId:
             String(
+
                 params.get(
                     "id"
                 ) ||
+
                 ""
+
             ).trim(),
 
         businessId:
             String(
+
                 params.get(
                     "loanId"
                 ) ||
+
                 ""
+
             ).trim()
 
     };
@@ -611,6 +758,7 @@ async function loadLoans() {
                     String(
 
                         data.status ||
+
                         "Active"
 
                     )
@@ -634,7 +782,9 @@ async function loadLoans() {
                     [
 
                         "active",
+
                         "running",
+
                         "open"
 
                     ].includes(
@@ -677,7 +827,9 @@ async function loadLoans() {
                     String(
 
                         a.customerName ||
+
                         a.name ||
+
                         ""
 
                     ).toLowerCase();
@@ -687,7 +839,9 @@ async function loadLoans() {
                     String(
 
                         b.customerName ||
+
                         b.name ||
+
                         ""
 
                     ).toLowerCase();
@@ -806,6 +960,7 @@ async function loadLoans() {
                 loans.find(
 
                     loan =>
+
                         loan.id ===
                         url.documentId
 
@@ -878,7 +1033,9 @@ async function loadLoans() {
 
 
         showMessage(
+
             "Unable to load loan accounts. Please refresh and try again."
+
         );
 
     }
@@ -984,7 +1141,9 @@ function displaySelectedLoan(
 if (loanSelect) {
 
     loanSelect.addEventListener(
+
         "change",
+
         function () {
 
             clearMessage();
@@ -1020,6 +1179,7 @@ if (loanSelect) {
                 loans.find(
 
                     item =>
+
                         item.id ===
                         selectedId
 
@@ -1041,6 +1201,7 @@ if (loanSelect) {
             );
 
         }
+
     );
 
 }
@@ -1114,9 +1275,13 @@ function updatePaymentSummary() {
 
 
     if (
+
         outstanding > 0 &&
+
         safePayment > 0 &&
+
         balanceAfter <= 0
+
     ) {
 
         status =
@@ -1258,7 +1423,9 @@ function resetSummary() {
 if (paymentAmount) {
 
     paymentAmount.addEventListener(
+
         "input",
+
         function () {
 
             clearMessage();
@@ -1266,6 +1433,7 @@ if (paymentAmount) {
             updatePaymentSummary();
 
         }
+
     );
 
 }
@@ -1278,7 +1446,9 @@ if (paymentAmount) {
 if (paymentMode) {
 
     paymentMode.addEventListener(
+
         "change",
+
         function () {
 
             const mode =
@@ -1309,6 +1479,7 @@ if (paymentMode) {
             }
 
         }
+
     );
 
 }
@@ -1539,6 +1710,20 @@ async function saveCollection() {
 
     try {
 
+        // =====================================================
+        // COLLECTION STAFF IDENTITY
+        // =====================================================
+
+        const collector =
+            getCollectionStaffIdentity();
+
+
+        console.log(
+            "Collection Collector Identity:",
+            collector
+        );
+
+
         const loanRef =
             doc(
 
@@ -1689,8 +1874,10 @@ async function saveCollection() {
                             receiptNo:
                                 receiptNo,
 
+
                             loanDocumentId:
                                 loanSnap.id,
+
 
                             loanId:
 
@@ -1702,70 +1889,136 @@ async function saveCollection() {
 
                                 loanSnap.id,
 
+
                             customerId:
 
                                 loan.customerId ||
+
                                 "",
+
 
                             customerDocumentId:
 
                                 loan.customerDocumentId ||
+
                                 "",
+
 
                             customerName:
 
                                 loan.customerName ||
+
                                 loan.name ||
+
                                 "",
+
 
                             customerMobile:
 
                                 loan.customerMobile ||
+
                                 loan.mobile ||
+
                                 loan.phone ||
+
                                 "",
+
 
                             amount:
                                 payment,
 
+
                             paidAmount:
                                 payment,
+
 
                             balanceBeforePayment:
                                 currentOutstanding,
 
+
                             balanceAfterPayment:
                                 newOutstanding,
+
 
                             paymentDate:
                                 paymentDate.value,
 
+
                             paymentMode:
                                 paymentMode.value,
+
 
                             referenceNumber:
 
                                 referenceNumber?.value
                                     ?.trim() ||
+
                                 "",
+
 
                             remarks:
 
                                 remarks?.value
                                     ?.trim() ||
+
                                 "",
+
 
                             status:
                                 "Success",
 
+
                             createdAt:
                                 serverTimestamp(),
+
 
                             updatedAt:
                                 serverTimestamp(),
 
+
+                            // =====================================================
+                            // STAFF / OWNER COLLECTION IDENTITY
+                            // =====================================================
+
+                            staffId:
+                                collector.staffId,
+
+
+                            staffDocumentId:
+                                collector.staffDocumentId,
+
+
+                            staffName:
+                                collector.staffName,
+
+
+                            collectorName:
+                                collector.collectorName,
+
+
+                            collectorStaffId:
+                                collector.collectorStaffId,
+
+
+                            collectorUid:
+                                collector.collectorUid,
+
+
+                            collectorEmail:
+                                collector.collectorEmail,
+
+
+                            collectorRole:
+                                collector.collectorRole,
+
+
                             createdBy:
                                 currentUser.uid,
+
+
+                            createdByUid:
+                                currentUser.uid,
+
 
                             createdByRole:
                                 currentRole || "staff"
@@ -1788,38 +2041,69 @@ async function saveCollection() {
                             amountPaid:
                                 newPaid,
 
+
                             paidAmount:
                                 newPaid,
+
 
                             balanceAmount:
                                 newOutstanding,
 
+
                             outstandingAmount:
                                 newOutstanding,
+
 
                             status:
                                 newStatus,
 
+
                             active:
                                 newActive,
+
 
                             lastPaymentAmount:
                                 payment,
 
+
                             lastPaymentDate:
                                 paymentDate.value,
+
 
                             lastReceiptNo:
                                 receiptNo,
 
+
                             updatedAt:
                                 serverTimestamp(),
+
 
                             updatedBy:
                                 currentUser.uid,
 
+
+                            updatedByUid:
+                                currentUser.uid,
+
+
                             updatedByRole:
-                                currentRole || "staff"
+                                currentRole || "staff",
+
+
+                            lastCollectorStaffId:
+                                collector.staffId,
+
+
+                            lastCollectorStaffDocumentId:
+                                collector.staffDocumentId,
+
+
+                            lastCollectorName:
+                                collector.staffName,
+
+
+                            lastCollectorUid:
+                                collector.collectorUid
 
                         }
 
@@ -1831,6 +2115,7 @@ async function saveCollection() {
                         receiptNo:
                             receiptNo,
 
+
                         loanId:
 
                             loan.loanId ||
@@ -1841,11 +2126,14 @@ async function saveCollection() {
 
                             loanSnap.id,
 
+
                         newPaid:
                             newPaid,
 
+
                         newOutstanding:
                             newOutstanding,
+
 
                         newStatus:
                             newStatus
@@ -1966,7 +2254,9 @@ async function saveCollection() {
 if (collectionForm) {
 
     collectionForm.addEventListener(
+
         "submit",
+
         async function (event) {
 
             event.preventDefault();
@@ -1986,6 +2276,7 @@ if (collectionForm) {
             await saveCollection();
 
         }
+
     );
 
 }
@@ -2025,12 +2316,18 @@ onAuthStateChanged(
 
 
         if (
+
             staffSession &&
+
             String(
+
                 staffSession.role ||
+
                 ""
+
             ).toLowerCase() ===
             "staff"
+
         ) {
 
             currentRole =
@@ -2045,8 +2342,11 @@ onAuthStateChanged(
 
             currentRole =
                 String(
+
                     staffSession?.role ||
+
                     "owner"
+
                 ).toLowerCase();
 
         }
