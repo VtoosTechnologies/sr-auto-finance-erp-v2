@@ -51,11 +51,26 @@ const todayCollectionElement =
     document.getElementById("todayCollection");
 
 const outstandingElement =
-    document.getElementById("outstanding");
+    document.getElementById("outstanding") ||
+    document.getElementById("outstandingAmount");
 
 const logoutBtn =
     document.getElementById("logoutBtn");
 
+// =====================================================
+// SAFE HTML
+// =====================================================
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
 
 // =====================================================
 // FORMAT CURRENCY
@@ -384,8 +399,6 @@ function getOutstanding(
     }
 
 
-    if (
-       
     return Math.max(
 
         getLoanTotal(
@@ -401,8 +414,6 @@ function getOutstanding(
     );
 
 }
-
-
 // =====================================================
 // GET PAYMENT AMOUNT
 // =====================================================
