@@ -2690,25 +2690,11 @@ function buildRepaymentSchedule() {
 
 
     const principal =
-        getNumber(
-            loan.loanAmount,
-            loan.principalAmount,
-            loan.amount
-        );
+        getLoanPrincipal();
 
 
     const totalPayable =
-        getNumber(
-            loan.totalPayable,
-            loan.totalAmount
-        );
-
-
-    const interestAmount =
-        getNumber(
-            loan.interestAmount,
-            loan.totalInterest
-        );
+        getLoanTotalPayable();
 
 
     const tenure =
@@ -2718,25 +2704,19 @@ function buildRepaymentSchedule() {
                     loan.loanDuration,
                     loan.tenure,
                     loan.duration,
-                    loan.numberOfInstallments
+                    loan.numberOfInstallments,
+                    loan.totalInstallments,
+                    loan.installments
                 )
             ),
             0
         );
 
 
-    const installmentAmount =
-        getNumber(
-            loan.installmentAmount,
-            loan.monthlyEMI,
-            loan.emiAmount,
-            loan.installment
-        );
-
-
     if (
         tenure <= 0 ||
-        principal <= 0
+        principal <= 0 ||
+        totalPayable <= 0
     ) {
 
         repaymentSchedule = [];
@@ -2747,7 +2727,7 @@ function buildRepaymentSchedule() {
 
 
     /*
-     * First due date
+     * FIRST DUE DATE
      */
 
     const firstDueDate =
@@ -2777,79 +2757,62 @@ function buildRepaymentSchedule() {
         new Date();
 
 
-   
     /*
-     * Generate schedule when no saved
-     * schedule exists.
+     * MASTER CALCULATION
+     *
+     * Total Payable / Tenure
+     *
+     * Example:
+     *
+     * ₹1,48,000 / 24
+     * = ₹6,166.666666...
+     *
+     * Display:
+     * ₹6,167
+     *
+     * Internal calculation:
+     * exact decimal value
+     *
+     * Final installment is adjusted so
+     * total schedule is EXACTLY ₹1,48,000.
      */
 
-    const type =
-        getInterestType();
+    const baseInstallment =
+        totalPayable /
+        tenure;
 
 
-    const monthlyRate =
-        getMonthlyRate();
+    const principalPerInstallment =
+        principal /
+        tenure;
 
 
-    const flatInterestPerMonth =
-        tenure > 0
-            ? interestAmount /
-              tenure
-            : 0;
+    const totalInterest =
+        Math.max(
+            totalPayable -
+            principal,
+            0
+        );
 
 
-    let balance =
-        principal;
+    const interestPerInstallment =
+        totalInterest /
+        tenure;
 
 
-    let emi =
-        installmentAmount;
+    repaymentSchedule = [];
 
 
-    /*
-     * Reducing balance EMI.
-     */
-
-    if (
-        type.includes(
-            "reducing"
-        ) &&
-        monthlyRate > 0
-    ) {
-
-        emi =
-            principal *
-            monthlyRate *
-            Math.pow(
-                1 +
-                monthlyRate,
-                tenure
-            ) /
-            (
-                Math.pow(
-                    1 +
-                    monthlyRate,
-                    tenure
-                ) -
-                1
-            );
-
-    }
+    let runningDue =
+        0;
 
 
-    if (
-        emi <= 0
-    ) {
-
-        emi =
-            totalPayable /
-            tenure;
-
-    }
+    let runningPrincipal =
+        0;
 
 
-    repaymentSchedule =
-        [];
+    let runningInterest =
+        0;
 
 
     for (
@@ -2871,99 +2834,84 @@ function buildRepaymentSchedule() {
         );
 
 
+        let dueAmount =
+            baseInstallment;
+
+
         let principalDue =
-            0;
+            principalPerInstallment;
 
 
         let interestDue =
-            0;
+            interestPerInstallment;
 
+
+        /*
+         * FINAL INSTALLMENT ADJUSTMENT
+         *
+         * This guarantees:
+         *
+         * SUM(all EMI) = Total Payable
+         *
+         * exactly.
+         */
 
         if (
-            type.includes(
-                "reducing"
-            )
+            index === tenure
         ) {
 
-            interestDue =
-                balance *
-                monthlyRate;
+            dueAmount =
+                totalPayable -
+                runningDue;
 
 
             principalDue =
-                Math.max(
-                    emi -
-                    interestDue,
-                    0
-                );
+                principal -
+                runningPrincipal;
 
-
-            if (
-                index === tenure
-            ) {
-
-                principalDue =
-                    Math.max(
-                        balance,
-                        0
-                    );
-
-            }
-
-        } else {
 
             interestDue =
-                flatInterestPerMonth;
-
-
-            principalDue =
-                Math.max(
-                    emi -
-                    interestDue,
-                    0
-                );
-
-
-            if (
-                index === tenure
-            ) {
-
-                principalDue =
-                    Math.max(
-                        principal -
-                        (
-                            principal -
-                            Math.max(
-                                balance -
-                                principalDue,
-                                0
-                            )
-                        ),
-                        0
-                    );
-
-            }
+                totalInterest -
+                runningInterest;
 
         }
 
 
-        principalDue =
-            Math.min(
-                principalDue,
-                Math.max(
-                    balance,
-                    0
-                )
+        /*
+         * Safety rounding
+         */
+
+        dueAmount =
+            Math.max(
+                dueAmount,
+                0
             );
 
 
-        const dueAmount =
-            index === tenure
-                ? (
-                    principalDue +
-                    interestDue
-                )
-                : emi;
+        principalDue =
+            Math.max(
+                principalDue,
+                0
+            );
+
+
+        interestDue =
+            Math.max(
+                interestDue,
+                0
+            );
+
+
+        runningDue +=
+            dueAmount;
+
+
+        runningPrincipal +=
+            principalDue;
+
+
+        runningInterest +=
+            interestDue;
 
 
         repaymentSchedule.push({
@@ -2972,7 +2920,7 @@ function buildRepaymentSchedule() {
                 index,
 
             dueDate:
-                dueDate.toISOString(),
+                dueDate,
 
             dueAmount:
                 dueAmount,
@@ -2993,28 +2941,74 @@ function buildRepaymentSchedule() {
                 0,
 
             paidDate:
-                "",
+                null,
 
             status:
                 "Pending"
 
         });
 
+    }
 
-        balance =
-            Math.max(
-                balance -
-                principalDue,
-                0
-            );
+
+    /*
+     * FINAL SAFETY CHECK
+     *
+     * If floating point creates a tiny
+     * difference, correct it in the
+     * final installment.
+     */
+
+    const calculatedTotal =
+        repaymentSchedule.reduce(
+            (
+                total,
+                row
+            ) => {
+
+                return (
+                    total +
+                    getNumber(
+                        row.dueAmount
+                    )
+                );
+
+            },
+            0
+        );
+
+
+    const difference =
+        totalPayable -
+        calculatedTotal;
+
+
+    if (
+        Math.abs(
+            difference
+        ) > 0.000001 &&
+        repaymentSchedule.length
+    ) {
+
+        const lastRow =
+            repaymentSchedule[
+                repaymentSchedule.length - 1
+            ];
+
+
+        lastRow.dueAmount +=
+            difference;
+
+
+        lastRow.pendingAmount +=
+            difference;
 
     }
 
 
-    return applyPaymentsToSchedule();
+    return repaymentSchedule;
 
 }
-
 
 // =====================================================
 // APPLY PAYMENTS TO SCHEDULE
@@ -5117,13 +5111,30 @@ function getLoanPrincipal() {
 
 function getLoanInterest() {
 
+    const principal =
+        getLoanPrincipal();
+
+    const totalPayable =
+        getLoanTotalPayable();
+
+    if (
+        totalPayable > 0 &&
+        principal > 0
+    ) {
+
+        return Math.max(
+            totalPayable - principal,
+            0
+        );
+
+    }
+
     return getNumber(
         currentLoan?.interestAmount,
         currentLoan?.totalInterest
     );
 
 }
-
 // =====================================================
 // TENURE / EMI HELPERS
 // =====================================================
@@ -5162,49 +5173,59 @@ function getInstallmentAmount() {
 
 function getLoanTotalPayable() {
 
-    const tenure =
-        getLoanTenure();
-
-    const emi =
-        getInstallmentAmount();
-
-
     /*
-     * PRIMARY CALCULATION
+     * MASTER VALUE
      *
-     * EMI × Total Installments
+     * Loan creation-la stored total payable
+     * dhaan final authority.
      *
      * Example:
-     * ₹2,750 × 24 = ₹66,000
+     * Principal = ₹1,00,000
+     * Total Payable = ₹1,48,000
      *
-     * Stored outstanding / balance is NOT used here.
+     * DO NOT calculate using displayed EMI.
      */
+
+    const storedTotal =
+        getNumber(
+            currentLoan?.totalPayable,
+            currentLoan?.totalRepayable,
+            currentLoan?.totalRepayment,
+            currentLoan?.totalDueAmount,
+            currentLoan?.totalLoanPayable,
+            currentLoan?.totalAmountPayable,
+            currentLoan?.totalAmount
+        );
+
+
     if (
-        tenure > 0 &&
-        emi > 0
+        storedTotal > 0
     ) {
 
-        return Math.max(
-            emi * tenure,
-            0
-        );
+        return storedTotal;
 
     }
 
 
     /*
-     * FALLBACK ONLY when EMI / tenure
-     * is genuinely unavailable.
+     * Fallback only if old loan does not
+     * contain total payable.
      */
-    return Math.max(
+
+    const principal =
+        getLoanPrincipal();
+
+
+    const interest =
         getNumber(
-            currentLoan?.totalRepayable,
-            currentLoan?.totalRepayment,
-            currentLoan?.totalPayable,
-            currentLoan?.totalDueAmount,
-            currentLoan?.totalLoanPayable,
-            currentLoan?.totalAmountPayable
-        ),
+            currentLoan?.interestAmount,
+            currentLoan?.totalInterest
+        );
+
+
+    return Math.max(
+        principal +
+        interest,
         0
     );
 
