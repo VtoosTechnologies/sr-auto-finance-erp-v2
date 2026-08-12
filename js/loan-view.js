@@ -5124,6 +5124,42 @@ function getLoanInterest() {
 
 }
 
+// =====================================================
+// TENURE / EMI HELPERS
+// =====================================================
+
+function getLoanTenure() {
+
+    return Math.max(
+        Math.round(
+            getNumber(
+                currentLoan?.loanDuration,
+                currentLoan?.tenure,
+                currentLoan?.duration,
+                currentLoan?.numberOfInstallments,
+                currentLoan?.totalInstallments,
+                currentLoan?.installments
+            )
+        ),
+        0
+    );
+
+}
+
+
+function getInstallmentAmount() {
+
+    return getNumber(
+        currentLoan?.installmentAmount,
+        currentLoan?.monthlyEMI,
+        currentLoan?.emiAmount,
+        currentLoan?.installment,
+        currentLoan?.emi
+    );
+
+}
+
+
 function getLoanTotalPayable() {
 
     const tenure =
@@ -5134,36 +5170,103 @@ function getLoanTotalPayable() {
 
 
     /*
-     * Main calculation:
+     * PRIMARY CALCULATION
+     *
      * EMI × Total Installments
      *
      * Example:
      * ₹2,750 × 24 = ₹66,000
+     *
+     * Stored outstanding / balance is NOT used here.
      */
     if (
         tenure > 0 &&
         emi > 0
     ) {
 
-        return (
-            emi *
-            tenure
+        return Math.max(
+            emi * tenure,
+            0
         );
 
     }
 
 
     /*
-     * Fallback only when
-     * EMI / tenure is unavailable.
+     * FALLBACK ONLY when EMI / tenure
+     * is genuinely unavailable.
      */
-    return getNumber(
-        currentLoan?.totalRepayable,
-        currentLoan?.totalRepayment,
-        currentLoan?.totalPayable,
-        currentLoan?.totalDueAmount,
-        currentLoan?.totalLoanPayable,
-        currentLoan?.totalAmountPayable
+    return Math.max(
+        getNumber(
+            currentLoan?.totalRepayable,
+            currentLoan?.totalRepayment,
+            currentLoan?.totalPayable,
+            currentLoan?.totalDueAmount,
+            currentLoan?.totalLoanPayable,
+            currentLoan?.totalAmountPayable
+        ),
+        0
+    );
+
+}
+
+
+// =====================================================
+// PAYMENT / OUTSTANDING CALCULATIONS
+// =====================================================
+
+function getLoanPaidAmount() {
+
+    /*
+     * Actual EMI payments only.
+     * Penalty is intentionally excluded.
+     */
+    if (
+        Array.isArray(repaymentPayments) &&
+        repaymentPayments.length
+    ) {
+
+        return Math.max(
+            repaymentPayments.reduce(
+                (total, payment) => {
+
+                    return (
+                        total +
+                        getPaymentAmount(payment)
+                    );
+
+                },
+                0
+            ),
+            0
+        );
+
+    }
+
+
+    return 0;
+
+}
+
+
+function getLoanOutstanding() {
+
+    const totalPayable =
+        getLoanTotalPayable();
+
+    const paidAmount =
+        getLoanPaidAmount();
+
+
+    /*
+     * Outstanding =
+     * Total Payable - Actual EMI Paid
+     *
+     * Stored outstanding / balance is NOT used.
+     */
+    return Math.max(
+        totalPayable - paidAmount,
+        0
     );
 
 }
