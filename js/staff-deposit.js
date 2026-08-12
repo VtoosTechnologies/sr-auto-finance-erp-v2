@@ -119,7 +119,7 @@ let currentUser = null;
 
 let currentStaff = null;
 
-let allPayments = [];
+let allCollections = [];
 
 let allDepositRequests = [];
 
@@ -429,14 +429,13 @@ function getPaymentAmount(
 // PAYMENT STAFF MATCH
 // ============================================================
 
-function paymentBelongsToStaff(
-    payment
+function collectionBelongsToStaff(
+    collectionData
 ) {
 
     if (!currentStaff) {
         return false;
     }
-
 
     const sessionStaffId =
         String(
@@ -444,13 +443,11 @@ function paymentBelongsToStaff(
             ""
         ).trim();
 
-
     const sessionDocumentId =
         String(
             currentStaff.staffDocumentId ||
             ""
         ).trim();
-
 
     const sessionUid =
         String(
@@ -458,14 +455,10 @@ function paymentBelongsToStaff(
             ""
         ).trim();
 
-
-    const paymentStaffId =
+    const collectionStaffId =
         String(
-
             firstValue(
-
-                payment,
-
+                collectionData,
                 [
                     "staffId",
                     "collectorStaffId",
@@ -473,107 +466,87 @@ function paymentBelongsToStaff(
                     "staffCode",
                     "employeeId"
                 ],
-
                 ""
-
             )
-
         ).trim();
 
-
-    const paymentStaffDocumentId =
+    const collectionStaffDocumentId =
         String(
-
             firstValue(
-
-                payment,
-
+                collectionData,
                 [
                     "staffDocumentId",
                     "collectorStaffDocumentId"
                 ],
-
                 ""
-
             )
-
         ).trim();
 
-
-    const paymentCreatedBy =
+    const collectionCreatedBy =
         String(
-
             firstValue(
-
-                payment,
-
+                collectionData,
                 [
                     "createdBy",
                     "createdByUid",
                     "collectorUid"
                 ],
-
                 ""
-
             )
-
         ).trim();
 
-
-    // ---------------------------------------------------------
-    // STAFF ID MATCH
-    // ---------------------------------------------------------
+    // NEW STANDARD STAFF COLLECTION
+    const source =
+        String(
+            collectionData.source ||
+            ""
+        ).toLowerCase().trim();
 
     if (
-        paymentStaffId &&
-        (
-            paymentStaffId ===
+        source === "staff"
+    ) {
+
+        if (
+            collectionStaffId &&
+            (
+                collectionStaffId ===
                 sessionStaffId ||
 
-            paymentStaffId ===
+                collectionStaffId ===
                 sessionDocumentId
-        )
-    ) {
+            )
+        ) {
+            return true;
+        }
 
-        return true;
+        if (
+            collectionStaffDocumentId &&
+            collectionStaffDocumentId ===
+            sessionDocumentId
+        ) {
+            return true;
+        }
 
+        if (
+            collectionCreatedBy &&
+            collectionCreatedBy ===
+            sessionUid
+        ) {
+            return true;
+        }
     }
 
-
-    // ---------------------------------------------------------
-    // STAFF DOCUMENT MATCH
-    // ---------------------------------------------------------
-
+    // Legacy fallback
     if (
-        paymentStaffDocumentId &&
-        paymentStaffDocumentId ===
-        sessionDocumentId
-    ) {
-
-        return true;
-
-    }
-
-
-    // ---------------------------------------------------------
-    // AUTH UID MATCH
-    // ---------------------------------------------------------
-
-    if (
-        sessionUid &&
-        paymentCreatedBy ===
+        collectionCreatedBy &&
+        collectionCreatedBy ===
         sessionUid
     ) {
-
         return true;
-
     }
 
-
     return false;
-
 }
-
 
 // ============================================================
 // DEPOSIT STAFF MATCH
@@ -733,90 +706,89 @@ async function loadData() {
     try {
 
         const [
-            paymentsSnapshot,
-            depositsSnapshot
-        ] = await Promise.all([
+    collectionsSnapshot,
+    depositsSnapshot
+] = await Promise.all([
 
-            getDocs(
-                collection(
-                    db,
-                    "payments"
-                )
-            ),
+    getDocs(
+        collection(
+            db,
+            "collections"
+        )
+    ),
 
-            getDocs(
-                collection(
-                    db,
-                    "depositRequests"
-                )
-            )
+    getDocs(
+        collection(
+            db,
+            "depositRequests"
+        )
+    )
 
-        ]);
+]);
 
 
         // =====================================================
         // PAYMENTS
         // =====================================================
 
-        allPayments = [];
+        allCollections = [];
 
+collectionsSnapshot.forEach(
+    docSnap => {
 
-        paymentsSnapshot.forEach(
-            docSnap => {
+        const collectionData = {
 
-                const payment = {
+            id:
+                docSnap.id,
 
-                    id:
-                        docSnap.id,
+            ...docSnap.data()
 
-                    ...docSnap.data()
+        };
 
-                };
+        const status =
+            String(
+                collectionData.status ||
+                "success"
+            )
+                .toLowerCase()
+                .trim();
 
+        // -----------------------------------------------------
+        // Ignore cancelled / reversed / deleted collections
+        // -----------------------------------------------------
 
-                const status =
-                    String(
+        if (
+            [
+                "cancelled",
+                "canceled",
+                "reversed",
+                "deleted"
+            ].includes(
+                status
+            )
+        ) {
 
-                        payment.status ||
-                        "success"
+            return;
+        }
 
-                    ).toLowerCase();
+        // -----------------------------------------------------
+        // Only current logged-in staff collections
+        // -----------------------------------------------------
 
+        if (
+            collectionBelongsToStaff(
+                collectionData
+            )
+        ) {
 
-                // Ignore cancelled/reversed
-                if (
+            allCollections.push(
+                collectionData
+            );
 
-                    [
-                        "cancelled",
-                        "canceled",
-                        "reversed",
-                        "deleted"
-                    ].includes(
-                        status
-                    )
+        }
 
-                ) {
-
-                    return;
-
-                }
-
-
-                if (
-                    paymentBelongsToStaff(
-                        payment
-                    )
-                ) {
-
-                    allPayments.push(
-                        payment
-                    );
-
-                }
-
-            }
-        );
-
+    }
+);
 
         // =====================================================
         // DEPOSIT REQUESTS
@@ -921,11 +893,11 @@ function calculateBalances() {
     // ========================================================
 
     totalCollected =
-        allPayments.reduce(
+        allCollections.reduce(
 
             (
                 total,
-                payment
+                collectionData
             ) => {
 
                 return (
@@ -933,7 +905,7 @@ function calculateBalances() {
                     total +
 
                     getPaymentAmount(
-                        payment
+                       collectionData
                     )
 
                 );
@@ -966,10 +938,14 @@ function calculateBalances() {
                     ).toLowerCase();
 
 
-                if (
-                    status ===
-                    "accepted"
-                ) {
+               if (
+    [
+        "accepted",
+        "approved"
+    ].includes(
+        status
+    )
+) {
 
                     return (
 
