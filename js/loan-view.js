@@ -5909,10 +5909,6 @@ async function loadEverything() {
 // after documents and payments are ready.
 // =====================================================
 
-const originalLoadRepaymentSchedule =
-    loadRepaymentSchedule;
-
-
 // =====================================================
 // SAFE REFRESH
 // =====================================================
