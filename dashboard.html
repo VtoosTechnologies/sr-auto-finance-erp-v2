@@ -285,6 +285,26 @@
 
 
         /* ================================
+           PENDING DEPOSIT BADGE
+        ================================= */
+
+        .pending-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 7px;
+            margin-top: 10px;
+            border-radius: 20px;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+
+        /* ================================
            BOTTOM GRID
         ================================= */
 
@@ -806,6 +826,39 @@
 
             <div class="quick-desc">
                 View business reports
+            </div>
+
+        </div>
+
+
+
+        <!-- Staff Deposits -->
+
+        <div
+            class="quick-card"
+            onclick="location.href='staff-deposit-approval.html'"
+        >
+
+            <div class="quick-icon">
+                💰
+            </div>
+
+
+            <div class="quick-title">
+                Staff Deposits
+            </div>
+
+
+            <div class="quick-desc">
+                Review and approve staff deposits
+            </div>
+
+
+            <div
+                class="pending-badge"
+                id="pendingDepositCount"
+            >
+                0 Pending
             </div>
 
         </div>
