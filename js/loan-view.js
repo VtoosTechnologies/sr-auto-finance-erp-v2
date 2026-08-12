@@ -5217,32 +5217,29 @@ function getLoanTotalPayable() {
 
 function getLoanPaidAmount() {
 
-    /*
-     * Actual EMI payments only.
-     * Penalty is intentionally excluded.
-     */
     if (
         Array.isArray(repaymentPayments) &&
-        repaymentPayments.length
+        repaymentPayments.length > 0
     ) {
 
-        return Math.max(
-            repaymentPayments.reduce(
-                (total, payment) => {
+        return repaymentPayments.reduce(
+            (
+                total,
+                payment
+            ) => {
 
-                    return (
-                        total +
-                        getPaymentAmount(payment)
-                    );
+                return (
+                    total +
+                    getPaymentAmount(
+                        payment
+                    )
+                );
 
-                },
-                0
-            ),
+            },
             0
         );
 
     }
-
 
     return 0;
 
@@ -5257,15 +5254,9 @@ function getLoanOutstanding() {
     const paidAmount =
         getLoanPaidAmount();
 
-
-    /*
-     * Outstanding =
-     * Total Payable - Actual EMI Paid
-     *
-     * Stored outstanding / balance is NOT used.
-     */
     return Math.max(
-        totalPayable - paidAmount,
+        totalPayable -
+        paidAmount,
         0
     );
 
