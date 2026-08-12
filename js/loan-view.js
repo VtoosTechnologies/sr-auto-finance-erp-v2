@@ -4402,20 +4402,38 @@ function setupDocumentToggle() {
 
 
 // =====================================================
-// SCHEDULE TOGGLE
+// SCHEDULE TOGGLE - FIXED
 // =====================================================
 
 function setupScheduleToggle() {
 
+    /*
+     * Support both versions of the HTML IDs.
+     *
+     * Older version:
+     * toggleScheduleBtn
+     * repaymentScheduleContainer
+     *
+     * Newer version:
+     * toggleRepaymentBtn
+     * repaymentScheduleSection
+     */
+
     const button =
         getElement(
             "toggleScheduleBtn"
+        ) ||
+        getElement(
+            "toggleRepaymentBtn"
         );
 
 
     const container =
         getElement(
             "repaymentScheduleContainer"
+        ) ||
+        getElement(
+            "repaymentScheduleSection"
         );
 
 
@@ -4424,38 +4442,108 @@ function setupScheduleToggle() {
         !container
     ) {
 
+        console.error(
+            "Repayment Schedule toggle elements not found."
+        );
+
         return;
 
     }
 
 
+    /*
+     * Prevent duplicate click handlers
+     * if setupPageControls() is called again.
+     */
+
+    if (
+        button.dataset.scheduleToggleReady ===
+        "true"
+    ) {
+
+        return;
+
+    }
+
+
+    button.dataset.scheduleToggleReady =
+        "true";
+
+
+    /*
+     * Initial state
+     */
+
+    container.style.display =
+        "none";
+
+    button.textContent =
+        "View Repayment Schedule";
+
+
+    /*
+     * CLICK
+     */
+
     button.addEventListener(
         "click",
-        () => {
+        function () {
 
             const isHidden =
                 container.style.display ===
-                "none" ||
+                    "none" ||
+                container.style.display ===
+                    "" ||
                 !container.style.display;
 
 
-            container.style.display =
-                isHidden
-                    ? "block"
-                    : "none";
+            if (isHidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Repayment Schedule";
 
 
-            button.textContent =
-                isHidden
-                    ? "Hide Repayment Schedule"
-                    : "View Repayment Schedule";
+                /*
+                 * Make sure latest schedule
+                 * is rendered when opened.
+                 */
+
+                if (
+                    typeof loadRepaymentSchedule ===
+                    "function"
+                ) {
+
+                    loadRepaymentSchedule()
+                        .catch(
+                            error => {
+
+                                console.error(
+                                    "Repayment schedule loading error:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Repayment Schedule";
+
+            }
 
         }
     );
 
 }
-
-
 // =====================================================
 // BACK BUTTON
 // =====================================================
@@ -5027,12 +5115,18 @@ function initializeScheduleSection() {
     const container =
         getElement(
             "repaymentScheduleContainer"
+        ) ||
+        getElement(
+            "repaymentScheduleSection"
         );
 
 
     const button =
         getElement(
             "toggleScheduleBtn"
+        ) ||
+        getElement(
+            "toggleRepaymentBtn"
         );
 
 
@@ -5056,7 +5150,6 @@ function initializeScheduleSection() {
     }
 
 }
-
 
 // =====================================================
 // LOAN INFORMATION HELPERS
