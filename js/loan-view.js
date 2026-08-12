@@ -5210,6 +5210,36 @@ function getLoanTotalPayable() {
     );
 
 }
+function getLoanPaidAmount() {
+
+    const paymentTotal =
+        getTotalCollection();
+
+    if (paymentTotal > 0) {
+        return paymentTotal;
+    }
+
+    return getNumber(
+        currentLoan?.amountPaid,
+        currentLoan?.paidAmount,
+        currentLoan?.totalPaid
+    );
+
+}
+function getLoanOutstanding() {
+
+    const totalPayable =
+        getLoanTotalPayable();
+
+    const paidAmount =
+        getLoanPaidAmount();
+
+    return Math.max(
+        totalPayable - paidAmount,
+        0
+    );
+
+}
 
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
