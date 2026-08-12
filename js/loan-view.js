@@ -3125,13 +3125,14 @@ function applyPaymentsToSchedule() {
         )
     ) {
 
-        repaymentSchedule = [];
+        repaymentSchedule =
+            [];
 
     }
 
 
     /*
-     * Reset payment-related values.
+     * Reset dynamic payment values.
      */
 
     repaymentSchedule =
@@ -3162,10 +3163,10 @@ function applyPaymentsToSchedule() {
 
 
     /*
-     * Apply every actual EMI payment
-     * from oldest EMI to newest EMI.
+     * Allocate actual EMI payment
+     * against oldest pending installment.
      *
-     * Penalty remains separate.
+     * Penalty is kept separate.
      */
 
     for (
@@ -3174,11 +3175,8 @@ function applyPaymentsToSchedule() {
     ) {
 
         let remaining =
-            Math.max(
-                getPaymentAmount(
-                    payment
-                ),
-                0
+            getPaymentAmount(
+                payment
             );
 
 
@@ -3194,55 +3192,14 @@ function applyPaymentsToSchedule() {
             );
 
 
-        /*
-         * Penalty-only payment.
-         *
-         * Do not treat penalty as EMI payment.
-         */
-
         if (
             remaining <= 0
         ) {
-
-            if (
-                penalty > 0 &&
-                repaymentSchedule.length
-            ) {
-
-                const penaltyRow =
-                    repaymentSchedule.find(
-                        row =>
-                            getNumber(
-                                row.pendingAmount
-                            ) > 0
-                    ) ||
-                    repaymentSchedule[
-                        repaymentSchedule.length - 1
-                    ];
-
-
-                if (
-                    penaltyRow
-                ) {
-
-                    penaltyRow.penalty =
-                        getNumber(
-                            penaltyRow.penalty
-                        ) +
-                        penalty;
-
-                }
-
-            }
 
             continue;
 
         }
 
-
-        /*
-         * FIFO allocation.
-         */
 
         for (
             const row
@@ -3259,20 +3216,14 @@ function applyPaymentsToSchedule() {
 
 
             const due =
-                Math.max(
-                    getNumber(
-                        row.dueAmount
-                    ),
-                    0
+                getNumber(
+                    row.dueAmount
                 );
 
 
             const alreadyPaid =
-                Math.max(
-                    getNumber(
-                        row.paidAmount
-                    ),
-                    0
+                getNumber(
+                    row.paidAmount
                 );
 
 
@@ -3300,8 +3251,7 @@ function applyPaymentsToSchedule() {
                 );
 
 
-            row.paidAmount =
-                alreadyPaid +
+            row.paidAmount +=
                 allocated;
 
 
@@ -3314,29 +3264,24 @@ function applyPaymentsToSchedule() {
 
 
             row.paidDate =
-                paymentDate ||
-                row.paidDate ||
-                "";
+                paymentDate;
+
+
+            row.status =
+                row.pendingAmount <= 0
+                    ? "Paid"
+                    : "Partial";
 
 
             remaining -=
                 allocated;
 
 
-            /*
-             * Penalty belongs to the payment.
-             *
-             * Keep it separate from EMI amount.
-             */
-
             if (
                 penalty > 0
             ) {
 
-                row.penalty =
-                    getNumber(
-                        row.penalty
-                    ) +
+                row.penalty +=
                     penalty;
 
             }
@@ -3347,7 +3292,7 @@ function applyPaymentsToSchedule() {
 
 
     /*
-     * Final status calculation.
+     * Final status cleanup.
      */
 
     repaymentSchedule =
@@ -3355,23 +3300,14 @@ function applyPaymentsToSchedule() {
             row => {
 
                 const due =
-                    Math.max(
-                        getNumber(
-                            row.dueAmount
-                        ),
-                        0
+                    getNumber(
+                        row.dueAmount
                     );
 
 
                 const paid =
-                    Math.min(
-                        Math.max(
-                            getNumber(
-                                row.paidAmount
-                            ),
-                            0
-                        ),
-                        due
+                    getNumber(
+                        row.paidAmount
                     );
 
 
@@ -3388,8 +3324,7 @@ function applyPaymentsToSchedule() {
 
 
                 if (
-                    pending <=
-                    0.01
+                    pending <= 0
                 ) {
 
                     status =
@@ -3409,14 +3344,10 @@ function applyPaymentsToSchedule() {
 
                     ...row,
 
-                    paidAmount:
-                        paid,
-
                     pendingAmount:
                         pending,
 
                     status:
-
                         status
 
                 };
@@ -3428,6 +3359,7 @@ function applyPaymentsToSchedule() {
     return repaymentSchedule;
 
 }
+
 
 // =====================================================
 // LOAD REPAYMENT SCHEDULE
@@ -3748,16 +3680,14 @@ function renderRepaymentSummary() {
         );
 
 
-   const partialInstallments =
-    repaymentSchedule.filter(
-        row =>
-            getNumber(
-                row.paidAmount
-            ) > 0 &&
-            getNumber(
-                row.pendingAmount
-            ) > 0.01
-    ).length;
+    const paidInstallments =
+        repaymentSchedule.filter(
+            row =>
+                String(
+                    row.status
+                ).toLowerCase() ===
+                "paid"
+        ).length;
 
 
     const partialInstallments =
@@ -4383,131 +4313,38 @@ function setupPageControls() {
 
     setupCloseButton();
 
+
     updateCloseButton();
+
 
     renderNextDue();
 
+
     renderOverdueSummary();
+
 
     renderCollectionSummary();
 
+
     renderLoanStatusSummary();
 
-    setupLoanDetailsToggle();
 
     setupDocumentToggle();
 
+
     setupScheduleToggle();
+
 
     setupBackButton();
 
+
     setupPrintButton();
+
 
     setupDownloadButton();
 
 }
-// =====================================================
-// LOAN DETAILS TOGGLE
-// =====================================================
 
-function setupLoanDetailsToggle() {
-
-    const button =
-        getElement(
-            "toggleLoanDetailsBtn"
-        ) ||
-        getElement(
-            "toggleLoanBtn"
-        );
-
-    const container =
-        getElement(
-            "loanDetailsSection"
-        ) ||
-        getElement(
-            "loanDetailsContainer"
-        ) ||
-        getElement(
-            "loanDetails"
-        );
-
-    if (
-        !button ||
-        !container
-    ) {
-
-        console.warn(
-            "Loan Details toggle elements not found."
-        );
-
-        return;
-
-    }
-
-
-    if (
-        button.dataset.loanDetailsToggleReady ===
-        "true"
-    ) {
-
-        return;
-
-    }
-
-
-    button.dataset.loanDetailsToggleReady =
-        "true";
-
-
-    /*
-     * Initial state
-     */
-
-    container.style.display =
-        "none";
-
-    button.textContent =
-        "View Loan Details";
-
-
-    /*
-     * CLICK
-     */
-
-    button.addEventListener(
-        "click",
-        function () {
-
-            const isHidden =
-                container.style.display ===
-                    "none" ||
-                container.style.display ===
-                    "" ||
-                !container.style.display;
-
-
-            if (isHidden) {
-
-                container.style.display =
-                    "block";
-
-                button.textContent =
-                    "Hide Loan Details";
-
-            } else {
-
-                container.style.display =
-                    "none";
-
-                button.textContent =
-                    "View Loan Details";
-
-            }
-
-        }
-    );
-
-}
 
 // =====================================================
 // DOCUMENT TOGGLE
@@ -4518,119 +4355,52 @@ function setupDocumentToggle() {
     const button =
         getElement(
             "toggleDocumentsBtn"
-        ) ||
-        getElement(
-            "toggleLoanDocumentsBtn"
         );
+
 
     const container =
         getElement(
             "loanDocuments"
-        ) ||
-        getElement(
-            "loanDocumentsSection"
-        ) ||
-        getElement(
-            "documentsSection"
         );
+
 
     if (
         !button ||
         !container
     ) {
 
-        console.warn(
-            "Loan Documents toggle elements not found."
-        );
-
         return;
 
     }
 
-
-    if (
-        button.dataset.documentsToggleReady ===
-        "true"
-    ) {
-
-        return;
-
-    }
-
-
-    button.dataset.documentsToggleReady =
-        "true";
-
-
-    /*
-     * Initial state
-     */
-
-    container.style.display =
-        "none";
-
-    button.textContent =
-        "View Loan Documents";
-
-
-    /*
-     * CLICK
-     */
 
     button.addEventListener(
         "click",
-        async function () {
+        () => {
 
             const isHidden =
                 container.style.display ===
-                    "none" ||
-                container.style.display ===
-                    "" ||
+                "none" ||
                 !container.style.display;
 
 
-            if (isHidden) {
-
-                container.style.display =
-                    "block";
-
-                button.textContent =
-                    "Hide Loan Documents";
+            container.style.display =
+                isHidden
+                    ? "block"
+                    : "none";
 
 
-                /*
-                 * Reload latest documents
-                 */
-
-                try {
-
-                    await loadLoanDocuments();
-
-                } catch (
-                    error
-                ) {
-
-                    console.error(
-                        "Document refresh error:",
-                        error
-                    );
-
-                }
-
-            } else {
-
-                container.style.display =
-                    "none";
-
-                button.textContent =
-                    "View Loan Documents";
-
-            }
+            button.textContent =
+                isHidden
+                    ? "Hide Loan Documents"
+                    : "View Loan Documents";
 
         }
     );
 
 }
+
+
 // =====================================================
 // SCHEDULE TOGGLE - FIXED
 // =====================================================
@@ -5435,31 +5205,47 @@ function getLoanTotalPayable() {
 function getLoanPaidAmount() {
 
     /*
-     * Actual EMI payment only.
+     * Use actual repayment payments.
      *
-     * Penalty is NOT included.
-     *
-     * When payments are loaded, payment history
-     * is the source of truth.
+     * Do not use totalCollection because
+     * penalty may be included there.
      */
 
+    const paymentTotal =
+        getTotalCollection();
+
+
     if (
-        Array.isArray(
-            repaymentPayments
-        ) &&
-        repaymentPayments.length
+        paymentTotal > 0
     ) {
 
-        return repaymentPayments.reduce(
+        return paymentTotal;
+
+    }
+
+
+    return getNumber(
+        currentLoan?.amountPaid,
+        currentLoan?.paidAmount,
+        currentLoan?.totalPaid
+    );
+
+}
+
+
+function getLoanOutstanding() {
+
+    const schedulePending =
+        repaymentSchedule.reduce(
             (
                 total,
-                payment
+                row
             ) => {
 
                 return (
                     total +
-                    getPaymentAmount(
-                        payment
+                    getNumber(
+                        row.pendingAmount
                     )
                 );
 
@@ -5467,55 +5253,27 @@ function getLoanPaidAmount() {
             0
         );
 
+
+    if (
+        repaymentSchedule.length
+    ) {
+
+        return Math.max(
+            schedulePending,
+            0
+        );
+
     }
 
 
-    /*
-     * If there are genuinely no payment
-     * documents, use the stored loan value
-     * as fallback for old loans.
-     */
-
     return Math.max(
-        getNumber(
-            currentLoan?.amountPaid,
-            currentLoan?.paidAmount,
-            currentLoan?.totalPaid
-        ),
+        getLoanTotalPayable() -
+        getLoanPaidAmount(),
         0
     );
 
 }
 
-function getLoanOutstanding() {
-
-    const totalPayable =
-        getLoanTotalPayable();
-
-
-    const paidAmount =
-        getLoanPaidAmount();
-
-
-    /*
-     * Outstanding must always be:
-     *
-     * Total Payable - Actual EMI Paid
-     *
-     * Do NOT use:
-     * loan.outstandingAmount
-     * loan.balanceAmount
-     *
-     * because those stored values can become stale.
-     */
-
-    return Math.max(
-        totalPayable -
-        paidAmount,
-        0
-    );
-
-}
 
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
