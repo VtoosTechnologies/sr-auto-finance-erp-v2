@@ -3340,6 +3340,10 @@ function renderPendingRequests() {
 // VIEW STAFF DETAILS
 // ============================================================
 
+// ============================================================
+// VIEW STAFF DETAILS - FIXED
+// ============================================================
+
 function openStaffDetails(
     staffKey
 ) {
@@ -3347,8 +3351,8 @@ function openStaffDetails(
     const group =
         staffRows.find(
             row =>
-                row.key ===
-                staffKey
+                String(row.key) ===
+                String(staffKey)
         );
 
 
@@ -3361,7 +3365,6 @@ function openStaffDetails(
             "error"
         );
 
-
         return;
 
     }
@@ -3371,14 +3374,398 @@ function openStaffDetails(
         staffKey;
 
 
-    detailModalTitle.textContent =
-        `${group.staffName} - Collection Details`;
+    // ========================================================
+    // STAFF NAME
+    // ========================================================
 
+    const staffName =
+        String(
+            group.staffName ||
+            "Staff"
+        ).trim();
+
+
+    // ========================================================
+    // IMPORTANT FIX
+    //
+    // Sometimes summary is calculated correctly but
+    // collectionItems is empty because staff identifier
+    // is different between staff master and collection.
+    //
+    // So here we independently find matching collections
+    // using:
+    // 1. staff key
+    // 2. staff IDs
+    // 3. staff name
+    // 4. collector name
+    // ========================================================
+
+    let detailItems = [];
+
+
+    // --------------------------------------------------------
+    // FIRST: use items already attached to group
+    // --------------------------------------------------------
+
+    if (
+        Array.isArray(
+            group.collectionItems
+        ) &&
+        group.collectionItems.length
+    ) {
+
+        detailItems =
+            [
+                ...group.collectionItems
+            ];
+
+    }
+
+
+    // --------------------------------------------------------
+    // SECOND: fallback direct matching
+    // --------------------------------------------------------
+
+    if (
+        !detailItems.length
+    ) {
+
+        detailItems =
+            filteredCollections.filter(
+                item => {
+
+                    // ----------------------------------------
+                    // Match by collection staff key
+                    // ----------------------------------------
+
+                    const itemKey =
+                        getCollectionStaffKey(
+                            item
+                        );
+
+
+                    if (
+                        String(
+                            itemKey
+                        ) ===
+                        String(
+                            staffKey
+                        )
+                    ) {
+
+                        return true;
+
+                    }
+
+
+                    // ----------------------------------------
+                    // Match by staff name
+                    // ----------------------------------------
+
+                    const itemStaffName =
+                        String(
+                            firstValue(
+                                item,
+                                [
+                                    "staffName",
+                                    "collectorName",
+                                    "collectedByName",
+                                    "staffDisplayName",
+                                    "employeeName"
+                                ],
+                                ""
+                            )
+                        )
+                            .trim()
+                            .toLowerCase();
+
+
+                    if (
+                        itemStaffName &&
+                        itemStaffName ===
+                            staffName.toLowerCase()
+                    ) {
+
+                        return true;
+
+                    }
+
+
+                    // ----------------------------------------
+                    // Match staff master
+                    // ----------------------------------------
+
+                    const matchedStaff =
+                        allStaff.find(
+                            staff => {
+
+                                const staffNameValue =
+                                    String(
+                                        firstValue(
+                                            staff,
+                                            [
+                                                "staffName",
+                                                "name",
+                                                "employeeName",
+                                                "displayName"
+                                            ],
+                                            ""
+                                        )
+                                    )
+                                        .trim()
+                                        .toLowerCase();
+
+
+                                if (
+                                    staffNameValue &&
+                                    staffNameValue ===
+                                        staffName.toLowerCase()
+                                ) {
+
+                                    return collectionMatchesStaff(
+                                        item,
+                                        staff
+                                    );
+
+                                }
+
+
+                                return false;
+
+                            }
+                        );
+
+
+                    if (
+                        matchedStaff
+                    ) {
+
+                        return true;
+
+                    }
+
+
+                    return false;
+
+                }
+            );
+
+    }
+
+
+    // ========================================================
+    // REMOVE DUPLICATES
+    // ========================================================
+
+    const uniqueMap =
+        new Map();
+
+
+    detailItems.forEach(
+        item => {
+
+            const key =
+                String(
+                    item.id ||
+                    (
+                        getCollectionDate(
+                            item
+                        ) +
+                        "_" +
+                        getCollectionAmount(
+                            item
+                        ) +
+                        "_" +
+                        firstValue(
+                            item,
+                            [
+                                "loanId",
+                                "customerId"
+                            ],
+                            ""
+                        )
+                    )
+                );
+
+
+            if (
+                !uniqueMap.has(
+                    key
+                )
+            ) {
+
+                uniqueMap.set(
+                    key,
+                    item
+                );
+
+            }
+
+        }
+    );
+
+
+    detailItems =
+        [
+            ...uniqueMap.values()
+        ];
+
+
+    // ========================================================
+    // SORT
+    // ========================================================
+
+    detailItems.sort(
+        (
+            a,
+            b
+        ) => {
+
+            const da =
+                parseDateValue(
+                    getCollectionDate(
+                        a
+                    )
+                );
+
+
+            const db =
+                parseDateValue(
+                    getCollectionDate(
+                        b
+                    )
+                );
+
+
+            return (
+                (db?.getTime() || 0) -
+                (da?.getTime() || 0)
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // CALCULATE MODAL TOTALS FROM DETAIL ITEMS
+    // ========================================================
+
+    let totalCollection =
+        0;
+
+    let totalPrincipal =
+        0;
+
+    let totalInterest =
+        0;
+
+    let totalPenalty =
+        0;
+
+
+    detailItems.forEach(
+        item => {
+
+            totalCollection +=
+                getCollectionAmount(
+                    item
+                );
+
+
+            totalPrincipal +=
+                getPrincipalAmount(
+                    item
+                );
+
+
+            totalInterest +=
+                getInterestAmount(
+                    item
+                );
+
+
+            totalPenalty +=
+                getPenaltyAmount(
+                    item
+                );
+
+        }
+    );
+
+
+    // ========================================================
+    // FALLBACK SUMMARY
+    //
+    // If collection records don't contain principal/
+    // interest fields, at least show staff summary amount.
+    // ========================================================
+
+    if (
+        totalCollection === 0 &&
+        group.totalCollection > 0
+    ) {
+
+        totalCollection =
+            group.totalCollection;
+
+    }
+
+
+    if (
+        totalPrincipal === 0 &&
+        group.principal > 0
+    ) {
+
+        totalPrincipal =
+            group.principal;
+
+    }
+
+
+    if (
+        totalInterest === 0 &&
+        group.interest > 0
+    ) {
+
+        totalInterest =
+            group.interest;
+
+    }
+
+
+    if (
+        totalPenalty === 0 &&
+        group.penalty > 0
+    ) {
+
+        totalPenalty =
+            group.penalty;
+
+    }
+
+
+    // ========================================================
+    // MODAL HEADER
+    // ========================================================
+
+    if (
+        detailModalTitle
+    ) {
+
+        detailModalTitle.textContent =
+            `${staffName} - Collection Details`;
+
+    }
+
+
+    // ========================================================
+    // SUMMARY CARDS
+    // ========================================================
 
     setText(
         "detailTotalCollection",
         formatCurrency(
-            group.totalCollection
+            totalCollection
         )
     );
 
@@ -3386,7 +3773,7 @@ function openStaffDetails(
     setText(
         "detailPrincipal",
         formatCurrency(
-            group.principal
+            totalPrincipal
         )
     );
 
@@ -3394,7 +3781,7 @@ function openStaffDetails(
     setText(
         "detailInterest",
         formatCurrency(
-            group.interest
+            totalInterest
         )
     );
 
@@ -3402,73 +3789,157 @@ function openStaffDetails(
     setText(
         "detailPenalty",
         formatCurrency(
-            group.penalty
+            totalPenalty
         )
     );
 
 
-    const items =
-        group.collectionItems
-            .slice()
-            .sort(
-                (
-                    a,
-                    b
-                ) => {
-
-                    const da =
-                        parseDateValue(
-                            getCollectionDate(
-                                a
-                            )
-                        );
-
-
-                    const db =
-                        parseDateValue(
-                            getCollectionDate(
-                                b
-                            )
-                        );
-
-
-                    return (
-                        (db?.getTime() || 0) -
-                        (da?.getTime() || 0)
-                    );
-
-                }
-            );
-
+    // ========================================================
+    // EMPTY CHECK
+    // ========================================================
 
     if (
-        !items.length
+        !detailItems.length
     ) {
 
-        collectionDetailBody.innerHTML = `
+        if (
+            collectionDetailBody
+        ) {
 
-            <tr>
+            collectionDetailBody.innerHTML = `
 
-                <td
-                    colspan="11"
-                    class="loading-state"
-                >
-                    No collection details found.
-                </td>
+                <tr>
 
-            </tr>
+                    <td
+                        colspan="11"
+                        class="loading-state"
+                    >
 
-        `;
+                        <div
+                            style="
+                                padding:20px;
+                                text-align:center;
+                            "
+                        >
+
+                            <strong>
+                                No collection records found.
+                            </strong>
+
+                            <br>
+
+                            <small>
+                                Total collection is
+                                ${formatCurrency(
+                                    group.totalCollection
+                                )}
+                                but individual collection
+                                records could not be matched
+                                with this staff.
+                            </small>
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+
+
+        if (
+            detailModal
+        ) {
+
+            detailModal.classList.add(
+                "show"
+            );
+
+        }
+
+
+        return;
 
     }
 
-    else {
+
+    // ========================================================
+    // RENDER DETAILS
+    // ========================================================
+
+    if (
+        collectionDetailBody
+    ) {
 
         collectionDetailBody.innerHTML =
 
-            items
+            detailItems
                 .map(
                     item => {
+
+                        // ------------------------------------
+                        // CUSTOMER
+                        // ------------------------------------
+
+                        const customerName =
+                            firstValue(
+                                item,
+                                [
+                                    "customerName",
+                                    "name"
+                                ],
+                                "-"
+                            );
+
+
+                        // ------------------------------------
+                        // LOAN
+                        // ------------------------------------
+
+                        const loanId =
+                            firstValue(
+                                item,
+                                [
+                                    "loanId",
+                                    "loanCode",
+                                    "loanNumber"
+                                ],
+                                "-"
+                            );
+
+
+                        // ------------------------------------
+                        // DUE NUMBER
+                        // ------------------------------------
+
+                        const dueNo =
+                            firstValue(
+                                item,
+                                [
+                                    "dueNo",
+                                    "installmentNo",
+                                    "installmentNumber",
+                                    "dueNumber"
+                                ],
+                                "-"
+                            );
+
+
+                        // ------------------------------------
+                        // DUE DATE
+                        // ------------------------------------
+
+                        const dueDate =
+                            getDueDate(
+                                item
+                            );
+
+
+                        // ------------------------------------
+                        // AMOUNTS
+                        // ------------------------------------
 
                         const amount =
                             getCollectionAmount(
@@ -3494,45 +3965,9 @@ function openStaffDetails(
                             );
 
 
-                        const customerName =
-                            firstValue(
-                                item,
-                                [
-                                    "customerName"
-                                ],
-                                "-"
-                            );
-
-
-                        const loanId =
-                            firstValue(
-                                item,
-                                [
-                                    "loanId",
-                                    "loanCode"
-                                ],
-                                "-"
-                            );
-
-
-                        const dueNo =
-                            firstValue(
-                                item,
-                                [
-                                    "dueNo",
-                                    "installmentNo",
-                                    "installmentNumber",
-                                    "dueNumber"
-                                ],
-                                "-"
-                            );
-
-
-                        const dueDate =
-                            getDueDate(
-                                item
-                            );
-
+                        // ------------------------------------
+                        // COLLECTION DATE
+                        // ------------------------------------
 
                         const collectionDate =
                             getCollectionDate(
@@ -3540,17 +3975,29 @@ function openStaffDetails(
                             );
 
 
+                        // ------------------------------------
+                        // BALANCE
+                        // ------------------------------------
+
                         const balance =
                             numberValue(
+
                                 item?.balanceAfterPayment,
 
                                 item?.balance,
 
                                 item?.outstanding,
 
-                                item?.pendingAmount
+                                item?.pendingAmount,
+
+                                item?.balanceAmount
+
                             );
 
+
+                        // ------------------------------------
+                        // STATUS
+                        // ------------------------------------
 
                         const status =
                             firstValue(
@@ -3609,11 +4056,13 @@ function openStaffDetails(
 
 
                                 <td>
+
                                     <strong>
                                         ${formatCurrency(
                                             amount
                                         )}
                                     </strong>
+
                                 </td>
 
 
@@ -3639,9 +4088,13 @@ function openStaffDetails(
 
 
                                 <td>
-                                    ${escapeHTML(
-                                        status
-                                    )}
+
+                                    <span>
+                                        ${escapeHTML(
+                                            status
+                                        )}
+                                    </span>
+
                                 </td>
 
                             </tr>
@@ -3655,6 +4108,10 @@ function openStaffDetails(
     }
 
 
+    // ========================================================
+    // OPEN MODAL
+    // ========================================================
+
     if (
         detailModal
     ) {
@@ -3666,7 +4123,6 @@ function openStaffDetails(
     }
 
 }
-
 
 // ============================================================
 // VIEW REQUEST DETAILS
