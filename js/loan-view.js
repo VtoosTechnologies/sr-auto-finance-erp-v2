@@ -4383,38 +4383,131 @@ function setupPageControls() {
 
     setupCloseButton();
 
-
     updateCloseButton();
-
 
     renderNextDue();
 
-
     renderOverdueSummary();
-
 
     renderCollectionSummary();
 
-
     renderLoanStatusSummary();
 
+    setupLoanDetailsToggle();
 
     setupDocumentToggle();
 
-
     setupScheduleToggle();
-
 
     setupBackButton();
 
-
     setupPrintButton();
-
 
     setupDownloadButton();
 
 }
+// =====================================================
+// LOAN DETAILS TOGGLE
+// =====================================================
 
+function setupLoanDetailsToggle() {
+
+    const button =
+        getElement(
+            "toggleLoanDetailsBtn"
+        ) ||
+        getElement(
+            "toggleLoanBtn"
+        );
+
+    const container =
+        getElement(
+            "loanDetailsSection"
+        ) ||
+        getElement(
+            "loanDetailsContainer"
+        ) ||
+        getElement(
+            "loanDetails"
+        );
+
+    if (
+        !button ||
+        !container
+    ) {
+
+        console.warn(
+            "Loan Details toggle elements not found."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        button.dataset.loanDetailsToggleReady ===
+        "true"
+    ) {
+
+        return;
+
+    }
+
+
+    button.dataset.loanDetailsToggleReady =
+        "true";
+
+
+    /*
+     * Initial state
+     */
+
+    container.style.display =
+        "none";
+
+    button.textContent =
+        "View Loan Details";
+
+
+    /*
+     * CLICK
+     */
+
+    button.addEventListener(
+        "click",
+        function () {
+
+            const isHidden =
+                container.style.display ===
+                    "none" ||
+                container.style.display ===
+                    "" ||
+                !container.style.display;
+
+
+            if (isHidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Loan Details";
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Loan Details";
+
+            }
+
+        }
+    );
+
+}
 
 // =====================================================
 // DOCUMENT TOGGLE
@@ -4425,18 +4518,39 @@ function setupDocumentToggle() {
     const button =
         getElement(
             "toggleDocumentsBtn"
+        ) ||
+        getElement(
+            "toggleLoanDocumentsBtn"
         );
-
 
     const container =
         getElement(
             "loanDocuments"
+        ) ||
+        getElement(
+            "loanDocumentsSection"
+        ) ||
+        getElement(
+            "documentsSection"
         );
-
 
     if (
         !button ||
         !container
+    ) {
+
+        console.warn(
+            "Loan Documents toggle elements not found."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        button.dataset.documentsToggleReady ===
+        "true"
     ) {
 
         return;
@@ -4444,33 +4558,79 @@ function setupDocumentToggle() {
     }
 
 
+    button.dataset.documentsToggleReady =
+        "true";
+
+
+    /*
+     * Initial state
+     */
+
+    container.style.display =
+        "none";
+
+    button.textContent =
+        "View Loan Documents";
+
+
+    /*
+     * CLICK
+     */
+
     button.addEventListener(
         "click",
-        () => {
+        async function () {
 
             const isHidden =
                 container.style.display ===
-                "none" ||
+                    "none" ||
+                container.style.display ===
+                    "" ||
                 !container.style.display;
 
 
-            container.style.display =
-                isHidden
-                    ? "block"
-                    : "none";
+            if (isHidden) {
+
+                container.style.display =
+                    "block";
+
+                button.textContent =
+                    "Hide Loan Documents";
 
 
-            button.textContent =
-                isHidden
-                    ? "Hide Loan Documents"
-                    : "View Loan Documents";
+                /*
+                 * Reload latest documents
+                 */
+
+                try {
+
+                    await loadLoanDocuments();
+
+                } catch (
+                    error
+                ) {
+
+                    console.error(
+                        "Document refresh error:",
+                        error
+                    );
+
+                }
+
+            } else {
+
+                container.style.display =
+                    "none";
+
+                button.textContent =
+                    "View Loan Documents";
+
+            }
 
         }
     );
 
 }
-
-
 // =====================================================
 // SCHEDULE TOGGLE - FIXED
 // =====================================================
