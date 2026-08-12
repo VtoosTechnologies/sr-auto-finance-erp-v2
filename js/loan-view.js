@@ -1983,48 +1983,36 @@ function renderFinancialSummary() {
 
 
     const loanAmount =
-        getNumber(
-            loan.loanAmount,
-            loan.principalAmount,
-            loan.amount
-        );
+        getLoanPrincipal();
 
 
     const interestAmount =
-        getNumber(
-            loan.interestAmount,
-            loan.totalInterest
-        );
+        getLoanInterest();
 
 
     const totalPayable =
-        getNumber(
-            loan.totalPayable,
-            loan.totalAmount,
-            loanAmount +
-            interestAmount
-        );
+        getLoanTotalPayable();
 
 
     const paidAmount =
-        getNumber(
-            loan.amountPaid,
-            loan.paidAmount,
-            loan.totalPaid
-        );
+        getLoanPaidAmount();
 
 
+    /*
+     * IMPORTANT:
+     *
+     * Never use stored outstandingAmount /
+     * balanceAmount as the primary source.
+     *
+     * Outstanding must be calculated:
+     *
+     * Total Payable - Actual Paid
+     *
+     * If repayment schedule is already available,
+     * getLoanOutstanding() uses the schedule pending amount.
+     */
     const outstanding =
-        getNumber(
-            loan.outstandingAmount,
-            loan.balanceAmount,
-            loan.remainingAmount,
-            Math.max(
-                totalPayable -
-                paidAmount,
-                0
-            )
-        );
+        getLoanOutstanding();
 
 
     const installment =
@@ -2077,6 +2065,14 @@ function renderFinancialSummary() {
 
 
     setText(
+        "totalAmount",
+        formatCurrency(
+            totalPayable
+        )
+    );
+
+
+    setText(
         "totalPaid",
         formatCurrency(
             paidAmount
@@ -2102,6 +2098,14 @@ function renderFinancialSummary() {
 
     setText(
         "outstandingAmount",
+        formatCurrency(
+            outstanding
+        )
+    );
+
+
+    setText(
+        "balanceAmount",
         formatCurrency(
             outstanding
         )
@@ -3700,9 +3704,34 @@ function renderRepaymentSummary() {
         ).length;
 
 
+    const pendingInstallments =
+        repaymentSchedule.filter(
+            row => {
+
+                const pending =
+                    Math.max(
+                        getNumber(
+                            row.pendingAmount
+                        ),
+                        0
+                    );
+
+
+                return (
+                    pending > 0
+                );
+
+            }
+        ).length;
+
+
     const totalInstallments =
         repaymentSchedule.length;
 
+
+    /*
+     * Repayment Schedule Summary
+     */
 
     setText(
         "scheduleTotalDue",
@@ -3736,6 +3765,10 @@ function renderRepaymentSummary() {
     );
 
 
+    /*
+     * Payment Summary
+     */
+
     setText(
         "paidInstallments",
         paidInstallments
@@ -3749,18 +3782,31 @@ function renderRepaymentSummary() {
 
 
     setText(
+        "pendingInstallments",
+        pendingInstallments
+    );
+
+
+    setText(
         "totalInstallments",
         totalInstallments
     );
 
 
     /*
-     * Also update the common summary fields
-     * used by different HTML versions.
+     * Common summary fields
      */
 
     setText(
         "totalPaid",
+        formatCurrency(
+            totalPaid
+        )
+    );
+
+
+    setText(
+        "paidAmount",
         formatCurrency(
             totalPaid
         )
@@ -3783,10 +3829,14 @@ function renderRepaymentSummary() {
     );
 
 
-    renderPaymentDates();
+    setText(
+        "balanceAmount",
+        formatCurrency(
+            totalPending
+        )
+    );
 
 }
-
 
 // =====================================================
 // PAYMENT DATES
@@ -5178,10 +5228,148 @@ function getLoanInterest() {
 
 function getLoanTotalPayable() {
 
+    const loan =
+        currentLoan || {};
+
+
+    /*
+     * 1. If a valid repayment schedule already exists,
+     *    its EMI total is the most reliable payable amount.
+     */
+    if (
+        Array.isArray(
+            repaymentSchedule
+        ) &&
+        repaymentSchedule.length > 0
+    ) {
+
+        const scheduleTotal =
+            repaymentSchedule.reduce(
+                (
+                    total,
+                    row
+                ) => {
+
+                    return (
+                        total +
+                        getNumber(
+                            row.dueAmount
+                        )
+                    );
+
+                },
+                0
+            );
+
+
+        if (
+            scheduleTotal > 0
+        ) {
+
+            return scheduleTotal;
+
+        }
+
+    }
+
+
+    /*
+     * 2. If loan document contains a saved repayment
+     *    schedule, calculate total from that schedule.
+     */
+    if (
+        Array.isArray(
+            loan.repaymentSchedule
+        ) &&
+        loan.repaymentSchedule.length > 0
+    ) {
+
+        const savedScheduleTotal =
+            loan.repaymentSchedule.reduce(
+                (
+                    total,
+                    row
+                ) => {
+
+                    return (
+                        total +
+                        getNumber(
+                            row.dueAmount,
+                            row.emiAmount,
+                            row.installmentAmount,
+                            row.amount
+                        )
+                    );
+
+                },
+                0
+            );
+
+
+        if (
+            savedScheduleTotal > 0
+        ) {
+
+            return savedScheduleTotal;
+
+        }
+
+    }
+
+
+    /*
+     * 3. If EMI and tenure are available,
+     *    calculate payable amount from them.
+     *
+     * Example:
+     * ₹2,750 × 24 = ₹66,000
+     */
+    const installment =
+        getNumber(
+            loan.installmentAmount,
+            loan.monthlyEMI,
+            loan.emiAmount,
+            loan.installment
+        );
+
+
+    const tenure =
+        Math.max(
+            Math.round(
+                getNumber(
+                    loan.totalInstallments,
+                    loan.installments,
+                    loan.loanDuration,
+                    loan.tenure,
+                    loan.duration,
+                    loan.numberOfInstallments
+                )
+            ),
+            0
+        );
+
+
+    if (
+        installment > 0 &&
+        tenure > 0
+    ) {
+
+        return (
+            installment *
+            tenure
+        );
+
+    }
+
+
+    /*
+     * 4. Only when the above information is not available,
+     *    use the explicitly stored total payable.
+     */
     const storedTotal =
         getNumber(
-            currentLoan?.totalPayable,
-            currentLoan?.totalAmount
+            loan.totalPayable,
+            loan.totalAmount
         );
 
 
@@ -5194,86 +5382,15 @@ function getLoanTotalPayable() {
     }
 
 
+    /*
+     * 5. Final fallback.
+     */
     return (
         getLoanPrincipal() +
         getLoanInterest()
     );
 
 }
-
-
-function getLoanPaidAmount() {
-
-    /*
-     * Use actual repayment payments.
-     *
-     * Do not use totalCollection because
-     * penalty may be included there.
-     */
-
-    const paymentTotal =
-        getTotalCollection();
-
-
-    if (
-        paymentTotal > 0
-    ) {
-
-        return paymentTotal;
-
-    }
-
-
-    return getNumber(
-        currentLoan?.amountPaid,
-        currentLoan?.paidAmount,
-        currentLoan?.totalPaid
-    );
-
-}
-
-
-function getLoanOutstanding() {
-
-    const schedulePending =
-        repaymentSchedule.reduce(
-            (
-                total,
-                row
-            ) => {
-
-                return (
-                    total +
-                    getNumber(
-                        row.pendingAmount
-                    )
-                );
-
-            },
-            0
-        );
-
-
-    if (
-        repaymentSchedule.length
-    ) {
-
-        return Math.max(
-            schedulePending,
-            0
-        );
-
-    }
-
-
-    return Math.max(
-        getLoanTotalPayable() -
-        getLoanPaidAmount(),
-        0
-    );
-
-}
-
 
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
