@@ -3125,14 +3125,13 @@ function applyPaymentsToSchedule() {
         )
     ) {
 
-        repaymentSchedule =
-            [];
+        repaymentSchedule = [];
 
     }
 
 
     /*
-     * Reset dynamic payment values.
+     * Reset payment-related values.
      */
 
     repaymentSchedule =
@@ -3163,10 +3162,10 @@ function applyPaymentsToSchedule() {
 
 
     /*
-     * Allocate actual EMI payment
-     * against oldest pending installment.
+     * Apply every actual EMI payment
+     * from oldest EMI to newest EMI.
      *
-     * Penalty is kept separate.
+     * Penalty remains separate.
      */
 
     for (
@@ -3175,8 +3174,11 @@ function applyPaymentsToSchedule() {
     ) {
 
         let remaining =
-            getPaymentAmount(
-                payment
+            Math.max(
+                getPaymentAmount(
+                    payment
+                ),
+                0
             );
 
 
@@ -3192,14 +3194,55 @@ function applyPaymentsToSchedule() {
             );
 
 
+        /*
+         * Penalty-only payment.
+         *
+         * Do not treat penalty as EMI payment.
+         */
+
         if (
             remaining <= 0
         ) {
+
+            if (
+                penalty > 0 &&
+                repaymentSchedule.length
+            ) {
+
+                const penaltyRow =
+                    repaymentSchedule.find(
+                        row =>
+                            getNumber(
+                                row.pendingAmount
+                            ) > 0
+                    ) ||
+                    repaymentSchedule[
+                        repaymentSchedule.length - 1
+                    ];
+
+
+                if (
+                    penaltyRow
+                ) {
+
+                    penaltyRow.penalty =
+                        getNumber(
+                            penaltyRow.penalty
+                        ) +
+                        penalty;
+
+                }
+
+            }
 
             continue;
 
         }
 
+
+        /*
+         * FIFO allocation.
+         */
 
         for (
             const row
@@ -3216,14 +3259,20 @@ function applyPaymentsToSchedule() {
 
 
             const due =
-                getNumber(
-                    row.dueAmount
+                Math.max(
+                    getNumber(
+                        row.dueAmount
+                    ),
+                    0
                 );
 
 
             const alreadyPaid =
-                getNumber(
-                    row.paidAmount
+                Math.max(
+                    getNumber(
+                        row.paidAmount
+                    ),
+                    0
                 );
 
 
@@ -3251,7 +3300,8 @@ function applyPaymentsToSchedule() {
                 );
 
 
-            row.paidAmount +=
+            row.paidAmount =
+                alreadyPaid +
                 allocated;
 
 
@@ -3264,24 +3314,29 @@ function applyPaymentsToSchedule() {
 
 
             row.paidDate =
-                paymentDate;
-
-
-            row.status =
-                row.pendingAmount <= 0
-                    ? "Paid"
-                    : "Partial";
+                paymentDate ||
+                row.paidDate ||
+                "";
 
 
             remaining -=
                 allocated;
 
 
+            /*
+             * Penalty belongs to the payment.
+             *
+             * Keep it separate from EMI amount.
+             */
+
             if (
                 penalty > 0
             ) {
 
-                row.penalty +=
+                row.penalty =
+                    getNumber(
+                        row.penalty
+                    ) +
                     penalty;
 
             }
@@ -3292,7 +3347,7 @@ function applyPaymentsToSchedule() {
 
 
     /*
-     * Final status cleanup.
+     * Final status calculation.
      */
 
     repaymentSchedule =
@@ -3300,14 +3355,23 @@ function applyPaymentsToSchedule() {
             row => {
 
                 const due =
-                    getNumber(
-                        row.dueAmount
+                    Math.max(
+                        getNumber(
+                            row.dueAmount
+                        ),
+                        0
                     );
 
 
                 const paid =
-                    getNumber(
-                        row.paidAmount
+                    Math.min(
+                        Math.max(
+                            getNumber(
+                                row.paidAmount
+                            ),
+                            0
+                        ),
+                        due
                     );
 
 
@@ -3324,7 +3388,8 @@ function applyPaymentsToSchedule() {
 
 
                 if (
-                    pending <= 0
+                    pending <=
+                    0.01
                 ) {
 
                     status =
@@ -3344,10 +3409,14 @@ function applyPaymentsToSchedule() {
 
                     ...row,
 
+                    paidAmount:
+                        paid,
+
                     pendingAmount:
                         pending,
 
                     status:
+
                         status
 
                 };
@@ -3359,7 +3428,6 @@ function applyPaymentsToSchedule() {
     return repaymentSchedule;
 
 }
-
 
 // =====================================================
 // LOAD REPAYMENT SCHEDULE
@@ -3680,14 +3748,16 @@ function renderRepaymentSummary() {
         );
 
 
-    const paidInstallments =
-        repaymentSchedule.filter(
-            row =>
-                String(
-                    row.status
-                ).toLowerCase() ===
-                "paid"
-        ).length;
+   const partialInstallments =
+    repaymentSchedule.filter(
+        row =>
+            getNumber(
+                row.paidAmount
+            ) > 0 &&
+            getNumber(
+                row.pendingAmount
+            ) > 0.01
+    ).length;
 
 
     const partialInstallments =
@@ -5205,47 +5275,31 @@ function getLoanTotalPayable() {
 function getLoanPaidAmount() {
 
     /*
-     * Use actual repayment payments.
+     * Actual EMI payment only.
      *
-     * Do not use totalCollection because
-     * penalty may be included there.
+     * Penalty is NOT included.
+     *
+     * When payments are loaded, payment history
+     * is the source of truth.
      */
 
-    const paymentTotal =
-        getTotalCollection();
-
-
     if (
-        paymentTotal > 0
+        Array.isArray(
+            repaymentPayments
+        ) &&
+        repaymentPayments.length
     ) {
 
-        return paymentTotal;
-
-    }
-
-
-    return getNumber(
-        currentLoan?.amountPaid,
-        currentLoan?.paidAmount,
-        currentLoan?.totalPaid
-    );
-
-}
-
-
-function getLoanOutstanding() {
-
-    const schedulePending =
-        repaymentSchedule.reduce(
+        return repaymentPayments.reduce(
             (
                 total,
-                row
+                payment
             ) => {
 
                 return (
                     total +
-                    getNumber(
-                        row.pendingAmount
+                    getPaymentAmount(
+                        payment
                     )
                 );
 
@@ -5253,27 +5307,55 @@ function getLoanOutstanding() {
             0
         );
 
-
-    if (
-        repaymentSchedule.length
-    ) {
-
-        return Math.max(
-            schedulePending,
-            0
-        );
-
     }
 
 
+    /*
+     * If there are genuinely no payment
+     * documents, use the stored loan value
+     * as fallback for old loans.
+     */
+
     return Math.max(
-        getLoanTotalPayable() -
-        getLoanPaidAmount(),
+        getNumber(
+            currentLoan?.amountPaid,
+            currentLoan?.paidAmount,
+            currentLoan?.totalPaid
+        ),
         0
     );
 
 }
 
+function getLoanOutstanding() {
+
+    const totalPayable =
+        getLoanTotalPayable();
+
+
+    const paidAmount =
+        getLoanPaidAmount();
+
+
+    /*
+     * Outstanding must always be:
+     *
+     * Total Payable - Actual EMI Paid
+     *
+     * Do NOT use:
+     * loan.outstandingAmount
+     * loan.balanceAmount
+     *
+     * because those stored values can become stale.
+     */
+
+    return Math.max(
+        totalPayable -
+        paidAmount,
+        0
+    );
+
+}
 
 // =====================================================
 // UPDATE FINANCIAL CARDS AFTER PAYMENT LOAD
