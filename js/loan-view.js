@@ -2419,11 +2419,13 @@ function getPaymentAmount(
         payment.amount,
 
         // Owner collection fields
+        payment.totalCollection,
         payment.collectionAmount,
 
         payment.collectedAmount,
 
         payment.amountCollected,
+        payment.totalReceived,
 
         payment.emiAmount,
 
