@@ -1975,7 +1975,28 @@ async function saveCollection() {
                             updatedAt:
                                 serverTimestamp(),
 
+// =====================================================
+// OWNER / STAFF IDENTITY
+// =====================================================
 
+ownerId:
+    collector.collectorRole === "owner"
+        ? (
+            collector.collectorUid ||
+            currentUser?.uid ||
+            ""
+        )
+        : "",
+
+ownerName:
+    collector.collectorRole === "owner"
+        ? (
+            collector.collectorName ||
+            currentUser?.displayName ||
+            currentUser?.email ||
+            "Owner"
+        )
+        : "",
                             // =====================================================
                             // STAFF / OWNER COLLECTION IDENTITY
                             // =====================================================
