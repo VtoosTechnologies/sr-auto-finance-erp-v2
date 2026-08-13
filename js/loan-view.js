@@ -2445,7 +2445,7 @@ function getPaymentReceipt(
 
 
 // =====================================================
-// LOAD PAYMENTS
+// LOAD PAYMENTS + OWNER COLLECTIONS
 // =====================================================
 
 async function loadPayments() {
@@ -2461,19 +2461,11 @@ async function loadPayments() {
 
     try {
 
-        // =====================================================
-        // LOAD STAFF PAYMENTS
-        // =====================================================
-
         const paymentsRef =
             collection(
                 db,
                 "payments"
             );
-
-        // =====================================================
-        // LOAD OWNER / STAFF COLLECTIONS
-        // =====================================================
 
         const collectionsRef =
             collection(
@@ -2481,8 +2473,18 @@ async function loadPayments() {
                 "collections"
             );
 
-        const resultMap =
+        // -------------------------------------------------
+        // MASTER RECORD MAP
+        //
+        // Key priority:
+        // 1. receipt number
+        // 2. transaction/payment reference
+        // 3. firestore document id
+        // -------------------------------------------------
+
+        const masterMap =
             new Map();
+
 
         const loanNumber =
             firstValue(
@@ -2491,26 +2493,261 @@ async function loadPayments() {
                     "loanId",
                     "loanNumber",
                     "loanCode"
-                ]
+                ],
+                ""
             );
 
-        // =====================================================
-        // PAYMENTS COLLECTION QUERIES
-        // =====================================================
+
+        function clean(value) {
+
+            return String(
+                value ?? ""
+            )
+                .trim()
+                .toLowerCase();
+
+        }
+
+
+        function getReceipt(record) {
+
+            return clean(
+                firstValue(
+                    record,
+                    [
+                        "receiptNo",
+                        "receiptNumber",
+                        "receiptId"
+                    ],
+                    ""
+                )
+            );
+
+        }
+
+
+        function getTransactionReference(record) {
+
+            return clean(
+                firstValue(
+                    record,
+                    [
+                        "transactionId",
+                        "paymentId",
+                        "collectionId",
+                        "referenceId",
+                        "receiptId"
+                    ],
+                    ""
+                )
+            );
+
+        }
+
+
+        function getDateKey(record) {
+
+            const value =
+                getPaymentDate(
+                    record
+                );
+
+            return clean(
+                value
+            );
+
+        }
+
+
+        function getAmountKey(record) {
+
+            return String(
+                Math.round(
+                    getPaymentAmount(
+                        record
+                    ) * 100
+                )
+            );
+
+        }
+
+
+        function getMasterKey(
+            record,
+            source
+        ) {
+
+            const receipt =
+                getReceipt(
+                    record
+                );
+
+            if (
+                receipt &&
+                receipt !== "-"
+            ) {
+
+                return (
+                    "receipt:" +
+                    receipt
+                );
+
+            }
+
+
+            const transaction =
+                getTransactionReference(
+                    record
+                );
+
+            if (
+                transaction
+            ) {
+
+                return (
+                    "transaction:" +
+                    transaction
+                );
+
+            }
+
+
+            /*
+             * Fallback key.
+             *
+             * This prevents accidental duplicate
+             * records only when there is no receipt/
+             * transaction reference.
+             */
+
+            const loan =
+                clean(
+                    firstValue(
+                        record,
+                        [
+                            "loanDocumentId",
+                            "loanId",
+                            "loanNumber",
+                            "loanCode"
+                        ],
+                        loanNumber
+                    )
+                );
+
+            return (
+                source +
+                ":" +
+                loan +
+                ":" +
+                getDateKey(record) +
+                ":" +
+                getAmountKey(record)
+            );
+
+        }
+
+
+        function addRecord(
+            snapshot,
+            source
+        ) {
+
+            const data =
+                snapshot.data();
+
+            const record = {
+
+                id:
+                    snapshot.id,
+
+                ...data,
+
+                source:
+                    source
+
+            };
+
+
+            const key =
+                getMasterKey(
+                    record,
+                    source
+                );
+
+
+            const existing =
+                masterMap.get(
+                    key
+                );
+
+
+            /*
+             * If the same repayment exists in both
+             * payments and collections:
+             *
+             * COLLECTION is the master record.
+             */
+
+            if (!existing) {
+
+                masterMap.set(
+                    key,
+                    record
+                );
+
+                return;
+
+            }
+
+
+            if (
+                source === "COLLECTION" &&
+                existing.source === "PAYMENT"
+            ) {
+
+                masterMap.set(
+                    key,
+                    record
+                );
+
+            }
+
+        }
+
+
+        // =================================================
+        // LOAD PAYMENTS
+        // =================================================
 
         const paymentQueries = [
 
-            ["loanDocumentId", loanDocumentId],
+            [
+                "loanDocumentId",
+                loanDocumentId
+            ],
 
-            ["loanId", loanDocumentId],
+            [
+                "loanId",
+                loanDocumentId
+            ],
 
-            ["loanId", loanNumber],
+            [
+                "loanId",
+                loanNumber
+            ],
 
-            ["loanNumber", loanNumber],
+            [
+                "loanNumber",
+                loanNumber
+            ],
 
-            ["loanCode", loanNumber]
+            [
+                "loanCode",
+                loanNumber
+            ]
 
         ];
+
 
         for (
             const [
@@ -2521,12 +2758,11 @@ async function loadPayments() {
         ) {
 
             if (
-                value === undefined ||
-                value === null ||
-                String(value).trim() === ""
+                !value
             ) {
                 continue;
             }
+
 
             try {
 
@@ -2542,56 +2778,66 @@ async function loadPayments() {
                         )
                     );
 
+
                 snapshot.forEach(
-                    paymentSnap => {
+                    snapshotItem => {
 
-                        resultMap.set(
-                            paymentSnap.id,
-                            {
-                                id:
-                                    paymentSnap.id,
-
-                                ...paymentSnap.data(),
-
-                                // Existing payments collection
-                                source:
-                                    "PAYMENT"
-                            }
+                        addRecord(
+                            snapshotItem,
+                            "PAYMENT"
                         );
 
                     }
                 );
 
             } catch (
-                queryError
+                error
             ) {
 
                 console.warn(
-                    `Payment query skipped for ${field}:`,
-                    queryError
+                    "Payment query skipped:",
+                    field,
+                    error
                 );
 
             }
 
         }
 
-        // =====================================================
-        // OWNER / STAFF COLLECTION QUERIES
-        // =====================================================
+
+        // =================================================
+        // LOAD OWNER / STAFF COLLECTIONS
+        // =================================================
 
         const collectionQueries = [
 
-            ["loanDocumentId", loanDocumentId],
+            [
+                "loanDocumentId",
+                loanDocumentId
+            ],
 
-            ["loanId", loanDocumentId],
+            [
+                "loanId",
+                loanDocumentId
+            ],
 
-            ["loanId", loanNumber],
+            [
+                "loanId",
+                loanNumber
+            ],
 
-            ["loanNumber", loanNumber],
+            [
+                "loanNumber",
+                loanNumber
+            ],
 
-            ["loanCode", loanNumber]
+            [
+                "loanCode",
+                loanNumber
+            ]
 
         ];
+
 
         for (
             const [
@@ -2602,12 +2848,11 @@ async function loadPayments() {
         ) {
 
             if (
-                value === undefined ||
-                value === null ||
-                String(value).trim() === ""
+                !value
             ) {
                 continue;
             }
+
 
             try {
 
@@ -2623,51 +2868,46 @@ async function loadPayments() {
                         )
                     );
 
+
                 snapshot.forEach(
-                    collectionSnap => {
+                    snapshotItem => {
 
-                        resultMap.set(
-                            collectionSnap.id,
-                            {
-                                id:
-                                    collectionSnap.id,
-
-                                ...collectionSnap.data(),
-
-                                // Master collections collection
-                                source:
-                                    "COLLECTION"
-                            }
+                        addRecord(
+                            snapshotItem,
+                            "COLLECTION"
                         );
 
                     }
                 );
 
             } catch (
-                queryError
+                error
             ) {
 
                 console.warn(
-                    `Collection query skipped for ${field}:`,
-                    queryError
+                    "Collection query skipped:",
+                    field,
+                    error
                 );
 
             }
 
         }
 
-        // =====================================================
-        // FINAL PAYMENT + COLLECTION LIST
-        // =====================================================
+
+        // =================================================
+        // FINAL MASTER REPAYMENT LIST
+        // =================================================
 
         repaymentPayments =
             Array.from(
-                resultMap.values()
+                masterMap.values()
             );
 
-        // =====================================================
-        // SORT OLDEST FIRST
-        // =====================================================
+
+        // =================================================
+        // SORT BY PAYMENT DATE
+        // =================================================
 
         repaymentPayments.sort(
             (
@@ -2689,42 +2929,59 @@ async function loadPayments() {
                         )
                     );
 
+
                 if (
                     !firstDate &&
                     !secondDate
                 ) {
+
                     return 0;
+
                 }
 
-                if (!firstDate) {
+
+                if (
+                    !firstDate
+                ) {
+
                     return 1;
+
                 }
 
-                if (!secondDate) {
+
+                if (
+                    !secondDate
+                ) {
+
                     return -1;
+
                 }
+
 
                 return (
-                    firstDate -
-                    secondDate
+                    firstDate.getTime() -
+                    secondDate.getTime()
                 );
 
             }
         );
 
+
         console.log(
-            "Loan repayment records loaded:",
+            "FINAL MASTER REPAYMENTS:",
             repaymentPayments
         );
 
+
         return repaymentPayments;
+
 
     } catch (
         error
     ) {
 
         console.error(
-            "Payments / Collections loading error:",
+            "Payment + Collection load error:",
             error
         );
 
@@ -2735,7 +2992,6 @@ async function loadPayments() {
     }
 
 }
-
 // =====================================================
 // INTEREST CALCULATION HELPERS
 // =====================================================
@@ -5345,36 +5601,52 @@ function getLoanTotalPayable() {
 // PAYMENT / OUTSTANDING CALCULATIONS
 // =====================================================
 
+// =====================================================
+// GET LOAN PAID AMOUNT
+// =====================================================
+// Only actual EMI / repayment amount is counted.
+// Penalty is NOT deducted from loan outstanding.
+// =====================================================
+
 function getLoanPaidAmount() {
 
     if (
-        Array.isArray(repaymentPayments) &&
-        repaymentPayments.length > 0
+        !Array.isArray(
+            repaymentPayments
+        ) ||
+        repaymentPayments.length === 0
     ) {
 
-        return repaymentPayments.reduce(
-            (
-                total,
-                payment
-            ) => {
-
-                return (
-                    total +
-                    getPaymentAmount(
-                        payment
-                    )
-                );
-
-            },
-            0
-        );
+        return 0;
 
     }
 
-    return 0;
+
+    return repaymentPayments.reduce(
+        (
+            total,
+            payment
+        ) => {
+
+            const amount =
+                Math.max(
+                    getPaymentAmount(
+                        payment
+                    ),
+                    0
+                );
+
+
+            return (
+                total +
+                amount
+            );
+
+        },
+        0
+    );
 
 }
-
 
 function getLoanOutstanding() {
 
