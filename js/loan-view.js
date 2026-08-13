@@ -2484,13 +2484,8 @@ function getPaymentReceipt(
 
 }
 
-
 // =====================================================
 // LOAD PAYMENTS + OWNER COLLECTIONS
-// =====================================================
-
-// =====================================================
-// LOAD PAYMENTS + COLLECTIONS
 // =====================================================
 
 async function loadPayments() {
@@ -2507,190 +2502,172 @@ async function loadPayments() {
     try {
 
         // =================================================
-        // STAFF PAYMENTS
+        // PAYMENTS COLLECTION
         // =================================================
 
-        const paymentsSnapshot =
-            await getDocs(
-                query(
-                    collection(
-                        db,
-                        "payments"
-                    ),
-                    where(
-                        "loanDocumentId",
-                        "==",
-                        loanDocumentId
-                    )
-                )
+        const paymentsRef =
+            collection(
+                db,
+                "payments"
             );
 
 
         // =================================================
-        // OWNER / STAFF COLLECTIONS
+        // COLLECTIONS MASTER
+        // Includes OWNER + STAFF collections
         // =================================================
 
-        const collectionsSnapshot =
-            await getDocs(
-                query(
-                    collection(
-                        db,
-                        "collections"
-                    ),
-                    where(
-                        "loanDocumentId",
-                        "==",
-                        loanDocumentId
-                    )
-                )
+        const collectionsRef =
+            collection(
+                db,
+                "collections"
             );
 
 
-        const records = [];
-
-
-        // =================================================
-        // PAYMENTS
-        // =================================================
-
-        paymentsSnapshot.forEach(
-            paymentDoc => {
-
-                records.push({
-
-                    id:
-                        paymentDoc.id,
-
-                    ...paymentDoc.data(),
-
-                    source:
-                        "PAYMENT"
-
-                });
-
-            }
-        );
-
-
-        // =================================================
-        // COLLECTIONS
-        // =================================================
-
-        collectionsSnapshot.forEach(
-            collectionDoc => {
-
-                records.push({
-
-                    id:
-                        collectionDoc.id,
-
-                    ...collectionDoc.data(),
-
-                    source:
-                        "COLLECTION"
-
-                });
-
-            }
-        );
-
-
-        // =================================================
-        // DUPLICATE PROTECTION
-        // =================================================
-
-        const master =
+        const resultMap =
             new Map();
 
 
-        records.forEach(
-            record => {
+        // =================================================
+        // 1. LOAD STAFF PAYMENTS
+        // =================================================
 
-                const receipt =
-                    String(
-                        record.receiptNo ||
-                        record.receiptNumber ||
-                        record.receiptId ||
-                        ""
+        const paymentSnapshot =
+            await getDocs(
+                query(
+                    paymentsRef,
+                    where(
+                        "loanDocumentId",
+                        "==",
+                        loanDocumentId
                     )
-                        .trim()
-                        .toLowerCase();
+                )
+            );
 
 
-                const key =
-                    receipt
-                        ? `receipt:${receipt}`
-                        : `doc:${record.id}`;
+        paymentSnapshot.forEach(
+            paymentSnap => {
 
+                resultMap.set(
+                    paymentSnap.id,
+                    {
+                        id:
+                            paymentSnap.id,
 
-                const existing =
-                    master.get(
-                        key
-                    );
+                        ...paymentSnap.data(),
 
-
-                // COLLECTION is master record
-                // if same receipt exists in payments.
-                if (
-                    !existing ||
-                    (
-                        record.source ===
-                            "COLLECTION"
-                        &&
-                        existing.source ===
+                        source:
                             "PAYMENT"
-                    )
-                ) {
 
-                    master.set(
-                        key,
-                        record
-                    );
-
-                }
+                    }
+                );
 
             }
         );
 
 
+        // =================================================
+        // 2. LOAD OWNER / STAFF COLLECTIONS
+        // =================================================
+
+        const collectionSnapshot =
+            await getDocs(
+                query(
+                    collectionsRef,
+                    where(
+                        "loanDocumentId",
+                        "==",
+                        loanDocumentId
+                    )
+                )
+            );
+
+
+        collectionSnapshot.forEach(
+            collectionSnap => {
+
+                const collectionData =
+                    collectionSnap.data();
+
+
+                resultMap.set(
+                    collectionSnap.id,
+                    {
+                        id:
+                            collectionSnap.id,
+
+                        ...collectionData,
+
+                        source:
+                            "COLLECTION"
+
+                    }
+                );
+
+            }
+        );
+
+
+        // =================================================
+        // FINAL REPAYMENT RECORDS
+        // =================================================
+
         repaymentPayments =
             Array.from(
-                master.values()
+                resultMap.values()
             );
 
 
         // =================================================
-        // SORT
+        // SORT BY PAYMENT DATE
         // =================================================
 
         repaymentPayments.sort(
             (
-                a,
-                b
+                first,
+                second
             ) => {
 
-                const dateA =
+                const firstDate =
                     toScheduleDate(
                         getPaymentDate(
-                            a
+                            first
                         )
                     );
 
-                const dateB =
+                const secondDate =
                     toScheduleDate(
                         getPaymentDate(
-                            b
+                            second
                         )
                     );
 
 
-                if (!dateA) return 1;
+                if (
+                    !firstDate &&
+                    !secondDate
+                ) {
+                    return 0;
+                }
 
-                if (!dateB) return -1;
+
+                if (
+                    !firstDate
+                ) {
+                    return 1;
+                }
+
+
+                if (
+                    !secondDate
+                ) {
+                    return -1;
+                }
+
 
                 return (
-                    dateA.getTime() -
-                    dateB.getTime()
+                    firstDate.getTime() -
+                    secondDate.getTime()
                 );
 
             }
@@ -2698,16 +2675,21 @@ async function loadPayments() {
 
 
         console.log(
-            "LOAN VIEW - PAYMENT RECORDS:",
-            repaymentPayments
+            "LOAN VIEW - PAYMENTS:",
+            paymentSnapshot.size
         );
 
 
-        // =================================================
-        // IMPORTANT: REFRESH CALCULATION
-        // =================================================
+        console.log(
+            "LOAN VIEW - COLLECTIONS:",
+            collectionSnapshot.size
+        );
 
-        refreshFinancialCards();
+
+        console.log(
+            "LOAN VIEW - FINAL REPAYMENTS:",
+            repaymentPayments
+        );
 
 
         return repaymentPayments;
@@ -2718,13 +2700,11 @@ async function loadPayments() {
     ) {
 
         console.error(
-            "Unable to load payments / collections:",
+            "Payments / Collections loading error:",
             error
         );
 
         repaymentPayments = [];
-
-        refreshFinancialCards();
 
         return [];
 
