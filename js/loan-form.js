@@ -13,6 +13,7 @@ import {
     doc,
     getDocs,
     getDoc,
+    updateDoc,
     runTransaction,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -196,7 +197,13 @@ let customers = [];
 
 let previousLoans = [];
 
+// =====================================================
+// EDIT MODE
+// =====================================================
 
+let editLoanDocumentId = null;
+
+let editLoanData = null;
 // =====================================================
 // DEFAULT DATE
 // =====================================================
@@ -2341,7 +2348,477 @@ async function getBusinessFundSnapshot() {
     };
 
 }
+// =====================================================
+// LOAD LOAN FOR EDIT
+// =====================================================
 
+async function loadLoanForEdit() {
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const editId =
+        params.get("editId");
+
+    if (!editId) {
+
+        return;
+
+    }
+
+
+    editLoanDocumentId =
+        editId;
+
+
+    try {
+
+        const loanRef =
+            doc(
+                db,
+                "loans",
+                editId
+            );
+
+
+        const loanSnap =
+            await getDoc(
+                loanRef
+            );
+
+
+        if (
+            !loanSnap.exists()
+        ) {
+
+            showMessage(
+                "Loan not found."
+            );
+
+            return;
+
+        }
+
+
+        editLoanData = {
+
+            id:
+                loanSnap.id,
+
+            ...loanSnap.data()
+
+        };
+
+
+        // =================================================
+        // LOAN TYPE
+        // =================================================
+
+        if (
+            loanType &&
+            editLoanData.loanType
+        ) {
+
+            loanType.value =
+                editLoanData.loanType;
+
+        }
+
+
+        // =================================================
+        // CUSTOMER
+        // =================================================
+
+        if (
+            customerSelect &&
+            editLoanData.customerDocumentId
+        ) {
+
+            customerSelect.value =
+                editLoanData.customerDocumentId;
+
+        }
+
+
+        // Show customer information
+        if (
+            customerSelect &&
+            customerSelect.value
+        ) {
+
+            await handleCustomerSelection();
+
+        }
+
+
+        // =================================================
+        // VEHICLE
+        // =================================================
+
+        if (vehicleType) {
+
+            vehicleType.value =
+                editLoanData.vehicleType ||
+                "";
+
+        }
+
+
+        if (vehicleBrand) {
+
+            vehicleBrand.value =
+                editLoanData.vehicleBrand ||
+                "";
+
+        }
+
+
+        if (vehicleModel) {
+
+            vehicleModel.value =
+                editLoanData.vehicleModel ||
+                "";
+
+        }
+
+
+        if (vehicleVariant) {
+
+            vehicleVariant.value =
+                editLoanData.vehicleVariant ||
+                "";
+
+        }
+
+
+        if (vehicleNumber) {
+
+            vehicleNumber.value =
+                editLoanData.vehicleNumber ||
+                "";
+
+        }
+
+
+        if (chassisNumber) {
+
+            chassisNumber.value =
+                editLoanData.chassisNumber ||
+                "";
+
+        }
+
+
+        if (engineNumber) {
+
+            engineNumber.value =
+                editLoanData.engineNumber ||
+                "";
+
+        }
+
+
+        if (manufacturingYear) {
+
+            manufacturingYear.value =
+                editLoanData.manufacturingYear ||
+                "";
+
+        }
+
+
+        if (registrationDate) {
+
+            registrationDate.value =
+                editLoanData.registrationDate ||
+                "";
+
+        }
+
+
+        if (vehicleColour) {
+
+            vehicleColour.value =
+                editLoanData.vehicleColour ||
+                "";
+
+        }
+
+
+        if (showroomName) {
+
+            showroomName.value =
+                editLoanData.showroomName ||
+                "";
+
+        }
+
+
+        if (showroomBookingId) {
+
+            showroomBookingId.value =
+                editLoanData.showroomBookingId ||
+                "";
+
+        }
+
+
+        if (vehicleCost) {
+
+            vehicleCost.value =
+                editLoanData.vehicleCost ||
+                "";
+
+        }
+
+
+        if (downPayment) {
+
+            downPayment.value =
+                editLoanData.downPayment ||
+                "";
+
+        }
+
+
+        // =================================================
+        // LOAN FINANCIAL DETAILS
+        // =================================================
+
+        if (loanAmount) {
+
+            loanAmount.value =
+                editLoanData.loanAmount ||
+                editLoanData.principalAmount ||
+                "";
+
+        }
+
+
+        if (interestRate) {
+
+            interestRate.value =
+                editLoanData.interestRate ||
+                "";
+
+        }
+
+
+        if (interestType) {
+
+            interestType.value =
+                editLoanData.interestType ||
+                "Flat";
+
+        }
+
+
+        if (tenure) {
+
+            tenure.value =
+                editLoanData.tenure ||
+                "";
+
+        }
+
+
+        if (repaymentFrequency) {
+
+            repaymentFrequency.value =
+                editLoanData.repaymentFrequency ||
+                "Monthly";
+
+        }
+
+
+        if (processingFee) {
+
+            processingFee.value =
+                editLoanData.processingFee ||
+                "";
+
+        }
+
+
+        // =================================================
+        // DATES
+        // =================================================
+
+        if (loanDate) {
+
+            loanDate.value =
+                editLoanData.loanDate ||
+                "";
+
+        }
+
+
+        if (firstDueDate) {
+
+            firstDueDate.value =
+                editLoanData.firstDueDate ||
+                editLoanData.loanDate ||
+                "";
+
+        }
+
+
+        // =================================================
+        // DOCUMENT STATUS VALUES
+        // =================================================
+
+        const documents =
+            editLoanData.documents ||
+            {};
+
+
+        if (docAadhaar) {
+
+            docAadhaar.value =
+                documents.aadhaar ||
+                "pending";
+
+        }
+
+
+        if (docPan) {
+
+            docPan.value =
+                documents.pan ||
+                "pending";
+
+        }
+
+
+        if (docRc) {
+
+            docRc.value =
+                documents.rcBook ||
+                "pending";
+
+        }
+
+
+        if (docInsurance) {
+
+            docInsurance.value =
+                documents.insurance ||
+                "pending";
+
+        }
+
+
+        if (docInvoice) {
+
+            docInvoice.value =
+                documents.saleInvoice ||
+                "pending";
+
+        }
+
+
+        if (docOther) {
+
+            docOther.value =
+                documents.other ||
+                "";
+
+        }
+
+
+        // =================================================
+        // RELOAN
+        // =================================================
+
+        if (
+            editLoanData.loanType ===
+            "reloan"
+        ) {
+
+            await loadPreviousLoans(
+                editLoanData.customerDocumentId
+            );
+
+
+            if (
+                previousLoanSelect &&
+                editLoanData.previousLoanDocumentId
+            ) {
+
+                previousLoanSelect.value =
+                    editLoanData.previousLoanDocumentId;
+
+                previousLoanSelect.dispatchEvent(
+                    new Event(
+                        "change"
+                    )
+                );
+
+            }
+
+        }
+
+
+        // =================================================
+        // RECALCULATE
+        // =================================================
+
+        calculateLoan();
+
+
+        // =================================================
+        // CHANGE BUTTON
+        // =================================================
+
+        if (saveLoanBtn) {
+
+            saveLoanBtn.textContent =
+                "Update Loan";
+
+        }
+
+
+        // =================================================
+        // CHANGE PAGE TITLE
+        // =================================================
+
+        const heading =
+            document.querySelector(
+                "h1"
+            );
+
+
+        if (heading) {
+
+            heading.textContent =
+                "Edit Loan";
+
+        }
+
+
+        console.log(
+            "Edit Loan loaded:",
+            editLoanData
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Edit loan loading error:",
+            error
+        );
+
+
+        showMessage(
+            "Unable to load existing loan details."
+        );
+
+    }
+
+}
 
 // =====================================================
 // SAVE LOAN
@@ -3096,6 +3573,7 @@ onAuthStateChanged(
 
 
         await loadCustomers();
+        await loadLoanForEdit();
 
     }
 
