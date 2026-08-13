@@ -2487,6 +2487,10 @@ function getPaymentReceipt(
 // LOAD PAYMENTS + OWNER COLLECTIONS
 // =====================================================
 
+// =====================================================
+// LOAD PAYMENTS + COLLECTIONS
+// =====================================================
+
 async function loadPayments() {
 
     repaymentPayments = [];
@@ -2500,260 +2504,231 @@ async function loadPayments() {
 
     try {
 
-        const paymentsRef =
-            collection(
-                db,
-                "payments"
+        // =================================================
+        // STAFF PAYMENTS
+        // =================================================
+
+        const paymentsSnapshot =
+            await getDocs(
+                query(
+                    collection(
+                        db,
+                        "payments"
+                    ),
+                    where(
+                        "loanDocumentId",
+                        "==",
+                        loanDocumentId
+                    )
+                )
             );
 
-        const collectionsRef =
-            collection(
-                db,
-                "collections"
+
+        // =================================================
+        // OWNER / STAFF COLLECTIONS
+        // =================================================
+
+        const collectionsSnapshot =
+            await getDocs(
+                query(
+                    collection(
+                        db,
+                        "collections"
+                    ),
+                    where(
+                        "loanDocumentId",
+                        "==",
+                        loanDocumentId
+                    )
+                )
             );
 
-        // -------------------------------------------------
-        // MASTER RECORD MAP
-        //
-        // Key priority:
-        // 1. receipt number
-        // 2. transaction/payment reference
-        // 3. firestore document id
-        // -------------------------------------------------
 
-        const masterMap =
+        const records = [];
+
+
+        // =================================================
+        // PAYMENTS
+        // =================================================
+
+        paymentsSnapshot.forEach(
+            paymentDoc => {
+
+                records.push({
+
+                    id:
+                        paymentDoc.id,
+
+                    ...paymentDoc.data(),
+
+                    source:
+                        "PAYMENT"
+
+                });
+
+            }
+        );
+
+
+        // =================================================
+        // COLLECTIONS
+        // =================================================
+
+        collectionsSnapshot.forEach(
+            collectionDoc => {
+
+                records.push({
+
+                    id:
+                        collectionDoc.id,
+
+                    ...collectionDoc.data(),
+
+                    source:
+                        "COLLECTION"
+
+                });
+
+            }
+        );
+
+
+        // =================================================
+        // DUPLICATE PROTECTION
+        // =================================================
+
+        const master =
             new Map();
 
 
-        const loanNumber =
-            firstValue(
-                currentLoan,
-                [
-                    "loanId",
-                    "loanNumber",
-                    "loanCode"
-                ],
-                ""
-            );
+        records.forEach(
+            record => {
 
-
-        function clean(value) {
-
-            return String(
-                value ?? ""
-            )
-                .trim()
-                .toLowerCase();
-
-        }
-
-
-        function getReceipt(record) {
-
-            return clean(
-                firstValue(
-                    record,
-                    [
-                        "receiptNo",
-                        "receiptNumber",
-                        "receiptId"
-                    ],
-                    ""
-                )
-            );
-
-        }
-
-
-        function getTransactionReference(record) {
-
-            return clean(
-                firstValue(
-                    record,
-                    [
-                        "transactionId",
-                        "paymentId",
-                        "collectionId",
-                        "referenceId",
-                        "receiptId"
-                    ],
-                    ""
-                )
-            );
-
-        }
-
-
-        function getDateKey(record) {
-
-            const value =
-                getPaymentDate(
-                    record
-                );
-
-            return clean(
-                value
-            );
-
-        }
-
-
-        function getAmountKey(record) {
-
-            return String(
-                Math.round(
-                    getPaymentAmount(
-                        record
-                    ) * 100
-                )
-            );
-
-        }
-
-
-        function getMasterKey(
-            record,
-            source
-        ) {
-
-            const receipt =
-                getReceipt(
-                    record
-                );
-
-            if (
-                receipt &&
-                receipt !== "-"
-            ) {
-
-                return (
-                    "receipt:" +
-                    receipt
-                );
-
-            }
-
-
-            const transaction =
-                getTransactionReference(
-                    record
-                );
-
-            if (
-                transaction
-            ) {
-
-                return (
-                    "transaction:" +
-                    transaction
-                );
-
-            }
-
-
-            /*
-             * Fallback key.
-             *
-             * This prevents accidental duplicate
-             * records only when there is no receipt/
-             * transaction reference.
-             */
-
-            const loan =
-                clean(
-                    firstValue(
-                        record,
-                        [
-                            "loanDocumentId",
-                            "loanId",
-                            "loanNumber",
-                            "loanCode"
-                        ],
-                        loanNumber
+                const receipt =
+                    String(
+                        record.receiptNo ||
+                        record.receiptNumber ||
+                        record.receiptId ||
+                        ""
                     )
-                );
+                        .trim()
+                        .toLowerCase();
 
-            return (
-                source +
-                ":" +
-                loan +
-                ":" +
-                getDateKey(record) +
-                ":" +
-                getAmountKey(record)
+
+                const key =
+                    receipt
+                        ? `receipt:${receipt}`
+                        : `doc:${record.id}`;
+
+
+                const existing =
+                    master.get(
+                        key
+                    );
+
+
+                // COLLECTION is master record
+                // if same receipt exists in payments.
+                if (
+                    !existing ||
+                    (
+                        record.source ===
+                            "COLLECTION"
+                        &&
+                        existing.source ===
+                            "PAYMENT"
+                    )
+                ) {
+
+                    master.set(
+                        key,
+                        record
+                    );
+
+                }
+
+            }
+        );
+
+
+        repaymentPayments =
+            Array.from(
+                master.values()
             );
 
-        }
+
+        // =================================================
+        // SORT
+        // =================================================
+
+        repaymentPayments.sort(
+            (
+                a,
+                b
+            ) => {
+
+                const dateA =
+                    toScheduleDate(
+                        getPaymentDate(
+                            a
+                        )
+                    );
+
+                const dateB =
+                    toScheduleDate(
+                        getPaymentDate(
+                            b
+                        )
+                    );
 
 
-        function addRecord(
-            snapshot,
-            source
-        ) {
+                if (!dateA) return 1;
 
-            const data =
-                snapshot.data();
+                if (!dateB) return -1;
 
-            const record = {
-
-                id:
-                    snapshot.id,
-
-                ...data,
-
-                source:
-                    source
-
-            };
-
-
-            const key =
-                getMasterKey(
-                    record,
-                    source
-                );
-
-
-            const existing =
-                masterMap.get(
-                    key
-                );
-
-
-            /*
-             * If the same repayment exists in both
-             * payments and collections:
-             *
-             * COLLECTION is the master record.
-             */
-
-            if (!existing) {
-
-                masterMap.set(
-                    key,
-                    record
-                );
-
-                return;
-
-            }
-
-
-            if (
-                source === "COLLECTION" &&
-                existing.source === "PAYMENT"
-            ) {
-
-                masterMap.set(
-                    key,
-                    record
+                return (
+                    dateA.getTime() -
+                    dateB.getTime()
                 );
 
             }
+        );
 
-        }
+
+        console.log(
+            "LOAN VIEW - PAYMENT RECORDS:",
+            repaymentPayments
+        );
 
 
+        // =================================================
+        // IMPORTANT: REFRESH CALCULATION
+        // =================================================
+
+        refreshFinancialCards();
+
+
+        return repaymentPayments;
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Unable to load payments / collections:",
+            error
+        );
+
+        repaymentPayments = [];
+
+        refreshFinancialCards();
+
+        return [];
+
+    }
+
+}
         // =================================================
         // LOAD PAYMENTS
         // =================================================
