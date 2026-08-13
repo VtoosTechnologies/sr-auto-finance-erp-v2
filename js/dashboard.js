@@ -1,13 +1,28 @@
 // =====================================================
 // SR AUTO FINANCE ERP
-// Dashboard Controller
-// File: js/dashboard.js
+// DASHBOARD CONTROLLER
+//
+// File:
+// js/dashboard.js
+//
+// BUSINESS FUND SUMMARY
+//
+// Total Invested
+// Total Disbursed
+// Total Collected
+// Available Cash
+// Outstanding
+//
+// Powered By:
+// VTOOS Software Solutions
 // =====================================================
+
 
 import {
     onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
 
 import {
     collection,
@@ -16,6 +31,7 @@ import {
     getDocs
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
+
 import {
     auth,
     db
@@ -23,60 +39,242 @@ import {
 
 
 // =====================================================
+// CONFIGURATION
+// =====================================================
+
+const OWNER_INVESTMENT_COLLECTION =
+    "ownerInvestments";
+
+
+// =====================================================
 // ELEMENTS
 // =====================================================
 
 const userNameElement =
-    document.getElementById("userName");
+    document.getElementById(
+        "userName"
+    );
+
 
 const userRoleElement =
-    document.getElementById("userRole");
+    document.getElementById(
+        "userRole"
+    );
+
 
 const companyNameElement =
-    document.getElementById("companyName");
+    document.getElementById(
+        "companyName"
+    );
+
 
 const welcomeTextElement =
-    document.getElementById("welcomeText");
+    document.getElementById(
+        "welcomeText"
+    );
+
 
 const companyInfoElement =
-    document.getElementById("companyInfo");
+    document.getElementById(
+        "companyInfo"
+    );
+
 
 const totalCustomersElement =
-    document.getElementById("totalCustomers");
+    document.getElementById(
+        "totalCustomers"
+    );
+
 
 const activeLoansElement =
-    document.getElementById("activeLoans");
+    document.getElementById(
+        "activeLoans"
+    );
+
 
 const todayCollectionElement =
-    document.getElementById("todayCollection");
+    document.getElementById(
+        "todayCollection"
+    );
+
 
 const outstandingElement =
-    document.getElementById("outstanding") ||
-    document.getElementById("outstandingAmount");
+    document.getElementById(
+        "outstanding"
+    );
+
 
 const logoutBtn =
-    document.getElementById("logoutBtn");
+    document.getElementById(
+        "logoutBtn"
+    );
+
 
 // =====================================================
-// SAFE HTML
+// BUSINESS FUND ELEMENTS
 // =====================================================
 
-function escapeHtml(value) {
+const totalInvestedElement =
+    document.getElementById(
+        "totalInvested"
+    );
 
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+const businessTotalDisbursedElement =
+    document.getElementById(
+        "businessTotalDisbursed"
+    );
+
+
+const businessTotalCollectionElement =
+    document.getElementById(
+        "businessTotalCollection"
+    );
+
+
+const businessAvailableFundElement =
+    document.getElementById(
+        "businessAvailableFund"
+    );
+
+
+const businessOutstandingElement =
+    document.getElementById(
+        "businessOutstanding"
+    );
+
+
+const positionInvestedElement =
+    document.getElementById(
+        "positionInvested"
+    );
+
+
+const positionDisbursedElement =
+    document.getElementById(
+        "positionDisbursed"
+    );
+
+
+const positionCollectionElement =
+    document.getElementById(
+        "positionCollection"
+    );
+
+
+const positionAvailableElement =
+    document.getElementById(
+        "positionAvailable"
+    );
+
+
+const refreshFundBtn =
+    document.getElementById(
+        "refreshFundBtn"
+    );
+
+
+// =====================================================
+// HELPER
+// FIRST AVAILABLE VALUE
+// =====================================================
+
+function firstValue(
+    object,
+    fields,
+    fallback = ""
+) {
+
+    if (
+        !object
+    ) {
+
+        return fallback;
+
+    }
+
+
+    for (
+        const field of fields
+    ) {
+
+        const value =
+            object[field];
+
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            return value;
+
+        }
+
+    }
+
+
+    return fallback;
 
 }
+
+
+// =====================================================
+// HELPER
+// NUMBER VALUE
+// =====================================================
+
+function numberValue(
+    ...values
+) {
+
+    for (
+        const value of values
+    ) {
+
+        if (
+            value === undefined ||
+            value === null ||
+            value === ""
+        ) {
+
+            continue;
+
+        }
+
+
+        const number =
+            Number(
+                value
+            );
+
+
+        if (
+            Number.isFinite(
+                number
+            )
+        ) {
+
+            return number;
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
 
 // =====================================================
 // FORMAT CURRENCY
 // =====================================================
 
-function formatCurrency(value) {
+function formatCurrency(
+    value
+) {
 
     return new Intl.NumberFormat(
         "en-IN",
@@ -86,7 +284,9 @@ function formatCurrency(value) {
             maximumFractionDigits: 0
         }
     ).format(
-        Number(value) || 0
+        numberValue(
+            value
+        )
     );
 
 }
@@ -96,10 +296,16 @@ function formatCurrency(value) {
 // FORMAT DATE
 // =====================================================
 
-function formatDate(value) {
+function formatDate(
+    value
+) {
 
-    if (!value) {
+    if (
+        !value
+    ) {
+
         return "-";
+
     }
 
 
@@ -120,7 +326,9 @@ function formatDate(value) {
         } else {
 
             date =
-                new Date(value);
+                new Date(
+                    value
+                );
 
         }
 
@@ -156,7 +364,7 @@ function formatDate(value) {
 
 
 // =====================================================
-// GET TODAY KEY
+// TODAY KEY
 // =====================================================
 
 function getTodayKey() {
@@ -195,13 +403,19 @@ function getTodayKey() {
 
 
 // =====================================================
-// GET DATE KEY
+// DATE KEY
 // =====================================================
 
-function getDateKey(value) {
+function getDateKey(
+    value
+) {
 
-    if (!value) {
+    if (
+        !value
+    ) {
+
         return "";
+
     }
 
 
@@ -222,7 +436,9 @@ function getDateKey(value) {
         } else {
 
             date =
-                new Date(value);
+                new Date(
+                    value
+                );
 
         }
 
@@ -275,7 +491,7 @@ function getDateKey(value) {
 
 
 // =====================================================
-// GET LOAN TOTAL
+// LOAN TOTAL
 // =====================================================
 
 function getLoanTotal(
@@ -290,9 +506,9 @@ function getLoanTotal(
     ) {
 
         return (
-            Number(
+            numberValue(
                 loan.totalPayable
-            ) || 0
+            )
         );
 
     }
@@ -306,27 +522,25 @@ function getLoanTotal(
     ) {
 
         return (
-            Number(
+            numberValue(
                 loan.totalAmount
-            ) || 0
+            )
         );
 
     }
 
 
     const principal =
-        Number(
-            loan.loanAmount ??
-            loan.principalAmount ??
-            loan.amount ??
-            0
+        numberValue(
+            loan.loanAmount,
+            loan.principalAmount,
+            loan.amount
         );
 
 
     const interest =
-        Number(
-            loan.interestAmount ??
-            0
+        numberValue(
+            loan.interestAmount
         );
 
 
@@ -339,19 +553,17 @@ function getLoanTotal(
 
 
 // =====================================================
-// GET LOAN PAID
+// LOAN PAID
 // =====================================================
 
 function getLoanPaid(
     loan
 ) {
 
-    return Number(
-
-        loan.amountPaid ??
-        loan.paidAmount ??
-        0
-
+    return numberValue(
+        loan.amountPaid,
+        loan.paidAmount,
+        loan.totalPaid
     );
 
 }
@@ -373,9 +585,9 @@ function getOutstanding(
     ) {
 
         return Math.max(
-            Number(
+            numberValue(
                 loan.outstandingAmount
-            ) || 0,
+            ),
             0
         );
 
@@ -390,9 +602,9 @@ function getOutstanding(
     ) {
 
         return Math.max(
-            Number(
+            numberValue(
                 loan.balanceAmount
-            ) || 0,
+            ),
             0
         );
 
@@ -400,20 +612,18 @@ function getOutstanding(
 
 
     return Math.max(
-
         getLoanTotal(
             loan
         ) -
-
         getLoanPaid(
             loan
         ),
-
         0
-
     );
 
 }
+
+
 // =====================================================
 // GET PAYMENT AMOUNT
 // =====================================================
@@ -422,18 +632,15 @@ function getPaymentAmount(
     payment
 ) {
 
-    return Number(
-
-        payment.amountReceived ??
-        payment.totalCollection ??
-        payment.amountCollected ??
-        payment.paymentAmount ??
-        payment.paidAmount ??
-        payment.emiPaid ??
-        payment.amount ??
-        0
-
-    ) || 0;
+    return numberValue(
+        payment.amountReceived,
+        payment.totalCollection,
+        payment.amountCollected,
+        payment.paymentAmount,
+        payment.paidAmount,
+        payment.emiPaid,
+        payment.amount
+    );
 
 }
 
@@ -458,7 +665,7 @@ function getPaymentDate(
 
 
 // =====================================================
-// CHECK INVALID PAYMENT
+// INVALID PAYMENT STATUS
 // =====================================================
 
 function isInvalidPaymentStatus(
@@ -469,16 +676,17 @@ function isInvalidPaymentStatus(
         String(
             status ||
             "Success"
-        ).toLowerCase();
+        )
+            .trim()
+            .toLowerCase();
 
 
     return [
-
         "cancelled",
         "canceled",
         "reversed",
-        "deleted"
-
+        "deleted",
+        "rejected"
     ].includes(
         value
     );
@@ -495,13 +703,19 @@ function isStaffPayment(
 ) {
 
     const staffId =
-        payment.staffId ||
-        payment.assignedStaffId ||
-        payment.collectorStaffId ||
-        payment.collectedByStaffId ||
-        payment.staffDocumentId ||
-        payment.staffCode ||
-        payment.employeeId;
+        firstValue(
+            payment,
+            [
+                "staffId",
+                "assignedStaffId",
+                "collectorStaffId",
+                "collectedByStaffId",
+                "staffDocumentId",
+                "staffCode",
+                "employeeId"
+            ],
+            ""
+        );
 
 
     return !!staffId;
@@ -569,8 +783,17 @@ async function loadUserProfile(
             String(
                 userData.status ||
                 ""
-            ).toLowerCase();
+            )
+                .trim()
+                .toLowerCase();
 
+
+        /*
+         * Existing ERP login uses:
+         *
+         * active = true
+         * status = active
+         */
 
         if (
             !active ||
@@ -593,14 +816,27 @@ async function loadUserProfile(
 
 
         const name =
-            userData.name ||
-            userData.username ||
-            "User";
+            firstValue(
+                userData,
+                [
+                    "name",
+                    "username",
+                    "displayName"
+                ],
+                "User"
+            );
 
 
         const role =
-            userData.role ||
-            "Staff";
+            firstValue(
+                userData,
+                [
+                    "role",
+                    "userRole",
+                    "type"
+                ],
+                "Staff"
+            );
 
 
         if (
@@ -689,25 +925,49 @@ async function loadCompanySettings() {
 
 
         const companyName =
-            company.companyName ||
-            company.brandName ||
-            "SR Auto Finance";
+            firstValue(
+                company,
+                [
+                    "companyName",
+                    "brandName",
+                    "name"
+                ],
+                "SR Auto Finance"
+            );
 
 
         const ownerName =
-            company.ownerName ||
-            "";
+            firstValue(
+                company,
+                [
+                    "ownerName",
+                    "proprietorName"
+                ],
+                ""
+            );
 
 
         const mobile =
-            company.mobile ||
-            company.phone ||
-            "";
+            firstValue(
+                company,
+                [
+                    "mobile",
+                    "phone",
+                    "contactNumber"
+                ],
+                ""
+            );
 
 
         const address =
-            company.address ||
-            "";
+            firstValue(
+                company,
+                [
+                    "address",
+                    "companyAddress"
+                ],
+                ""
+            );
 
 
         if (
@@ -888,7 +1148,9 @@ async function loadLoans() {
                     String(
                         loan.status ||
                         "Active"
-                    ).toLowerCase();
+                    )
+                        .trim()
+                        .toLowerCase();
 
 
                 const outstanding =
@@ -897,16 +1159,15 @@ async function loadLoans() {
                     );
 
 
-                const isClosed = [
-
-                    "closed",
-                    "cancelled",
-                    "canceled",
-                    "completed"
-
-                ].includes(
-                    status
-                );
+                const isClosed =
+                    [
+                        "closed",
+                        "cancelled",
+                        "canceled",
+                        "completed"
+                    ].includes(
+                        status
+                    );
 
 
                 if (
@@ -954,6 +1215,18 @@ async function loadLoans() {
         }
 
 
+        if (
+            businessOutstandingElement
+        ) {
+
+            businessOutstandingElement.textContent =
+                formatCurrency(
+                    totalOutstanding
+                );
+
+        }
+
+
     } catch (
         error
     ) {
@@ -985,20 +1258,103 @@ async function loadLoans() {
 
         }
 
+
+        if (
+            businessOutstandingElement
+        ) {
+
+            businessOutstandingElement.textContent =
+                formatCurrency(
+                    0
+                );
+
+        }
+
     }
 
 }
 
 
 // =====================================================
-// LOAD TODAY'S COLLECTION
+// CALCULATE CURRENT OUTSTANDING
+// =====================================================
+
+async function calculateTotalOutstanding() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "loans"
+                )
+            );
+
+
+        let total =
+            0;
+
+
+        snapshot.forEach(
+            loanDoc => {
+
+                const loan =
+                    loanDoc.data();
+
+
+                const outstanding =
+                    getOutstanding(
+                        loan
+                    );
+
+
+                if (
+                    outstanding > 0
+                ) {
+
+                    total +=
+                        outstanding;
+
+                }
+
+            }
+        );
+
+
+        return total;
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Outstanding calculation error:",
+            error
+        );
+
+
+        return 0;
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD TODAY COLLECTION
 //
-// OWNER COLLECTION
+// collections
 // +
-// STAFF COLLECTION
+// staff-linked payments
 //
-// Staff payment is already customer collection.
-// Deposit acceptance is NOT added here again.
+// depositRequests / ownerCollectionLedger
+// are NOT counted here.
+//
+// Reason:
+// Staff deposit is only staff -> owner transfer.
+// It is not another customer collection.
 // =====================================================
 
 async function loadTodayCollection() {
@@ -1013,12 +1369,8 @@ async function loadTodayCollection() {
             0;
 
 
-        const countedIds =
-            new Set();
-
-
         // =================================================
-        // OWNER DIRECT COLLECTIONS
+        // OWNER COLLECTIONS
         // =================================================
 
         const collectionsSnapshot =
@@ -1049,10 +1401,9 @@ async function loadTodayCollection() {
 
 
                 const paymentDate =
-                    data.paymentDate ||
-                    data.collectionDate ||
-                    data.date ||
-                    data.createdAt;
+                    getPaymentDate(
+                        data
+                    );
 
 
                 if (
@@ -1067,32 +1418,17 @@ async function loadTodayCollection() {
                 }
 
 
-                const amount =
-                    Number(
-
-                        data.amount ??
-                        data.paidAmount ??
-                        data.paymentAmount ??
-                        data.amountReceived ??
-                        0
-
-                    ) || 0;
-
-
                 todayAmount +=
-                    amount;
-
-
-                countedIds.add(
-                    `collections_${collectionDoc.id}`
-                );
+                    getPaymentAmount(
+                        data
+                    );
 
             }
         );
 
 
         // =================================================
-        // STAFF COLLECTION
+        // STAFF PAYMENTS
         // =================================================
 
         const paymentsSnapshot =
@@ -1121,14 +1457,6 @@ async function loadTodayCollection() {
 
                 }
 
-
-                /*
-                 * Only staff-linked payment
-                 * records are added.
-                 *
-                 * This prevents normal owner
-                 * payments from duplicate counting.
-                 */
 
                 if (
                     !isStaffPayment(
@@ -1159,26 +1487,6 @@ async function loadTodayCollection() {
                 }
 
 
-                const uniqueId =
-                    `payments_${paymentDoc.id}`;
-
-
-                if (
-                    countedIds.has(
-                        uniqueId
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                countedIds.add(
-                    uniqueId
-                );
-
-
                 todayAmount +=
                     getPaymentAmount(
                         data
@@ -1187,10 +1495,6 @@ async function loadTodayCollection() {
             }
         );
 
-
-        // =================================================
-        // UPDATE
-        // =================================================
 
         if (
             todayCollectionElement
@@ -1231,11 +1535,655 @@ async function loadTodayCollection() {
 
 
 // =====================================================
+// LOAD TOTAL CUSTOMER COLLECTIONS
+//
+// PRIMARY:
+// collections
+//
+// LEGACY:
+// staff-linked payments
+//
+// IMPORTANT:
+// Staff deposit is not added.
+// =====================================================
+
+async function loadTotalCustomerCollections() {
+
+    try {
+
+        let totalCollection =
+            0;
+
+
+        const collectionReceiptIds =
+            new Set();
+
+
+        // =================================================
+        // COLLECTION MASTER
+        // =================================================
+
+        const collectionsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "collections"
+                )
+            );
+
+
+        collectionsSnapshot.forEach(
+            collectionDoc => {
+
+                const data =
+                    collectionDoc.data();
+
+
+                if (
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const amount =
+                    getPaymentAmount(
+                        data
+                    );
+
+
+                if (
+                    amount <= 0
+                ) {
+
+                    return;
+
+                }
+
+
+                totalCollection +=
+                    amount;
+
+
+                const receiptNo =
+                    String(
+                        firstValue(
+                            data,
+                            [
+                                "receiptNo",
+                                "receiptNumber",
+                                "paymentId",
+                                "collectionId"
+                            ],
+                            ""
+                        )
+                    ).trim();
+
+
+                if (
+                    receiptNo
+                ) {
+
+                    collectionReceiptIds.add(
+                        receiptNo
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =================================================
+        // LEGACY STAFF PAYMENTS
+        // =================================================
+
+        const paymentsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "payments"
+                )
+            );
+
+
+        paymentsSnapshot.forEach(
+            paymentDoc => {
+
+                const data =
+                    paymentDoc.data();
+
+
+                if (
+                    isInvalidPaymentStatus(
+                        data.status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                if (
+                    !isStaffPayment(
+                        data
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const receiptNo =
+                    String(
+                        firstValue(
+                            data,
+                            [
+                                "receiptNo",
+                                "receiptNumber",
+                                "paymentId",
+                                "collectionId"
+                            ],
+                            ""
+                        )
+                    ).trim();
+
+
+                if (
+                    receiptNo &&
+                    collectionReceiptIds.has(
+                        receiptNo
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                totalCollection +=
+                    getPaymentAmount(
+                        data
+                    );
+
+            }
+        );
+
+
+        return totalCollection;
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Total collection loading error:",
+            error
+        );
+
+
+        return 0;
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD OWNER INVESTMENT
+//
+// Firestore:
+// ownerInvestments
+//
+// Supported amount fields:
+//
+// amount
+// investmentAmount
+// capitalAmount
+//
+// Supported valid statuses:
+//
+// active
+// approved
+// completed
+// received
+//
+// Blank status is also treated as valid.
+// =====================================================
+
+async function loadTotalInvested() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    OWNER_INVESTMENT_COLLECTION
+                )
+            );
+
+
+        let totalInvested =
+            0;
+
+
+        snapshot.forEach(
+            investmentDoc => {
+
+                const data =
+                    investmentDoc.data();
+
+
+                const status =
+                    String(
+                        data.status ||
+                        ""
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                if (
+                    [
+                        "cancelled",
+                        "canceled",
+                        "reversed",
+                        "deleted",
+                        "rejected"
+                    ].includes(
+                        status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const amount =
+                    numberValue(
+                        data.amount,
+                        data.investmentAmount,
+                        data.capitalAmount
+                    );
+
+
+                if (
+                    amount > 0
+                ) {
+
+                    totalInvested +=
+                        amount;
+
+                }
+
+            }
+        );
+
+
+        return totalInvested;
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Owner investment loading error:",
+            error
+        );
+
+
+        return 0;
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD TOTAL DISBURSED
+//
+// PRIORITY:
+//
+// 1. netDisbursement
+// 2. disbursedAmount
+// 3. loanAmount
+// 4. principalAmount
+//
+// DO NOT use totalPayable.
+//
+// totalPayable includes interest.
+// =====================================================
+
+async function loadTotalDisbursed() {
+
+    try {
+
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "loans"
+                )
+            );
+
+
+        let totalDisbursed =
+            0;
+
+
+        snapshot.forEach(
+            loanDoc => {
+
+                const loan =
+                    loanDoc.data();
+
+
+                const status =
+                    String(
+                        loan.status ||
+                        "Active"
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                if (
+                    [
+                        "cancelled",
+                        "canceled",
+                        "reversed",
+                        "deleted"
+                    ].includes(
+                        status
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                const disbursed =
+                    numberValue(
+                        loan.netDisbursement,
+                        loan.disbursedAmount,
+                        loan.loanAmount,
+                        loan.principalAmount
+                    );
+
+
+                if (
+                    disbursed > 0
+                ) {
+
+                    totalDisbursed +=
+                        disbursed;
+
+                }
+
+            }
+        );
+
+
+        return totalDisbursed;
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Total disbursement loading error:",
+            error
+        );
+
+
+        return 0;
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD BUSINESS FUND SUMMARY
+//
+// FORMULA:
+//
+// Available Cash
+//
+// = Total Invested
+// - Total Disbursed
+// + Total Collected
+//
+// Outstanding
+//
+// = Current Loan Outstanding
+// =====================================================
+
+async function loadBusinessFundSummary() {
+
+    try {
+
+        const [
+            totalInvested,
+            totalDisbursed,
+            totalCollection,
+            totalOutstanding
+        ] = await Promise.all([
+
+            loadTotalInvested(),
+
+            loadTotalDisbursed(),
+
+            loadTotalCustomerCollections(),
+
+            calculateTotalOutstanding()
+
+        ]);
+
+
+        const availableCash =
+            totalInvested -
+            totalDisbursed +
+            totalCollection;
+
+
+        // =================================================
+        // MAIN CARDS
+        // =================================================
+
+        if (
+            totalInvestedElement
+        ) {
+
+            totalInvestedElement.textContent =
+                formatCurrency(
+                    totalInvested
+                );
+
+        }
+
+
+        if (
+            businessTotalDisbursedElement
+        ) {
+
+            businessTotalDisbursedElement.textContent =
+                formatCurrency(
+                    totalDisbursed
+                );
+
+        }
+
+
+        if (
+            businessTotalCollectionElement
+        ) {
+
+            businessTotalCollectionElement.textContent =
+                formatCurrency(
+                    totalCollection
+                );
+
+        }
+
+
+        if (
+            businessAvailableFundElement
+        ) {
+
+            businessAvailableFundElement.textContent =
+                formatCurrency(
+                    availableCash
+                );
+
+        }
+
+
+        if (
+            businessOutstandingElement
+        ) {
+
+            businessOutstandingElement.textContent =
+                formatCurrency(
+                    totalOutstanding
+                );
+
+        }
+
+
+        // =================================================
+        // FUND POSITION
+        // =================================================
+
+        if (
+            positionInvestedElement
+        ) {
+
+            positionInvestedElement.textContent =
+                formatCurrency(
+                    totalInvested
+                );
+
+        }
+
+
+        if (
+            positionDisbursedElement
+        ) {
+
+            positionDisbursedElement.textContent =
+                formatCurrency(
+                    totalDisbursed
+                );
+
+        }
+
+
+        if (
+            positionCollectionElement
+        ) {
+
+            positionCollectionElement.textContent =
+                formatCurrency(
+                    totalCollection
+                );
+
+        }
+
+
+        if (
+            positionAvailableElement
+        ) {
+
+            positionAvailableElement.textContent =
+                formatCurrency(
+                    availableCash
+                );
+
+        }
+
+
+        // =================================================
+        // CONSOLE DEBUG
+        // =================================================
+
+        console.log(
+            "========================================"
+        );
+
+
+        console.log(
+            "SR AUTO FINANCE - BUSINESS FUND"
+        );
+
+
+        console.log(
+            "Total Invested:",
+            totalInvested
+        );
+
+
+        console.log(
+            "Total Disbursed:",
+            totalDisbursed
+        );
+
+
+        console.log(
+            "Total Collected:",
+            totalCollection
+        );
+
+
+        console.log(
+            "Available Cash:",
+            availableCash
+        );
+
+
+        console.log(
+            "Outstanding:",
+            totalOutstanding
+        );
+
+
+        console.log(
+            "========================================"
+        );
+
+
+    } catch (
+        error
+    ) {
+
+        console.error(
+            "Business fund summary error:",
+            error
+        );
+
+    }
+
+}
+
+
+// =====================================================
 // LOAD RECENT COLLECTIONS
 //
-// OWNER COLLECTIONS
+// collections
 // +
-// STAFF PAYMENTS
+// staff-linked payments
 // =====================================================
 
 async function loadRecentCollections() {
@@ -1263,7 +2211,8 @@ async function loadRecentCollections() {
             );
 
 
-        const records = [];
+        const records =
+            [];
 
 
         // =================================================
@@ -1382,38 +2331,50 @@ async function loadRecentCollections() {
             ) => {
 
                 const dateA =
-                    a.createdAt &&
-                    typeof a.createdAt.toDate ===
-                    "function"
-
-                        ? a.createdAt.toDate()
-
-                        : new Date(
-                            a.paymentDate ||
-                            a.collectionDate ||
-                            a.date ||
-                            0
-                        );
+                    getPaymentDate(
+                        a
+                    );
 
 
                 const dateB =
-                    b.createdAt &&
-                    typeof b.createdAt.toDate ===
+                    getPaymentDate(
+                        b
+                    );
+
+
+                const timeA =
+                    dateA &&
+                    typeof dateA.toDate ===
                     "function"
 
-                        ? b.createdAt.toDate()
+                        ? dateA
+                            .toDate()
+                            .getTime()
 
                         : new Date(
-                            b.paymentDate ||
-                            b.collectionDate ||
-                            b.date ||
+                            dateA ||
                             0
-                        );
+                        ).getTime();
+
+
+                const timeB =
+                    dateB &&
+                    typeof dateB.toDate ===
+                    "function"
+
+                        ? dateB
+                            .toDate()
+                            .getTime()
+
+                        : new Date(
+                            dateB ||
+                            0
+                        ).getTime();
 
 
                 return (
-                    dateB.getTime() -
-                    dateA.getTime()
+                    timeB -
+                    timeA
                 );
 
             }
@@ -1427,7 +2388,9 @@ async function loadRecentCollections() {
             );
 
 
-        // Remove old generated list
+        // =================================================
+        // REMOVE OLD LIST
+        // =================================================
 
         const oldList =
             panel.querySelector(
@@ -1453,6 +2416,10 @@ async function loadRecentCollections() {
         }
 
 
+        // =================================================
+        // EMPTY
+        // =================================================
+
         if (
             !latest.length
         ) {
@@ -1467,8 +2434,17 @@ async function loadRecentCollections() {
                 "empty-state";
 
 
-            empty.textContent =
-                "No collections yet.";
+            empty.innerHTML = `
+
+                <div class="empty-icon">
+                    📋
+                </div>
+
+                <p>
+                    No collections yet.
+                </p>
+
+            `;
 
 
             panel.appendChild(
@@ -1480,6 +2456,10 @@ async function loadRecentCollections() {
 
         }
 
+
+        // =================================================
+        // LIST
+        // =================================================
 
         const list =
             document.createElement(
@@ -1494,8 +2474,10 @@ async function loadRecentCollections() {
         list.style.display =
             "flex";
 
+
         list.style.flexDirection =
             "column";
+
 
         list.style.gap =
             "10px";
@@ -1509,20 +2491,39 @@ async function loadRecentCollections() {
             payment => {
 
                 const receiptNo =
-                    payment.receiptNo ||
-                    payment.receiptNumber ||
-                    payment.id;
+                    firstValue(
+                        payment,
+                        [
+                            "receiptNo",
+                            "receiptNumber",
+                            "paymentId",
+                            "collectionId"
+                        ],
+                        payment.id
+                    );
 
 
                 const customerName =
-                    payment.customerName ||
-                    "Customer";
+                    firstValue(
+                        payment,
+                        [
+                            "customerName",
+                            "name"
+                        ],
+                        "Customer"
+                    );
 
 
                 const staffName =
-                    payment.staffName ||
-                    payment.collectorName ||
-                    "Staff";
+                    firstValue(
+                        payment,
+                        [
+                            "staffName",
+                            "collectorName",
+                            "collectedByName"
+                        ],
+                        "Staff"
+                    );
 
 
                 const amount =
@@ -1532,9 +2533,14 @@ async function loadRecentCollections() {
 
 
                 const paymentMode =
-                    payment.paymentMode ||
-                    payment.mode ||
-                    "";
+                    firstValue(
+                        payment,
+                        [
+                            "paymentMode",
+                            "mode"
+                        ],
+                        ""
+                    );
 
 
                 const paymentDate =
@@ -1561,26 +2567,34 @@ async function loadRecentCollections() {
                 row.style.display =
                     "flex";
 
+
                 row.style.alignItems =
                     "center";
+
 
                 row.style.justifyContent =
                     "space-between";
 
+
                 row.style.gap =
                     "12px";
+
 
                 row.style.padding =
                     "11px";
 
+
                 row.style.border =
                     "1px solid #e2e8f0";
+
 
                 row.style.borderRadius =
                     "10px";
 
+
                 row.style.background =
                     "#f8fafc";
+
 
                 row.style.cursor =
                     "pointer";
@@ -1677,15 +2691,6 @@ async function loadRecentCollections() {
                             payment.source ===
                             "staff"
                         ) {
-
-                            /*
-                             * Staff collection
-                             * view page.
-                             *
-                             * If this page is not
-                             * created yet, change
-                             * this path later.
-                             */
 
                             window.location.href =
                                 `staff-collection-view.html?id=${encodeURIComponent(
@@ -1792,12 +2797,67 @@ if (
 
 
 // =====================================================
+// REFRESH BUSINESS FUND
+// =====================================================
+
+if (
+    refreshFundBtn
+) {
+
+    refreshFundBtn.addEventListener(
+        "click",
+        async function() {
+
+            try {
+
+                refreshFundBtn.disabled =
+                    true;
+
+
+                refreshFundBtn.textContent =
+                    "↻ Loading...";
+
+
+                await loadBusinessFundSummary();
+
+
+            } catch (
+                error
+            ) {
+
+                console.error(
+                    "Fund refresh error:",
+                    error
+                );
+
+            } finally {
+
+                refreshFundBtn.disabled =
+                    false;
+
+
+                refreshFundBtn.textContent =
+                    "↻ Refresh";
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
 // AUTH STATE
 // =====================================================
 
 onAuthStateChanged(
     auth,
     async function(user) {
+
+        // =================================================
+        // NO USER
+        // =================================================
 
         if (
             !user
@@ -1806,10 +2866,15 @@ onAuthStateChanged(
             window.location.href =
                 "login.html";
 
+
             return;
 
         }
 
+
+        // =================================================
+        // VALIDATE USER
+        // =================================================
 
         const validUser =
             await loadUserProfile(
@@ -1826,12 +2891,9 @@ onAuthStateChanged(
         }
 
 
-        /*
-         * Load independently.
-         *
-         * One module failure should not
-         * stop the complete dashboard.
-         */
+        // =================================================
+        // LOAD DASHBOARD
+        // =================================================
 
         await Promise.all([
 
@@ -1843,7 +2905,9 @@ onAuthStateChanged(
 
             loadTodayCollection(),
 
-            loadRecentCollections()
+            loadRecentCollections(),
+
+            loadBusinessFundSummary()
 
         ]);
 
