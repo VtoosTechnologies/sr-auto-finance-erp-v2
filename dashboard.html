@@ -20,10 +20,16 @@
         content="SR Auto Finance ERP - Powered By VTOOS Software Solutions"
     >
 
-    <title>Dashboard | SR Auto Finance ERP</title>
+    <title>
+        Dashboard | SR Auto Finance ERP
+    </title>
 
 
     <style>
+
+        /* =====================================================
+           GLOBAL
+        ===================================================== */
 
         * {
             margin: 0;
@@ -33,388 +39,943 @@
 
 
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
             background: #f1f5f9;
+
             color: #1e293b;
         }
 
 
-        /* ================================
+        button {
+            font-family: inherit;
+        }
+
+
+        /* =====================================================
            HEADER
-        ================================= */
+        ===================================================== */
 
         .header {
+
             height: 70px;
+
             background: #0f172a;
+
             color: white;
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
+
             padding: 0 24px;
+
             position: sticky;
+
             top: 0;
+
             z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+
+            box-shadow:
+                0 4px 15px
+                rgba(0,0,0,0.15);
         }
 
 
         .brand-area {
+
             display: flex;
+
             align-items: center;
+
             gap: 12px;
         }
 
 
         .brand-logo {
+
             width: 42px;
+
             height: 42px;
+
             border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #2563eb,
+                    #0ea5e9
+                );
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             font-weight: 800;
+
             font-size: 15px;
         }
 
 
         .brand-text h1 {
+
             font-size: 17px;
+
             font-weight: 800;
         }
 
 
         .brand-text p {
+
             font-size: 11px;
+
             color: #94a3b8;
+
             margin-top: 2px;
         }
 
 
         .header-right {
+
             display: flex;
+
             align-items: center;
+
             gap: 14px;
         }
 
 
         .user-info {
+
             text-align: right;
         }
 
 
         .user-name {
+
             font-size: 13px;
+
             font-weight: 700;
         }
 
 
         .user-role {
+
             font-size: 10px;
+
             color: #94a3b8;
+
             text-transform: uppercase;
         }
 
 
         .logout-btn {
-            border: 1px solid #475569;
+
+            border:
+                1px solid #475569;
+
             background: transparent;
+
             color: white;
+
             padding: 9px 13px;
+
             border-radius: 9px;
+
             cursor: pointer;
+
             font-size: 12px;
+
+            transition: 0.2s;
         }
 
 
         .logout-btn:hover {
+
             background: #1e293b;
         }
 
 
-        /* ================================
+        /* =====================================================
            MAIN
-        ================================= */
+        ===================================================== */
 
         .main {
+
             max-width: 1400px;
+
             margin: auto;
+
             padding: 25px;
         }
 
 
-        /* ================================
+        /* =====================================================
            WELCOME
-        ================================= */
+        ===================================================== */
 
         .welcome-section {
-            margin-bottom: 24px;
+
+            margin-bottom: 22px;
         }
 
 
         .welcome-section h2 {
+
             font-size: 25px;
+
             font-weight: 800;
+
             color: #0f172a;
         }
 
 
         .welcome-section p {
+
             color: #64748b;
+
             font-size: 13px;
+
             margin-top: 5px;
         }
 
 
-        /* ================================
-           STAT CARDS
-        ================================= */
+        /* =====================================================
+           BUSINESS FUND SUMMARY
+        ===================================================== */
+
+        .business-fund-section {
+
+            background: white;
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 18px;
+
+            padding: 20px;
+
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 4px 12px
+                rgba(15,23,42,0.04);
+        }
+
+
+        .business-fund-header {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+        }
+
+
+        .business-fund-title {
+
+            font-size: 18px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+        }
+
+
+        .business-fund-subtitle {
+
+            margin-top: 4px;
+
+            font-size: 11px;
+
+            color: #64748b;
+        }
+
+
+        .fund-refresh-btn {
+
+            border:
+                1px solid #cbd5e1;
+
+            background: #f8fafc;
+
+            color: #334155;
+
+            padding: 8px 13px;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            transition: 0.2s;
+        }
+
+
+        .fund-refresh-btn:hover {
+
+            background: #eff6ff;
+
+            border-color: #93c5fd;
+        }
+
+
+        .fund-refresh-btn:disabled {
+
+            opacity: 0.6;
+
+            cursor: wait;
+        }
+
+
+        .fund-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(5, 1fr);
+
+            gap: 12px;
+        }
+
+
+        .fund-card {
+
+            border:
+                1px solid #e2e8f0;
+
+            border-radius: 13px;
+
+            padding: 16px;
+
+            background: #f8fafc;
+
+            min-width: 0;
+        }
+
+
+        .fund-card-top {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 8px;
+        }
+
+
+        .fund-label {
+
+            font-size: 11px;
+
+            color: #64748b;
+
+            font-weight: 700;
+        }
+
+
+        .fund-icon {
+
+            width: 34px;
+
+            height: 34px;
+
+            border-radius: 9px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            font-size: 17px;
+
+            background: #eff6ff;
+
+            flex-shrink: 0;
+        }
+
+
+        .fund-value {
+
+            margin-top: 12px;
+
+            font-size: 21px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+            word-break: break-word;
+        }
+
+
+        .fund-note {
+
+            margin-top: 5px;
+
+            font-size: 9px;
+
+            color: #94a3b8;
+
+            line-height: 1.4;
+        }
+
+
+        .investment-card {
+
+            border-color: #bfdbfe;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #ffffff,
+                    #eff6ff
+                );
+        }
+
+
+        .disbursed-card {
+
+            border-color: #fed7aa;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #ffffff,
+                    #fff7ed
+                );
+        }
+
+
+        .collection-card {
+
+            border-color: #bbf7d0;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #ffffff,
+                    #f0fdf4
+                );
+        }
+
+
+        .available-card {
+
+            border-color: #a5f3fc;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #ffffff,
+                    #ecfeff
+                );
+        }
+
+
+        .outstanding-card {
+
+            border-color: #ddd6fe;
+
+            background:
+                linear-gradient(
+                    180deg,
+                    #ffffff,
+                    #f5f3ff
+                );
+        }
+
+
+        /* =====================================================
+           FUND POSITION
+        ===================================================== */
+
+        .fund-position {
+
+            margin-top: 18px;
+
+            border-top:
+                1px solid #e2e8f0;
+
+            padding-top: 16px;
+        }
+
+
+        .fund-position-title {
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            color: #0f172a;
+
+            margin-bottom: 10px;
+        }
+
+
+        .fund-position-row {
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            padding: 7px 0;
+
+            font-size: 11px;
+
+            color: #64748b;
+        }
+
+
+        .fund-position-row strong {
+
+            color: #0f172a;
+
+            font-size: 12px;
+
+            text-align: right;
+        }
+
+
+        .fund-position-divider {
+
+            border-top:
+                1px dashed #cbd5e1;
+
+            margin: 4px 0;
+        }
+
+
+        .fund-position-row.final {
+
+            font-size: 13px;
+
+            color: #0f172a;
+        }
+
+
+        .fund-position-row.final strong {
+
+            font-size: 16px;
+
+            color: #0f172a;
+        }
+
+
+        /* =====================================================
+           OPERATIONAL STATISTICS
+        ===================================================== */
 
         .stats-grid {
+
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
             gap: 16px;
+
             margin-bottom: 25px;
         }
 
 
         .stat-card {
+
             background: white;
+
             border-radius: 16px;
+
             padding: 20px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+
+            border:
+                1px solid #e2e8f0;
+
+            box-shadow:
+                0 4px 12px
+                rgba(15,23,42,0.04);
         }
 
 
         .stat-top {
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
         }
 
 
         .stat-title {
+
             font-size: 12px;
+
             color: #64748b;
+
             font-weight: 600;
         }
 
 
         .stat-icon {
+
             width: 38px;
+
             height: 38px;
+
             border-radius: 10px;
+
             background: #eff6ff;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
+
             font-size: 18px;
         }
 
 
         .stat-value {
+
             margin-top: 13px;
+
             font-size: 24px;
+
             font-weight: 800;
+
             color: #0f172a;
         }
 
 
         .stat-note {
+
             margin-top: 5px;
+
             font-size: 10px;
+
             color: #94a3b8;
         }
 
 
-        /* ================================
-           QUICK ACTIONS
-        ================================= */
+        /* =====================================================
+           SECTION TITLE
+        ===================================================== */
 
         .section-title {
+
             font-size: 17px;
+
             font-weight: 800;
+
             color: #0f172a;
+
             margin-bottom: 13px;
         }
 
 
+        /* =====================================================
+           QUICK ACTIONS
+        ===================================================== */
+
         .quick-grid {
+
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
             gap: 14px;
+
             margin-bottom: 25px;
         }
 
 
         .quick-card {
+
             background: white;
-            border: 1px solid #e2e8f0;
+
+            border:
+                1px solid #e2e8f0;
+
             border-radius: 14px;
+
             padding: 18px;
+
             cursor: pointer;
+
             transition: 0.2s;
         }
 
 
         .quick-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(15,23,42,0.08);
-            border-color: #bfdbfe;
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 8px 20px
+                rgba(15,23,42,0.08);
+
+            border-color:
+                #bfdbfe;
         }
 
 
         .quick-icon {
+
             font-size: 22px;
+
             margin-bottom: 10px;
         }
 
 
         .quick-title {
+
             font-size: 13px;
+
             font-weight: 700;
         }
 
 
         .quick-desc {
+
             font-size: 10px;
+
             color: #64748b;
+
             margin-top: 4px;
         }
 
 
-        /* ================================
-           PENDING DEPOSIT BADGE
-        ================================= */
+        /* =====================================================
+           PENDING DEPOSIT
+        ===================================================== */
 
         .pending-badge {
+
             display: inline-flex;
+
             align-items: center;
+
             justify-content: center;
+
             min-width: 22px;
+
             height: 22px;
+
             padding: 0 7px;
+
             margin-top: 10px;
+
             border-radius: 20px;
+
             background: #fef2f2;
+
             color: #b91c1c;
+
             font-size: 10px;
+
             font-weight: 800;
         }
 
 
-        /* ================================
+        /* =====================================================
            BOTTOM GRID
-        ================================= */
+        ===================================================== */
 
         .bottom-grid {
+
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
+
+            grid-template-columns:
+                1.5fr 1fr;
+
             gap: 18px;
         }
 
 
         .panel {
+
             background: white;
-            border: 1px solid #e2e8f0;
+
+            border:
+                1px solid #e2e8f0;
+
             border-radius: 16px;
+
             padding: 20px;
         }
 
 
         .panel-header {
+
             display: flex;
+
             align-items: center;
+
             justify-content: space-between;
+
             margin-bottom: 18px;
         }
 
 
         .panel-title {
+
             font-size: 15px;
+
             font-weight: 800;
         }
 
 
         .view-all {
+
             border: none;
+
             background: transparent;
+
             color: #2563eb;
+
             font-size: 11px;
+
             cursor: pointer;
+
             font-weight: 700;
         }
 
 
-        /* ================================
+        /* =====================================================
            EMPTY STATE
-        ================================= */
+        ===================================================== */
 
         .empty-state {
+
             text-align: center;
+
             padding: 30px 15px;
+
             color: #94a3b8;
         }
 
 
         .empty-icon {
+
             font-size: 30px;
+
             margin-bottom: 8px;
         }
 
 
         .empty-state p {
+
             font-size: 12px;
         }
 
 
-        /* ================================
+        /* =====================================================
            FOOTER
-        ================================= */
-
-        .footer {
-            text-align: center;
-            padding: 25px 10px;
-            color: #94a3b8;
-            font-size: 10px;
-        }
-
+        ===================================================== */
 
         .app-footer {
+
             text-align: center;
-            padding: 20px 15px 25px;
+
+            padding:
+                20px 15px 25px;
+
             color: #94a3b8;
+
             font-size: 11px;
+
             line-height: 1.6;
         }
 
 
         .app-footer div:last-child {
+
             color: #64748b;
+
             font-weight: 600;
+
             font-size: 10px;
         }
 
 
-        /* ================================
+        /* =====================================================
            MOBILE
-        ================================= */
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+
+            .fund-grid {
+
+                grid-template-columns:
+                    repeat(3, 1fr);
+            }
+
+        }
+
 
         @media (max-width: 900px) {
 
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
 
             .quick-grid {
-                grid-template-columns: repeat(2, 1fr);
+
+                grid-template-columns:
+                    repeat(2, 1fr);
             }
 
 
             .bottom-grid {
-                grid-template-columns: 1fr;
+
+                grid-template-columns:
+                    1fr;
+            }
+
+        }
+
+
+        @media (max-width: 700px) {
+
+            .fund-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+
+            .business-fund-header {
+
+                align-items:
+                    flex-start;
             }
 
         }
@@ -423,58 +984,122 @@
         @media (max-width: 600px) {
 
             .header {
-                padding: 0 14px;
+
+                padding:
+                    0 14px;
+
                 height: 64px;
             }
 
 
             .brand-text h1 {
+
                 font-size: 14px;
             }
 
 
             .brand-text p {
+
                 display: none;
             }
 
 
             .user-info {
+
                 display: none;
             }
 
 
             .main {
-                padding: 18px 14px;
+
+                padding:
+                    18px 14px;
             }
 
 
             .welcome-section h2 {
+
                 font-size: 21px;
             }
 
 
             .stats-grid {
+
                 gap: 10px;
             }
 
 
             .stat-card {
+
                 padding: 15px;
             }
 
 
             .stat-value {
+
                 font-size: 20px;
             }
 
 
             .quick-grid {
+
                 gap: 10px;
             }
 
 
             .quick-card {
+
                 padding: 15px;
+            }
+
+
+            .fund-card {
+
+                padding: 14px;
+            }
+
+
+            .fund-value {
+
+                font-size: 18px;
+            }
+
+        }
+
+
+        @media (max-width: 450px) {
+
+            .fund-grid {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .stats-grid {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .quick-grid {
+
+                grid-template-columns:
+                    1fr;
+            }
+
+
+            .business-fund-header {
+
+                flex-direction:
+                    column;
+            }
+
+
+            .fund-refresh-btn {
+
+                width: 100%;
             }
 
         }
@@ -487,550 +1112,805 @@
 <body>
 
 
-<!-- =========================================
-     HEADER
-========================================= -->
+    <!-- =====================================================
+         HEADER
+    ===================================================== -->
 
-<header class="header">
+    <header class="header">
 
-    <div class="brand-area">
+        <div class="brand-area">
 
-        <div class="brand-logo">
-            SR
+            <div class="brand-logo">
+                SR
+            </div>
+
+
+            <div class="brand-text">
+
+                <h1 id="companyName">
+                    SR Auto Finance
+                </h1>
+
+                <p>
+                    Finance Management ERP
+                </p>
+
+            </div>
+
         </div>
 
 
-        <div class="brand-text">
+        <div class="header-right">
 
-            <h1 id="companyName">
-                SR Auto Finance
-            </h1>
+            <div class="user-info">
 
-            <p>
-                Finance Management ERP
+                <div
+                    class="user-name"
+                    id="userName"
+                >
+                    Admin
+                </div>
+
+
+                <div
+                    class="user-role"
+                    id="userRole"
+                >
+                    Owner
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="logout-btn"
+                id="logoutBtn"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- =====================================================
+         MAIN
+    ===================================================== -->
+
+    <main class="main">
+
+
+        <!-- =================================================
+             WELCOME
+        ================================================= -->
+
+        <section class="welcome-section">
+
+            <h2>
+                Dashboard
+            </h2>
+
+
+            <p id="welcomeText">
+                Welcome back. Here's your business overview.
             </p>
 
-        </div>
-
-    </div>
+        </section>
 
 
-    <div class="header-right">
+        <!-- =================================================
+             BUSINESS FUND SUMMARY
+        ================================================= -->
 
-        <div class="user-info">
-
-            <div
-                class="user-name"
-                id="userName"
-            >
-                Admin
-            </div>
+        <section class="business-fund-section">
 
 
-            <div
-                class="user-role"
-                id="userRole"
-            >
-                Owner
-            </div>
+            <div class="business-fund-header">
 
-        </div>
+                <div>
 
+                    <div class="business-fund-title">
+                        Business Fund Summary
+                    </div>
 
-        <button
-            class="logout-btn"
-            id="logoutBtn"
-        >
-            Logout
-        </button>
+                    <div class="business-fund-subtitle">
+                        Complete business capital and cash position
+                    </div>
 
-    </div>
-
-</header>
-
-
-
-<!-- =========================================
-     MAIN
-========================================= -->
-
-<main class="main">
-
-
-    <!-- Welcome -->
-
-    <section class="welcome-section">
-
-        <h2>
-            Dashboard
-        </h2>
-
-
-        <p id="welcomeText">
-            Welcome back. Here's your business overview.
-        </p>
-
-    </section>
-
-
-
-    <!-- =====================================
-         STATISTICS
-    ====================================== -->
-
-    <section class="stats-grid">
-
-
-        <!-- Total Customers -->
-
-        <div class="stat-card">
-
-            <div class="stat-top">
-
-                <div class="stat-title">
-                    Total Customers
                 </div>
 
 
-                <div class="stat-icon">
-                    👥
+                <button
+                    type="button"
+                    class="fund-refresh-btn"
+                    id="refreshFundBtn"
+                >
+                    ↻ Refresh
+                </button>
+
+            </div>
+
+
+            <div class="fund-grid">
+
+
+                <!-- TOTAL INVESTED -->
+
+                <div
+                    class="fund-card investment-card"
+                >
+
+                    <div class="fund-card-top">
+
+                        <div class="fund-label">
+                            Total Invested
+                        </div>
+
+                        <div class="fund-icon">
+                            🏦
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="fund-value"
+                        id="totalInvested"
+                    >
+                        ₹0
+                    </div>
+
+
+                    <div class="fund-note">
+                        Owner business capital
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL DISBURSED -->
+
+                <div
+                    class="fund-card disbursed-card"
+                >
+
+                    <div class="fund-card-top">
+
+                        <div class="fund-label">
+                            Total Disbursed
+                        </div>
+
+                        <div class="fund-icon">
+                            💸
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="fund-value"
+                        id="businessTotalDisbursed"
+                    >
+                        ₹0
+                    </div>
+
+
+                    <div class="fund-note">
+                        Actual loan money disbursed
+                    </div>
+
+                </div>
+
+
+                <!-- TOTAL COLLECTED -->
+
+                <div
+                    class="fund-card collection-card"
+                >
+
+                    <div class="fund-card-top">
+
+                        <div class="fund-label">
+                            Total Collected
+                        </div>
+
+                        <div class="fund-icon">
+                            📥
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="fund-value"
+                        id="businessTotalCollection"
+                    >
+                        ₹0
+                    </div>
+
+
+                    <div class="fund-note">
+                        Customer collections received
+                    </div>
+
+                </div>
+
+
+                <!-- AVAILABLE CASH -->
+
+                <div
+                    class="fund-card available-card"
+                >
+
+                    <div class="fund-card-top">
+
+                        <div class="fund-label">
+                            Available Cash
+                        </div>
+
+                        <div class="fund-icon">
+                            💰
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="fund-value"
+                        id="businessAvailableFund"
+                    >
+                        ₹0
+                    </div>
+
+
+                    <div class="fund-note">
+                        Cash available in business
+                    </div>
+
+                </div>
+
+
+                <!-- OUTSTANDING -->
+
+                <div
+                    class="fund-card outstanding-card"
+                >
+
+                    <div class="fund-card-top">
+
+                        <div class="fund-label">
+                            Outstanding
+                        </div>
+
+                        <div class="fund-icon">
+                            📊
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="fund-value"
+                        id="businessOutstanding"
+                    >
+                        ₹0
+                    </div>
+
+
+                    <div class="fund-note">
+                        Amount currently with customers
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- =================================================
+                 FUND POSITION
+            ================================================== -->
+
+            <div class="fund-position">
+
+                <div class="fund-position-title">
+                    Business Fund Position
+                </div>
+
+
+                <div class="fund-position-row">
+
+                    <span>
+                        Total Invested Capital
+                    </span>
+
+                    <strong id="positionInvested">
+                        ₹0
+                    </strong>
+
+                </div>
+
+
+                <div class="fund-position-row">
+
+                    <span>
+                        Less: Total Disbursed
+                    </span>
+
+                    <strong id="positionDisbursed">
+                        ₹0
+                    </strong>
+
+                </div>
+
+
+                <div class="fund-position-row">
+
+                    <span>
+                        Add: Total Collections
+                    </span>
+
+                    <strong id="positionCollection">
+                        ₹0
+                    </strong>
+
+                </div>
+
+
+                <div class="fund-position-divider"></div>
+
+
+                <div
+                    class="fund-position-row final"
+                >
+
+                    <span>
+                        Cash Available in Hand
+                    </span>
+
+                    <strong id="positionAvailable">
+                        ₹0
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             OPERATIONAL STATISTICS
+        ================================================== -->
+
+        <section class="stats-grid">
+
+
+            <!-- TOTAL CUSTOMERS -->
+
+            <div class="stat-card">
+
+                <div class="stat-top">
+
+                    <div class="stat-title">
+                        Total Customers
+                    </div>
+
+                    <div class="stat-icon">
+                        👥
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="totalCustomers"
+                >
+                    0
+                </div>
+
+
+                <div class="stat-note">
+                    Registered customers
                 </div>
 
             </div>
 
 
-            <div
-                class="stat-value"
-                id="totalCustomers"
-            >
-                0
+            <!-- ACTIVE LOANS -->
+
+            <div class="stat-card">
+
+                <div class="stat-top">
+
+                    <div class="stat-title">
+                        Active Loans
+                    </div>
+
+                    <div class="stat-icon">
+                        💳
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="activeLoans"
+                >
+                    0
+                </div>
+
+
+                <div class="stat-note">
+                    Currently active
+                </div>
+
             </div>
 
 
-            <div class="stat-note">
-                Registered customers
+            <!-- TODAY COLLECTION -->
+
+            <div class="stat-card">
+
+                <div class="stat-top">
+
+                    <div class="stat-title">
+                        Today's Collection
+                    </div>
+
+                    <div class="stat-icon">
+                        📥
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="todayCollection"
+                >
+                    ₹0
+                </div>
+
+
+                <div class="stat-note">
+                    Today's received amount
+                </div>
+
             </div>
 
+
+            <!-- OUTSTANDING -->
+
+            <div class="stat-card">
+
+                <div class="stat-top">
+
+                    <div class="stat-title">
+                        Outstanding
+                    </div>
+
+                    <div class="stat-icon">
+                        📊
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="stat-value"
+                    id="outstanding"
+                >
+                    ₹0
+                </div>
+
+
+                <div class="stat-note">
+                    Pending loan amount
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =================================================
+             QUICK ACTIONS
+        ================================================== -->
+
+        <div class="section-title">
+            Quick Actions
         </div>
 
 
+        <section class="quick-grid">
 
-        <!-- Active Loans -->
 
-        <div class="stat-card">
+            <!-- CUSTOMERS -->
 
-            <div class="stat-top">
+            <div
+                class="quick-card"
+                onclick="location.href='customers.html'"
+            >
 
-                <div class="stat-title">
-                    Active Loans
+                <div class="quick-icon">
+                    👤
                 </div>
 
+                <div class="quick-title">
+                    Customers
+                </div>
 
-                <div class="stat-icon">
+                <div class="quick-desc">
+                    Manage customers
+                </div>
+
+            </div>
+
+
+            <!-- LOANS -->
+
+            <div
+                class="quick-card"
+                onclick="location.href='loans.html'"
+            >
+
+                <div class="quick-icon">
+                    💳
+                </div>
+
+                <div class="quick-title">
+                    Loans
+                </div>
+
+                <div class="quick-desc">
+                    Manage loan accounts
+                </div>
+
+            </div>
+
+
+            <!-- COLLECTIONS -->
+
+            <div
+                class="quick-card"
+                onclick="location.href='collections.html'"
+            >
+
+                <div class="quick-icon">
+                    💵
+                </div>
+
+                <div class="quick-title">
+                    Collections
+                </div>
+
+                <div class="quick-desc">
+                    Record collections
+                </div>
+
+            </div>
+
+
+            <!-- REPORTS -->
+
+            <div
+                class="quick-card"
+                onclick="location.href='reports.html'"
+            >
+
+                <div class="quick-icon">
+                    📈
+                </div>
+
+                <div class="quick-title">
+                    Reports
+                </div>
+
+                <div class="quick-desc">
+                    View business reports
+                </div>
+
+            </div>
+
+
+            <!-- STAFF DEPOSITS -->
+
+            <div
+                class="quick-card"
+                onclick="location.href='staff-deposit-approval.html'"
+            >
+
+                <div class="quick-icon">
                     💰
                 </div>
 
-            </div>
+                <div class="quick-title">
+                    Staff Deposits
+                </div>
 
-
-            <div
-                class="stat-value"
-                id="activeLoans"
-            >
-                0
-            </div>
-
-
-            <div class="stat-note">
-                Currently active
-            </div>
-
-        </div>
-
-
-
-        <!-- Today's Collection -->
-
-        <div class="stat-card">
-
-            <div class="stat-top">
-
-                <div class="stat-title">
-                    Today's Collection
+                <div class="quick-desc">
+                    Review and approve staff deposits
                 </div>
 
 
-                <div class="stat-icon">
-                    📥
-                </div>
-
-            </div>
-
-
-            <div
-                class="stat-value"
-                id="todayCollection"
-            >
-                ₹0
-            </div>
-
-
-            <div class="stat-note">
-                Today's received amount
-            </div>
-
-        </div>
-
-
-
-        <!-- Outstanding -->
-
-        <div class="stat-card">
-
-            <div class="stat-top">
-
-                <div class="stat-title">
-                    Outstanding
-                </div>
-
-
-                <div class="stat-icon">
-                    📊
-                </div>
-
-            </div>
-
-
-            <div
-                class="stat-value"
-                id="outstanding"
-            >
-                ₹0
-            </div>
-
-
-            <div class="stat-note">
-                Pending loan amount
-            </div>
-
-        </div>
-
-
-    </section>
-
-
-
-    <!-- =====================================
-         QUICK ACTIONS
-    ====================================== -->
-
-    <div class="section-title">
-        Quick Actions
-    </div>
-
-
-    <section class="quick-grid">
-
-
-        <!-- Customers -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='customers.html'"
-        >
-
-            <div class="quick-icon">
-                👤
-            </div>
-
-
-            <div class="quick-title">
-                Customers
-            </div>
-
-
-            <div class="quick-desc">
-                Manage customers
-            </div>
-
-        </div>
-
-
-
-        <!-- Loans -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='loans.html'"
-        >
-
-            <div class="quick-icon">
-                💳
-            </div>
-
-
-            <div class="quick-title">
-                Loans
-            </div>
-
-
-            <div class="quick-desc">
-                Manage loan accounts
-            </div>
-
-        </div>
-
-
-
-        <!-- Collections -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='collections.html'"
-        >
-
-            <div class="quick-icon">
-                💵
-            </div>
-
-
-            <div class="quick-title">
-                Collections
-            </div>
-
-
-            <div class="quick-desc">
-                Record collections
-            </div>
-
-        </div>
-
-
-
-        <!-- Reports -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='reports.html'"
-        >
-
-            <div class="quick-icon">
-                📈
-            </div>
-
-
-            <div class="quick-title">
-                Reports
-            </div>
-
-
-            <div class="quick-desc">
-                View business reports
-            </div>
-
-        </div>
-
-
-
-        <!-- Staff Deposits -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='staff-deposit-approval.html'"
-        >
-
-            <div class="quick-icon">
-                💰
-            </div>
-
-
-            <div class="quick-title">
-                Staff Deposits
-            </div>
-
-
-            <div class="quick-desc">
-                Review and approve staff deposits
-            </div>
-
-
-            <div
-                class="pending-badge"
-                id="pendingDepositCount"
-            >
-                0 Pending
-            </div>
-
-        </div>
-
-
-
-        <!-- Staff -->
-
-        <div
-            class="quick-card"
-            onclick="location.href='staff.html'"
-        >
-
-            <div class="quick-icon">
-                👥
-            </div>
-
-
-            <div class="quick-title">
-                Staff
-            </div>
-
-
-            <div class="quick-desc">
-                Manage staff
-            </div>
-
-        </div>
-<!-- Owner Investment -->
-
-<div
-    class="quick-card"
-    onclick="location.href='owner-investment.html'"
->
-
-    <div class="quick-icon">
-        🏦
-    </div>
-
-    <div class="quick-title">
-        Owner Investment
-    </div>
-
-    <div class="quick-desc">
-        Manage business capital & investment
-    </div>
-
-</div>
-
-    </section>
-
-
-
-    <!-- =====================================
-         BOTTOM PANELS
-    ====================================== -->
-
-    <section class="bottom-grid">
-
-
-        <!-- Recent Collections -->
-
-        <div class="panel">
-
-            <div class="panel-header">
-
-                <div class="panel-title">
-                    Recent Collections
-                </div>
-
-
-                <button
-                    class="view-all"
-                    onclick="location.href='collections.html'"
+                <div
+                    class="pending-badge"
+                    id="pendingDepositCount"
                 >
-                    View All
-                </button>
-
-            </div>
-
-
-            <div class="empty-state">
-
-                <div class="empty-icon">
-                    📋
+                    0 Pending
                 </div>
 
-
-                <p>
-                    No recent collections available.
-                </p>
-
             </div>
 
-        </div>
 
-
-
-        <!-- Company -->
-
-        <div class="panel">
-
-            <div class="panel-header">
-
-                <div class="panel-title">
-                    Company Information
-                </div>
-
-
-                <button
-                    class="view-all"
-                    onclick="location.href='settings.html'"
-                >
-                    Settings
-                </button>
-
-            </div>
-
+            <!-- STAFF -->
 
             <div
-                class="empty-state"
-                id="companyInfo"
+                class="quick-card"
+                onclick="location.href='staff.html'"
             >
 
-                <div class="empty-icon">
-                    🏢
+                <div class="quick-icon">
+                    👥
                 </div>
 
+                <div class="quick-title">
+                    Staff
+                </div>
 
-                <p>
-                    Loading company information...
-                </p>
+                <div class="quick-desc">
+                    Manage staff
+                </div>
 
             </div>
 
+
+            <!-- OWNER INVESTMENT -->
+
+            <div
+                class="quick-card"
+                onclick="location.href='owner-investment.html'"
+            >
+
+                <div class="quick-icon">
+                    🏦
+                </div>
+
+                <div class="quick-title">
+                    Owner Investment
+                </div>
+
+                <div class="quick-desc">
+                    Manage business capital & investment
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =================================================
+             BOTTOM PANELS
+        ================================================== -->
+
+        <section class="bottom-grid">
+
+
+            <!-- RECENT COLLECTIONS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div class="panel-title">
+                        Recent Collections
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="view-all"
+                        onclick="location.href='collections.html'"
+                    >
+                        View All
+                    </button>
+
+                </div>
+
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        📋
+                    </div>
+
+                    <p>
+                        Loading recent collections...
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- COMPANY -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div class="panel-title">
+                        Company Information
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="view-all"
+                        onclick="location.href='settings.html'"
+                    >
+                        Settings
+                    </button>
+
+                </div>
+
+
+                <div
+                    class="empty-state"
+                    id="companyInfo"
+                >
+
+                    <div class="empty-icon">
+                        🏢
+                    </div>
+
+                    <p>
+                        Loading company information...
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+    </main>
+
+
+    <!-- =====================================================
+         FOOTER
+    ===================================================== -->
+
+    <footer class="app-footer">
+
+        <div>
+            © 2026 SR Auto Finance ERP
         </div>
 
+        <div>
+            Powered by VTOOS Software Solutions
+        </div>
 
-    </section>
-
-
-</main>
-
-
-
-<!-- =========================================
-     FOOTER
-========================================= -->
-
-<footer class="app-footer">
-
-    <div>
-        © 2026 SR Auto Finance ERP
-    </div>
+    </footer>
 
 
-    <div>
-        Powered by VTOOS Software Solutions
-    </div>
+    <!-- =====================================================
+         DASHBOARD JAVASCRIPT
+    ===================================================== -->
 
-</footer>
-
-
-
-<!-- =========================================
-     DASHBOARD JAVASCRIPT
-========================================= -->
-
-<script
-    type="module"
-    src="js/dashboard.js"
-></script>
+    <script
+        type="module"
+        src="js/dashboard.js"
+    ></script>
 
 
 </body>
