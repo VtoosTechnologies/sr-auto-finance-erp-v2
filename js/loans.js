@@ -842,10 +842,12 @@ function updateSummary() {
              * disbursed.
              */
 
-            totalDisbursed +=
-                getLoanAmount(
-                    loan
-                );
+           totalDisbursed +=
+    numberValue(
+        loan.netDisbursement,
+        loan.disbursedAmount,
+        getLoanAmount(loan)
+    );
 
 
             /*
