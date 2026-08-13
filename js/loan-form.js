@@ -983,7 +983,11 @@ function calculateLoan() {
         ) || 0;
 
 
-    const rate =
+    // =================================================
+    // ANNUAL INTEREST RATE
+    // =================================================
+
+    const annualRate =
         Number(
             interestRate.value
         ) || 0;
@@ -1008,19 +1012,36 @@ function calculateLoan() {
     let installment = 0;
 
 
-    // -----------------------------------------------
-    // Flat Interest
-    // -----------------------------------------------
+    // =================================================
+    // FLAT INTEREST
+    // Annual Rate Based
+    // =================================================
 
     if (
         interestType.value ===
         "Flat"
     ) {
 
+        /*
+         * Example:
+         *
+         * Principal = ₹1,00,000
+         * Annual Rate = 24%
+         * Tenure = 24 months
+         *
+         * Interest =
+         *
+         * 1,00,000
+         * × 24/100
+         * × 24/12
+         *
+         * = ₹48,000
+         */
+
         interest =
             principal *
-            (rate / 100) *
-            periods;
+            (annualRate / 100) *
+            (periods / 12);
 
 
         totalPayable =
@@ -1028,53 +1049,73 @@ function calculateLoan() {
             interest;
 
 
-        if (periods > 0) {
-
-            installment =
-                totalPayable /
-                periods;
-
-        }
+        installment =
+            periods > 0
+                ? totalPayable / periods
+                : 0;
 
     }
 
 
-    // -----------------------------------------------
-    // Reducing Interest
-    // -----------------------------------------------
+    // =================================================
+    // REDUCING BALANCE
+    // Annual Rate → Monthly Rate
+    // =================================================
 
     else {
 
         if (
             principal > 0 &&
-            rate > 0 &&
+            annualRate > 0 &&
             periods > 0
         ) {
 
+            /*
+             * Example:
+             *
+             * Annual Rate = 24%
+             *
+             * Monthly Rate =
+             * 24 / 12
+             * = 2%
+             *
+             * Decimal =
+             * 2 / 100
+             * = 0.02
+             */
+
             const monthlyRate =
-                rate / 100;
+                (
+                    annualRate /
+                    12
+                ) / 100;
 
 
             const numerator =
                 principal *
                 monthlyRate *
                 Math.pow(
-                    1 + monthlyRate,
+                    1 +
+                    monthlyRate,
                     periods
                 );
 
 
             const denominator =
                 Math.pow(
-                    1 + monthlyRate,
+                    1 +
+                    monthlyRate,
                     periods
-                ) - 1;
+                ) -
+                1;
 
 
             installment =
                 denominator !== 0
-                    ? numerator / denominator
-                    : principal / periods;
+                    ? numerator /
+                      denominator
+                    : principal /
+                      periods;
 
 
             totalPayable =
@@ -1086,7 +1127,9 @@ function calculateLoan() {
                 totalPayable -
                 principal;
 
-        } else {
+        }
+
+        else {
 
             totalPayable =
                 principal;
@@ -1098,7 +1141,8 @@ function calculateLoan() {
 
             installment =
                 periods > 0
-                    ? principal / periods
+                    ? principal /
+                      periods
                     : 0;
 
         }
@@ -1106,9 +1150,18 @@ function calculateLoan() {
     }
 
 
-    const netDisbursement =
-        principal - fee;
+    // =================================================
+    // NET DISBURSEMENT
+    // =================================================
 
+    const netDisbursement =
+        principal -
+        fee;
+
+
+    // =================================================
+    // DISPLAY CALCULATION
+    // =================================================
 
     document.getElementById(
         "calcPrincipal"
@@ -1175,7 +1228,6 @@ function calculateLoan() {
     };
 
 }
-
 
 // =====================================================
 // LIVE CALCULATION EVENTS
