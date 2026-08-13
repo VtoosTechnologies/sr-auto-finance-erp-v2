@@ -6270,16 +6270,30 @@ function refreshAllDerivedData() {
 // LOAD EVERYTHING AFTER AUTH
 // =====================================================
 
+// =====================================================
+// LOAD EVERYTHING AFTER AUTH
+// =====================================================
+
 async function loadEverything() {
 
+    // Load loan documents first
     await loadLoanDocuments();
 
 
-    /*
-     * Payments are already loaded as part
-     * of repayment schedule.
-     */
+    // IMPORTANT:
+    // Load BOTH:
+    // 1. payments
+    // 2. collections
+    //
+    // Before calculating:
+    // Paid Amount
+    // Outstanding
+    // Repayment Schedule
 
+    await loadRepaymentSchedule();
+
+
+    // Now refresh all calculated values
     refreshAllDerivedData();
 
 }
