@@ -821,9 +821,6 @@ function renderLoan() {
 
     loadLoanDocuments();
 
-
-    loadRepaymentSchedule();
-
 }
 // =====================================================
 // CLOSE BUTTON
