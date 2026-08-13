@@ -2401,27 +2401,42 @@ function getPaymentAmount(
     payment
 ) {
 
-    /*
-     * IMPORTANT:
-     *
-     * totalCollection is NOT used here.
-     *
-     * totalCollection may include penalty.
-     *
-     * Loan repayment should use only
-     * actual EMI / loan payment amount.
-     */
+    // =====================================================
+    // ACTUAL REPAYMENT / COLLECTION AMOUNT
+    // =====================================================
 
     return getNumber(
+
+        // Staff payment fields
         payment.emiPaid,
+
         payment.amountReceived,
+
         payment.paidAmount,
+
         payment.paymentAmount,
-        payment.amount
+
+        payment.amount,
+
+        // Owner collection fields
+        payment.collectionAmount,
+
+        payment.collectedAmount,
+
+        payment.amountCollected,
+
+        payment.emiAmount,
+
+        payment.installmentAmount,
+
+        payment.installment,
+
+        // Final fallback
+        payment.receivedAmount
+
     );
 
 }
-
 
 function getPaymentPenalty(
     payment
