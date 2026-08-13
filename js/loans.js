@@ -1142,7 +1142,19 @@ function renderLoans(
                                 >
                                     View
                                 </button>
-
+<button
+    class="action-btn"
+    style="
+        border-color:#2563eb;
+        color:#1d4ed8;
+    "
+    data-id="${escapeHTML(
+        loan.id
+    )}"
+    onclick="editLoan(this.dataset.id)"
+>
+    Edit
+</button>
 
                                 ${
                                     statusLower ===
