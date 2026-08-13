@@ -2587,6 +2587,9 @@ async function savePayment() {
 
                     loanId:
                         currentLoanId,
+                    loanDocumentId:
+    latestLoan.id ||
+    currentLoanId,
 
                     receiptNumber:
                         savedReceiptNumber,
