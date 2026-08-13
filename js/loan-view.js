@@ -3825,104 +3825,108 @@ function renderRepaymentSummary() {
 // =====================================================
 
 function renderPaymentDates() {
+    /*
+     * IMPORTANT:
+     * Last Payment must come from actual payment /
+     * collection records, NOT from repaymentSchedule.
+     *
+     * Example:
+     * Owner collection = ₹7,000
+     * Schedule may allocate:
+     * EMI 1 = ₹6,167
+     * EMI 2 = ₹833
+     *
+     * Last payment should still show:
+     * ₹7,000
+     */
 
-    const paidRows =
-        repaymentSchedule
-            .filter(
-                row =>
-                    getNumber(
-                        row.paidAmount
-                    ) > 0 &&
-                    row.paidDate
+    const successfulPayments = repaymentPayments
+        .filter(payment => {
+            const amount =
+                getPaymentAmount(payment);
+
+            const status = String(
+                payment.status || "success"
+            ).toLowerCase();
+
+            return (
+                amount > 0 &&
+                ![
+                    "cancelled",
+                    "canceled",
+                    "reversed",
+                    "failed",
+                    "deleted"
+                ].includes(status)
             );
+        })
+        .sort((a, b) => {
+            const dateA =
+                toScheduleDate(
+                    getPaymentDate(a)
+                );
 
+            const dateB =
+                toScheduleDate(
+                    getPaymentDate(b)
+                );
 
-    if (
-        !paidRows.length
-    ) {
+            return (
+                (dateB?.getTime() || 0) -
+                (dateA?.getTime() || 0)
+            );
+        });
+
+    /*
+     * =====================================================
+     * LAST PAYMENT
+     * =====================================================
+     */
+
+    const lastPayment =
+        successfulPayments[0];
+
+    if (lastPayment) {
+
+        setText(
+            "lastPaymentDate",
+            formatDate(
+                getPaymentDate(
+                    lastPayment
+                )
+            )
+        );
+
+        setText(
+            "lastPaymentAmount",
+            formatCurrency(
+                getPaymentAmount(
+                    lastPayment
+                )
+            )
+        );
+
+    } else {
 
         setText(
             "lastPaymentDate",
             "-"
         );
 
-
         setText(
             "lastPaymentAmount",
-            formatCurrency(
-                0
-            )
+            formatCurrency(0)
         );
-
-
-        setText(
-            "nextDueDate",
-            formatDate(
-                firstValue(
-                    currentLoan,
-                    [
-                        "nextDueDate",
-                        "nextInstallmentDate"
-                    ]
-                )
-            )
-        );
-
-
-        return;
 
     }
 
-
-    const sortedRows =
-        [
-            ...paidRows
-        ].sort(
-            (
-                first,
-                second
-            ) => {
-
-                const firstDate =
-                    toScheduleDate(
-                        first.paidDate
-                    );
-
-
-                const secondDate =
-                    toScheduleDate(
-                        second.paidDate
-                    );
-
-
-                return (
-                    (secondDate?.getTime() || 0) -
-                    (firstDate?.getTime() || 0)
-                );
-
-            }
-        );
-
-
-    const lastPayment =
-        sortedRows[0];
-
-
-    setText(
-        "lastPaymentDate",
-        formatDate(
-            lastPayment.paidDate
-        )
-    );
-
-
-    setText(
-        "lastPaymentAmount",
-        formatCurrency(
-            lastPayment.paidAmount
-        )
-    );
-
+    /*
+     * =====================================================
+     * NEXT DUE DATE
+     * =====================================================
+     *
+     * Next due must come from actual repayment schedule.
+     */
 
     const nextRow =
         repaymentSchedule.find(
@@ -3932,10 +3936,7 @@ function renderPaymentDates() {
                 ) > 0
         );
 
-
-    if (
-        nextRow
-    ) {
+    if (nextRow) {
 
         setText(
             "nextDueDate",
@@ -3944,10 +3945,15 @@ function renderPaymentDates() {
             )
         );
 
+    } else {
+
+        setText(
+            "nextDueDate",
+            "-"
+        );
+
     }
-
 }
-
 
 // =====================================================
 // NEXT DUE DETAILS
@@ -5971,7 +5977,7 @@ function refreshAllDerivedData() {
 
 
     renderPaymentHistory();
-
+renderPaymentDates();
 
     renderRepaymentSummary();
 
