@@ -3094,7 +3094,7 @@ function buildRepaymentSchedule() {
 
     }
 
-
+applyPaymentsToSchedule();
     return repaymentSchedule;
 
 }
