@@ -1712,7 +1712,286 @@ function getDocumentDetails() {
     };
 
 }
+// =====================================================
+// CREATE DEFAULT LOAN DOCUMENT RECORDS
+// =====================================================
+// Every newly created loan gets 5 document records.
+// These records are stored in TOP-LEVEL `documents`.
+// They are linked using `loanDocumentId`.
+// Status starts as Pending and can be edited later.
+// =====================================================
 
+function createLoanDocumentRecords(
+    transaction,
+    loanRef,
+    generatedLoanId,
+    customerId,
+    customerName,
+    customerMobile
+) {
+
+    const details =
+        getDocumentDetails();
+
+    const today =
+        loanDate.value ||
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+    const documentDefinitions = [
+
+        {
+            documentType: "Aadhaar Card",
+            documentName: "Aadhaar Card",
+            value: details.aadhaar
+        },
+
+        {
+            documentType: "PAN Card",
+            documentName: "PAN Card",
+            value: details.pan
+        },
+
+        {
+            documentType: "RC Book",
+            documentName: "RC Book",
+            value: details.rcBook
+        },
+
+        {
+            documentType: "Insurance",
+            documentName: "Insurance",
+            value: details.insurance
+        },
+
+        {
+            documentType: "Sale Invoice",
+            documentName: "Sale Invoice",
+            value: details.saleInvoice
+        }
+
+    ];
+
+    documentDefinitions.forEach(
+        definition => {
+
+            const rawStatus =
+                String(
+                    definition.value ||
+                    "pending"
+                )
+                    .trim()
+                    .toLowerCase();
+
+            let status =
+                "Pending";
+
+            if (
+                rawStatus === "received"
+            ) {
+                status =
+                    "Received";
+            }
+
+            else if (
+                rawStatus === "issued"
+            ) {
+                status =
+                    "Issued";
+            }
+
+            else if (
+                rawStatus === "returned"
+            ) {
+                status =
+                    "Returned";
+            }
+
+            const documentRef =
+                doc(
+                    collection(
+                        db,
+                        "documents"
+                    )
+                );
+
+            const receivedDate =
+                (
+                    status === "Received" ||
+                    status === "Issued" ||
+                    status === "Returned"
+                )
+                    ? today
+                    : "";
+
+            const issuedDate =
+                status === "Issued"
+                    ? today
+                    : "";
+
+            const returnedDate =
+                status === "Returned"
+                    ? today
+                    : "";
+
+            const currentHolder =
+                status === "Returned"
+                    ? "Customer"
+                    : "Office";
+
+            const lastAction =
+                status === "Pending"
+                    ? "Document Pending"
+                    : status === "Received"
+                        ? "Document Received"
+                        : status === "Issued"
+                            ? "Document Issued"
+                            : "Document Returned";
+
+            transaction.set(
+                documentRef,
+                {
+
+                    // ---------------------------------
+                    // DOCUMENT
+                    // ---------------------------------
+
+                    documentType:
+                        definition.documentType,
+
+                    documentName:
+                        definition.documentName,
+
+                    // ---------------------------------
+                    // LOAN LINK
+                    // ---------------------------------
+
+                    loanId:
+                        generatedLoanId,
+
+                    loanDocumentId:
+                        loanRef.id,
+
+                    // ---------------------------------
+                    // CUSTOMER
+                    // ---------------------------------
+
+                    customerId:
+                        customerId || "",
+
+                    customerName:
+                        customerName || "",
+
+                    customerMobile:
+                        customerMobile || "",
+
+                    // ---------------------------------
+                    // STATUS
+                    // ---------------------------------
+
+                    status:
+                        status,
+
+                    currentHolder:
+                        currentHolder,
+
+                    // ---------------------------------
+                    // STAFF
+                    // ---------------------------------
+
+                    staffId:
+                        "",
+
+                    staffCode:
+                        "",
+
+                    staffName:
+                        "",
+
+                    // ---------------------------------
+                    // DATES
+                    // ---------------------------------
+
+                    receivedDate:
+                        receivedDate,
+
+                    issuedDate:
+                        issuedDate,
+
+                    returnedDate:
+                        returnedDate,
+
+                    // ---------------------------------
+                    // REMARKS
+                    // ---------------------------------
+
+                    remarks:
+                        "",
+
+                    // ---------------------------------
+                    // LAST ACTION
+                    // ---------------------------------
+
+                    lastAction:
+                        lastAction,
+
+                    lastActionDate:
+                        today,
+
+                    // ---------------------------------
+                    // HISTORY
+                    // ---------------------------------
+
+                    history: [
+
+                        {
+
+                            action:
+                                lastAction,
+
+                            status:
+                                status,
+
+                            currentHolder:
+                                currentHolder,
+
+                            staffId:
+                                "",
+
+                            staffName:
+                                "",
+
+                            date:
+                                today,
+
+                            remarks:
+                                ""
+
+                        }
+
+                    ],
+
+                    // ---------------------------------
+                    // META
+                    // ---------------------------------
+
+                    createdAt:
+                        serverTimestamp(),
+
+                    updatedAt:
+                        serverTimestamp(),
+
+                    createdBy:
+                        currentUser.uid
+
+                }
+            );
+
+        }
+    );
+
+}
 
 // =====================================================
 // BUSINESS FUND HELPERS
@@ -2536,7 +2815,30 @@ async function saveLoan() {
 
                     );
 
+// =================================================
+// CREATE DEFAULT DOCUMENT REGISTER
+// =================================================
+// Create 5 document records together with the loan.
+// Because this is inside the same Firestore
+// transaction, loan + documents are saved together.
+// =================================================
 
+createLoanDocumentRecords(
+
+    transaction,
+
+    loanRef,
+
+    generatedLoanId,
+
+    customerId,
+
+    customerName,
+
+    customerMobile
+
+);
+                    
                     return generatedLoanId;
 
                 }
