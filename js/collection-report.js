@@ -3,11 +3,32 @@
 // COLLECTION REPORT
 // File: js/collection-report.js
 //
-// DATA SOURCE
-// payments + customers + loans + staff
+// UPDATED VERSION
+//
+// PRIMARY COLLECTION MASTER:
+//     collections
+//
+// LEGACY FALLBACK:
+//     payments
+//
+// Supports:
+//     Owner Collection
+//     Staff Collection
+//     Collection Document ID
+//     Receipt Number
+//     Collector ID
+//     Collector Role
+//     Date Wise
+//     Week Wise
+//     Month Wise
+//     Staff Wise
+//     Customer Wise
+//     Loan Filter
+//     CSV Download
+//     Print
 //
 // IMPORTANT:
-// Do not change collection-report.html for this version.
+// Existing collection-report.html can continue to be used.
 // ============================================================
 
 import {
@@ -24,7 +45,7 @@ import {
 // GLOBAL DATA
 // ============================================================
 
-let allPayments = [];
+let allCollections = [];
 let allCustomers = [];
 let allLoans = [];
 let allStaff = [];
@@ -33,7 +54,7 @@ let customerMap = new Map();
 let loanMap = new Map();
 let staffMap = new Map();
 
-let filteredPayments = [];
+let filteredCollections = [];
 
 let currentView = "date";
 
@@ -42,30 +63,23 @@ let currentView = "date";
 // ELEMENTS
 // ============================================================
 
-const allInputs = [
-    ...document.querySelectorAll("input")
-];
+const allInputs =
+    [...document.querySelectorAll("input")];
 
-const allSelects = [
-    ...document.querySelectorAll("select")
-];
+const allSelects =
+    [...document.querySelectorAll("select")];
 
 const fromDateInput =
     document.getElementById("fromDate") ||
-    allInputs.find(input =>
-        input.type === "date"
+    allInputs.find(
+        input => input.type === "date"
     );
 
 const toDateInput =
     document.getElementById("toDate") ||
-    allInputs.filter(input =>
-        input.type === "date"
+    allInputs.filter(
+        input => input.type === "date"
     )[1];
-
-
-// ------------------------------------------------------------
-// SELECTS
-// ------------------------------------------------------------
 
 const staffSelect =
     document.getElementById("staffSelect") ||
@@ -79,36 +93,34 @@ const loanSelect =
     document.getElementById("loanSelect") ||
     allSelects[2];
 
-
-// ------------------------------------------------------------
-// BUTTONS
-// ------------------------------------------------------------
-
 const searchButton =
     document.getElementById("searchBtn") ||
     [...document.querySelectorAll("button")]
-        .find(button =>
-            button.textContent
-                .trim()
-                .toLowerCase() === "search"
+        .find(
+            button =>
+                button.textContent
+                    .trim()
+                    .toLowerCase() === "search"
         );
 
 const printButton =
     document.getElementById("printBtn") ||
     [...document.querySelectorAll("button")]
-        .find(button =>
-            button.textContent
-                .trim()
-                .toLowerCase() === "print"
+        .find(
+            button =>
+                button.textContent
+                    .trim()
+                    .toLowerCase() === "print"
         );
 
 const downloadButton =
     document.getElementById("downloadBtn") ||
     [...document.querySelectorAll("button")]
-        .find(button =>
-            button.textContent
-                .trim()
-                .toLowerCase() === "download"
+        .find(
+            button =>
+                button.textContent
+                    .trim()
+                    .toLowerCase() === "download"
         );
 
 
@@ -145,21 +157,19 @@ function getReportTable() {
         return null;
     }
 
-    // Prefer table containing Date / Collections
     const matching =
-        tables.find(table =>
-            table.textContent
-                .toLowerCase()
-                .includes("date")
+        tables.find(
+            table =>
+                table.textContent
+                    .toLowerCase()
+                    .includes("date")
         );
 
     return matching || tables[0];
 }
 
-
 const reportTable =
     getReportTable();
-
 
 let reportTableHead =
     reportTable?.querySelector("thead");
@@ -169,7 +179,7 @@ let reportTableBody =
 
 
 // ============================================================
-// HELPERS
+// BASIC HELPERS
 // ============================================================
 
 function numberValue(value) {
@@ -251,17 +261,15 @@ function parseDateValue(value) {
             return value.toDate();
         }
 
-        if (
-            value instanceof Date
-        ) {
+        if (value instanceof Date) {
+
             return isNaN(value.getTime())
                 ? null
                 : value;
         }
 
-        if (
-            typeof value === "number"
-        ) {
+        if (typeof value === "number") {
+
             const date =
                 new Date(value);
 
@@ -270,17 +278,16 @@ function parseDateValue(value) {
                 : date;
         }
 
-        const stringValue =
+        const text =
             String(value).trim();
 
-        if (!stringValue) {
+        if (!text) {
             return null;
         }
 
-        // YYYY-MM-DD
         if (
             /^\d{4}-\d{2}-\d{2}$/
-                .test(stringValue)
+                .test(text)
         ) {
 
             const [
@@ -288,7 +295,7 @@ function parseDateValue(value) {
                 month,
                 day
             ] =
-                stringValue
+                text
                     .split("-")
                     .map(Number);
 
@@ -300,42 +307,39 @@ function parseDateValue(value) {
         }
 
         const date =
-            new Date(stringValue);
+            new Date(text);
 
-        if (
-            isNaN(date.getTime())
-        ) {
-            return null;
-        }
-
-        return date;
+        return isNaN(date.getTime())
+            ? null
+            : date;
 
     } catch {
+
         return null;
     }
 }
 
 
-function dateKey(date) {
+function dateKey(value) {
 
-    const parsed =
-        parseDateValue(date);
+    const date =
+        parseDateValue(value);
 
-    if (!parsed) {
+    if (!date) {
         return "";
     }
 
     const year =
-        parsed.getFullYear();
+        date.getFullYear();
 
     const month =
         String(
-            parsed.getMonth() + 1
+            date.getMonth() + 1
         ).padStart(2, "0");
 
     const day =
         String(
-            parsed.getDate()
+            date.getDate()
         ).padStart(2, "0");
 
     return `${year}-${month}-${day}`;
@@ -351,15 +355,14 @@ function formatDate(value) {
         return "-";
     }
 
-    return date
-        .toLocaleDateString(
-            "en-IN",
-            {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            }
-        );
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
 }
 
 
@@ -387,7 +390,7 @@ function getFirstDayOfMonth() {
 
 
 // ============================================================
-// GENERIC FIELD HELPERS
+// GENERIC FIELD HELPER
 // ============================================================
 
 function firstValue(
@@ -408,6 +411,7 @@ function firstValue(
             value !== null &&
             String(value).trim() !== ""
         ) {
+
             return value;
         }
     }
@@ -417,23 +421,35 @@ function firstValue(
 
 
 // ============================================================
-// NORMALIZE PAYMENT
+// NORMALIZE COLLECTION
+//
+// IMPORTANT:
+//
+// Current collection-form writes:
+//     collections
+//
+// Document ID itself is preserved as:
+//     collectionId
+//
+// Receipt:
+//     receiptNo
+//
+// Owner / Staff:
+//     collectorRole
+//     collectorUid
+//     collectorStaffId
+//     collectorName
+//
 // ============================================================
 
-function normalizePayment(
-    payment
+function normalizeCollection(
+    raw,
+    documentId
 ) {
-
-    const paymentId =
-        payment.id || "";
-
-    // --------------------------------------------------------
-    // IDS
-    // --------------------------------------------------------
 
     const customerId =
         firstValue(
-            payment,
+            raw,
             [
                 "customerId"
             ]
@@ -441,27 +457,21 @@ function normalizePayment(
 
     const loanId =
         firstValue(
-            payment,
+            raw,
             [
                 "loanId",
+                "loanNumber",
                 "loanDocumentId"
             ]
         );
 
-    const staffId =
+    const loanDocumentId =
         firstValue(
-            payment,
+            raw,
             [
-                "staffId",
-                "collectedBy",
-                "createdBy"
+                "loanDocumentId"
             ]
         );
-
-
-    // --------------------------------------------------------
-    // MAPPED RECORDS
-    // --------------------------------------------------------
 
     const customer =
         customerMap.get(
@@ -470,13 +480,53 @@ function normalizePayment(
 
     const loan =
         loanMap.get(
-            String(loanId)
+            String(loanDocumentId || loanId)
         ) || {};
+
+    const staffId =
+        firstValue(
+            raw,
+            [
+                "staffId",
+                "collectorStaffId"
+            ]
+        );
 
     const staff =
         staffMap.get(
             String(staffId)
         ) || {};
+
+    const role =
+        String(
+            firstValue(
+                raw,
+                [
+                    "collectorRole",
+                    "role"
+                ],
+                ""
+            )
+        )
+            .trim()
+            .toLowerCase();
+
+    const isOwner =
+        role === "owner" ||
+        role === "admin" ||
+        role === "administrator" ||
+        !staffId && (
+            role === "" ||
+            firstValue(
+                raw,
+                [
+                    "collectorUid",
+                    "createdByUid",
+                    "createdBy"
+                ],
+                ""
+            )
+        );
 
 
     // --------------------------------------------------------
@@ -485,7 +535,7 @@ function normalizePayment(
 
     const customerName =
         firstValue(
-            payment,
+            raw,
             [
                 "customerName"
             ]
@@ -503,7 +553,7 @@ function normalizePayment(
 
     const customerMobile =
         firstValue(
-            payment,
+            raw,
             [
                 "customerMobile",
                 "mobile",
@@ -527,9 +577,11 @@ function normalizePayment(
 
     const loanNumber =
         firstValue(
-            payment,
+            raw,
             [
-                "loanId"
+                "loanId",
+                "loanNumber",
+                "loanCode"
             ]
         ) ||
         firstValue(
@@ -540,15 +592,16 @@ function normalizePayment(
                 "loanCode"
             ]
         ) ||
-        loanId ||
+        loanDocumentId ||
         "-";
 
 
     const vehicleNumber =
         firstValue(
-            payment,
+            raw,
             [
-                "vehicleNumber"
+                "vehicleNumber",
+                "vehicleNo"
             ]
         ) ||
         firstValue(
@@ -562,15 +615,15 @@ function normalizePayment(
 
 
     // --------------------------------------------------------
-    // STAFF
+    // COLLECTOR
     // --------------------------------------------------------
 
-    const staffName =
+    const collectorName =
         firstValue(
-            payment,
+            raw,
             [
-                "staffName",
-                "collectedByName"
+                "collectorName",
+                "staffName"
             ]
         ) ||
         firstValue(
@@ -581,10 +634,25 @@ function normalizePayment(
                 "fullName"
             ]
         ) ||
-        "-";
+        (
+            isOwner
+                ? "Owner"
+                : "-"
+        );
 
 
-    const staffCode =
+    const collectorId =
+        firstValue(
+            raw,
+            [
+                "collectorStaffId",
+                "staffId",
+                "collectorUid",
+                "staffDocumentId",
+                "createdByUid",
+                "createdBy"
+            ]
+        ) ||
         firstValue(
             staff,
             [
@@ -593,38 +661,35 @@ function normalizePayment(
                 "employeeId"
             ]
         ) ||
-        "";
-
-
-    // --------------------------------------------------------
-    // PAYMENT DATE
-    // --------------------------------------------------------
-
-    const paymentDate =
-        firstValue(
-            payment,
-            [
-                "paymentDate",
-                "collectionDate",
-                "date",
-                "createdAt"
-            ]
+        (
+            isOwner
+                ? "OWNER"
+                : ""
         );
 
 
+    const collectorRole =
+        isOwner
+            ? "Owner"
+            : (
+                role ||
+                "Staff"
+            );
+
+
     // --------------------------------------------------------
-    // AMOUNTS
+    // AMOUNT
     // --------------------------------------------------------
 
-    const paidAmount =
+    const amount =
         numberValue(
             firstValue(
-                payment,
+                raw,
                 [
+                    "paidAmount",
+                    "amount",
                     "amountReceived",
                     "totalReceived",
-                    "amount",
-                    "paidAmount",
                     "paymentAmount"
                 ],
                 0
@@ -635,53 +700,21 @@ function normalizePayment(
     const penalty =
         numberValue(
             firstValue(
-                payment,
+                raw,
                 [
-                    "penaltyCollected",
+                    "penalty",
                     "penaltyAmount",
-                    "penalty"
+                    "penaltyCollected"
                 ],
                 0
             )
         );
 
 
-    const previousOutstanding =
+    const dueAmount =
         numberValue(
             firstValue(
-                payment,
-                [
-                    "previousOutstanding",
-                    "previousPending",
-                    "outstandingBeforePayment"
-                ],
-                0
-            )
-        );
-
-
-    const balanceAfterPayment =
-        numberValue(
-            firstValue(
-                payment,
-                [
-                    "balanceAfterPayment",
-                    "outstandingAfterPayment",
-                    "balanceAmount"
-                ],
-                0
-            )
-        );
-
-
-    // --------------------------------------------------------
-    // EMI / DUE AMOUNT
-    // --------------------------------------------------------
-
-    const installmentAmount =
-        numberValue(
-            firstValue(
-                payment,
+                raw,
                 [
                     "dueAmount",
                     "installmentAmount",
@@ -705,86 +738,94 @@ function normalizePayment(
         );
 
 
-// --------------------------------------------------------
-// EMI / INSTALLMENT PENDING
-// --------------------------------------------------------
-//
-// This is PAYMENT-level pending.
-// It must NOT use loan.pendingAmount or loan outstanding.
-//
-// Due EMI - EMI amount paid in this transaction
-//
-// Example:
-// EMI Due       ₹8,000
-// EMI Paid      ₹8,000
-// EMI Pending   ₹0
-//
-// If partial payment:
-// EMI Due       ₹8,000
-// EMI Paid      ₹5,000
-// EMI Pending   ₹3,000
-// --------------------------------------------------------
-
-const pendingAmount =
-    Math.max(
-        installmentAmount -
-        paidAmount,
-        0
-    );
-
-  // --------------------------------------------------------
-// TOTAL COLLECTION
-// --------------------------------------------------------
-//
-// EMI / payment amount + penalty / interest collected
-//
-// Example:
-// EMI Paid     ₹8,000
-// Penalty      ₹800
-// Total        ₹8,800
-// --------------------------------------------------------
-
-const totalCollection =
-    Math.max(
-        paidAmount +
-        penalty,
-        0
-    );
-
-
-    // --------------------------------------------------------
-    // INSTALLMENTS
-    // --------------------------------------------------------
-
-    const paidInstallments =
+    const pendingAmount =
         numberValue(
             firstValue(
-                payment,
+                raw,
                 [
-                    "paidInstallments",
-                    "installmentsPaid"
+                    "pendingAmount",
+                    "emiPending",
+                    "installmentPending"
                 ],
                 0
             )
         );
 
-    const pendingInstallments =
+
+    const totalCollection =
         numberValue(
             firstValue(
-                payment,
+                raw,
                 [
-                    "pendingInstallments",
-                    "installmentsPending"
+                    "totalCollection",
+                    "totalReceived"
                 ],
                 0
             )
+        ) ||
+        (
+            amount +
+            penalty
+        );
+
+
+    // --------------------------------------------------------
+    // DATE
+    // --------------------------------------------------------
+
+    const paymentDate =
+        firstValue(
+            raw,
+            [
+                "paymentDate",
+                "collectionDate",
+                "date",
+                "createdAt"
+            ]
+        );
+
+
+    // --------------------------------------------------------
+    // IDS
+    // --------------------------------------------------------
+
+    const receiptNumber =
+        firstValue(
+            raw,
+            [
+                "receiptNo",
+                "receiptNumber",
+                "receiptId"
+            ],
+            "-"
+        );
+
+
+    const collectionId =
+        documentId ||
+        firstValue(
+            raw,
+            [
+                "collectionId"
+            ],
+            "-"
         );
 
 
     return {
 
         id:
-            paymentId,
+            documentId,
+
+        collectionId,
+
+        receiptNumber,
+
+        loanDocumentId,
+
+        loanId,
+
+        loanNumber,
 
         customerId,
 
@@ -792,27 +833,22 @@ const totalCollection =
 
         customerMobile,
 
-        loanId,
-
-        loanNumber,
-
         vehicleNumber,
+
+        collectorId,
+
+        collectorName,
+
+        collectorRole,
 
         staffId,
 
-        staffName,
-
-        staffCode,
-
         paymentDate,
 
-        paidDate:
-            paymentDate,
+        dueAmount,
 
-        dueAmount:
-            installmentAmount,
-
-        paidAmount,
+        paidAmount:
+            amount,
 
         pendingAmount,
 
@@ -820,17 +856,34 @@ const totalCollection =
 
         totalCollection,
 
-        previousOutstanding,
+        balanceBeforePayment:
+            numberValue(
+                firstValue(
+                    raw,
+                    [
+                        "balanceBeforePayment",
+                        "previousOutstanding"
+                    ],
+                    0
+                )
+            ),
 
-        balanceAfterPayment,
-
-        paidInstallments,
-
-        pendingInstallments,
+        balanceAfterPayment:
+            numberValue(
+                firstValue(
+                    raw,
+                    [
+                        "balanceAfterPayment",
+                        "outstandingAfterPayment",
+                        "balanceAmount"
+                    ],
+                    0
+                )
+            ),
 
         paymentMode:
             firstValue(
-                payment,
+                raw,
                 [
                     "paymentMode",
                     "mode"
@@ -838,20 +891,19 @@ const totalCollection =
                 "-"
             ),
 
-        receiptNumber:
+        referenceNumber:
             firstValue(
-                payment,
+                raw,
                 [
-                    "receiptNumber",
-                    "receiptNo",
-                    "paymentId"
+                    "referenceNumber",
+                    "referenceNo"
                 ],
-                "-"
+                ""
             ),
 
         remarks:
             firstValue(
-                payment,
+                raw,
                 [
                     "remarks",
                     "remark"
@@ -862,40 +914,45 @@ const totalCollection =
         status:
             String(
                 firstValue(
-                    payment,
-                    ["status"],
+                    raw,
+                    [
+                        "status"
+                    ],
                     "Success"
                 )
-            ).toLowerCase()
+            )
+                .trim()
+                .toLowerCase(),
+
+        createdAt:
+            raw.createdAt,
+
+        createdBy:
+            firstValue(
+                raw,
+                [
+                    "createdByUid",
+                    "createdBy"
+                ],
+                ""
+            )
 
     };
 }
 
 
 // ============================================================
-// LOAD ALL DATA
+// LOAD SUPPORTING DATA
 // ============================================================
 
-async function loadAllData() {
+async function loadSupportData() {
 
-    showLoading();
-
-
-    try {
-
-        const [
-            paymentsSnapshot,
-            customersSnapshot,
-            loansSnapshot,
-            staffSnapshot
-        ] = await Promise.all([
-
-            getDocs(
-                collection(
-                    db,
-                    "payments"
-                )
-            ),
+    const [
+        customersSnapshot,
+        loansSnapshot,
+        staffSnapshot
+    ] =
+        await Promise.all([
 
             getDocs(
                 collection(
@@ -921,197 +978,243 @@ async function loadAllData() {
         ]);
 
 
-        // ====================================================
-        // CUSTOMERS
-        // ====================================================
+    // --------------------------------------------------------
+    // CUSTOMERS
+    // --------------------------------------------------------
 
-        allCustomers = [];
+    allCustomers = [];
 
-        customerMap.clear();
+    customerMap.clear();
 
-        customersSnapshot.forEach(
-            docSnap => {
+    customersSnapshot.forEach(
+        docSnap => {
 
-                const data =
-                    docSnap.data();
+            const data =
+                docSnap.data();
 
-                const customer = {
+            const customer = {
 
-                    id:
-                        docSnap.id,
+                id:
+                    docSnap.id,
 
-                    ...data
+                ...data
 
-                };
+            };
 
-                allCustomers.push(
-                    customer
+            allCustomers.push(
+                customer
+            );
+
+            customerMap.set(
+                String(docSnap.id),
+                customer
+            );
+
+
+            const customerId =
+                firstValue(
+                    data,
+                    [
+                        "customerId"
+                    ]
                 );
 
+            if (customerId) {
 
                 customerMap.set(
-                    String(
-                        docSnap.id
-                    ),
+                    String(customerId),
                     customer
                 );
-
-
-                const customerId =
-                    firstValue(
-                        data,
-                        [
-                            "customerId"
-                        ]
-                    );
-
-                if (customerId) {
-
-                    customerMap.set(
-                        String(
-                            customerId
-                        ),
-                        customer
-                    );
-                }
-
             }
-        );
+
+        }
+    );
 
 
-        // ====================================================
-        // LOANS
-        // ====================================================
+    // --------------------------------------------------------
+    // LOANS
+    // --------------------------------------------------------
 
-        allLoans = [];
+    allLoans = [];
 
-        loanMap.clear();
+    loanMap.clear();
 
-        loansSnapshot.forEach(
-            docSnap => {
+    loansSnapshot.forEach(
+        docSnap => {
 
-                const data =
-                    docSnap.data();
+            const data =
+                docSnap.data();
 
-                const loan = {
+            const loan = {
 
-                    id:
-                        docSnap.id,
+                id:
+                    docSnap.id,
 
-                    ...data
+                ...data
 
-                };
+            };
 
-                allLoans.push(
-                    loan
+            allLoans.push(
+                loan
+            );
+
+            loanMap.set(
+                String(docSnap.id),
+                loan
+            );
+
+
+            const loanId =
+                firstValue(
+                    data,
+                    [
+                        "loanId",
+                        "loanNumber",
+                        "loanCode"
+                    ]
                 );
 
+            if (loanId) {
 
                 loanMap.set(
-                    String(
-                        docSnap.id
-                    ),
+                    String(loanId),
                     loan
                 );
-
-
-                const loanId =
-                    firstValue(
-                        data,
-                        [
-                            "loanId",
-                            "loanNumber",
-                            "loanCode"
-                        ]
-                    );
-
-                if (loanId) {
-
-                    loanMap.set(
-                        String(
-                            loanId
-                        ),
-                        loan
-                    );
-                }
-
             }
-        );
+
+        }
+    );
 
 
-        // ====================================================
-        // STAFF
-        // ====================================================
+    // --------------------------------------------------------
+    // STAFF
+    // --------------------------------------------------------
 
-        allStaff = [];
+    allStaff = [];
 
-        staffMap.clear();
+    staffMap.clear();
 
-        staffSnapshot.forEach(
-            docSnap => {
+    staffSnapshot.forEach(
+        docSnap => {
 
-                const data =
-                    docSnap.data();
+            const data =
+                docSnap.data();
 
-                const staff = {
+            const staff = {
 
-                    id:
-                        docSnap.id,
+                id:
+                    docSnap.id,
 
-                    ...data
+                ...data
 
-                };
+            };
 
-                allStaff.push(
-                    staff
+            allStaff.push(
+                staff
+            );
+
+            staffMap.set(
+                String(docSnap.id),
+                staff
+            );
+
+
+            const staffId =
+                firstValue(
+                    data,
+                    [
+                        "staffId",
+                        "staffCode",
+                        "employeeId"
+                    ]
                 );
 
+            if (staffId) {
 
                 staffMap.set(
-                    String(
-                        docSnap.id
-                    ),
+                    String(staffId),
                     staff
                 );
-
-
-                const staffId =
-                    firstValue(
-                        data,
-                        [
-                            "staffId",
-                            "staffCode",
-                            "employeeId"
-                        ]
-                    );
-
-                if (staffId) {
-
-                    staffMap.set(
-                        String(
-                            staffId
-                        ),
-                        staff
-                    );
-                }
-
             }
-        );
+
+        }
+    );
+
+}
+
+
+// ============================================================
+// LOAD COLLECTIONS
+//
+// CURRENT SYSTEM:
+// collections
+//
+// If collections has data:
+//     use collections only.
+//
+// If collections is completely empty:
+//     fallback to payments.
+//
+// This prevents duplicate collection reporting.
+// ============================================================
+
+async function loadAllData() {
+
+    showLoading();
+
+    try {
+
+        await loadSupportData();
 
 
         // ====================================================
-        // PAYMENTS
+        // PRIMARY COLLECTION MASTER
         // ====================================================
 
-        allPayments = [];
+        const collectionsSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "collections"
+                )
+            );
 
-        paymentsSnapshot.forEach(
+
+        let rawCollections = [];
+
+
+        collectionsSnapshot.forEach(
             docSnap => {
 
                 const data =
                     docSnap.data();
 
-                allPayments.push({
+                const status =
+                    String(
+                        firstValue(
+                            data,
+                            [
+                                "status"
+                            ],
+                            "Success"
+                        )
+                    )
+                        .trim()
+                        .toLowerCase();
+
+
+                if (
+                    status === "cancelled" ||
+                    status === "canceled" ||
+                    status === "reversed" ||
+                    status === "deleted"
+                ) {
+
+                    return;
+                }
+
+
+                rawCollections.push({
 
                     id:
                         docSnap.id,
@@ -1125,30 +1228,104 @@ async function loadAllData() {
 
 
         // ====================================================
-        // NORMALIZE
+        // LEGACY FALLBACK
         // ====================================================
 
-        allPayments =
-            allPayments
+        if (
+            rawCollections.length === 0
+        ) {
+
+            try {
+
+                const paymentsSnapshot =
+                    await getDocs(
+                        collection(
+                            db,
+                            "payments"
+                        )
+                    );
+
+
+                paymentsSnapshot.forEach(
+                    docSnap => {
+
+                        const data =
+                            docSnap.data();
+
+                        const status =
+                            String(
+                                firstValue(
+                                    data,
+                                    [
+                                        "status"
+                                    ],
+                                    "Success"
+                                )
+                            )
+                                .trim()
+                                .toLowerCase();
+
+
+                        if (
+                            status === "cancelled" ||
+                            status === "canceled" ||
+                            status === "reversed" ||
+                            status === "deleted"
+                        ) {
+
+                            return;
+                        }
+
+
+                        rawCollections.push({
+
+                            id:
+                                docSnap.id,
+
+                            ...data
+
+                        });
+
+                    }
+                );
+
+            } catch (
+                legacyError
+            ) {
+
+                console.warn(
+                    "Legacy payments fallback unavailable:",
+                    legacyError
+                );
+
+            }
+
+        }
+
+
+        allCollections =
+            rawCollections
                 .map(
-                    normalizePayment
+                    item =>
+                        normalizeCollection(
+                            item,
+                            item.id
+                        )
                 )
                 .filter(
-                    payment =>
-                        payment.status !==
-                        "cancelled" &&
-                        payment.status !==
-                        "canceled" &&
-                        payment.status !==
-                        "reversed"
+                    item =>
+                        item.status !==
+                            "cancelled" &&
+                        item.status !==
+                            "canceled" &&
+                        item.status !==
+                            "reversed" &&
+                        item.status !==
+                            "deleted"
                 );
 
 
-        // ====================================================
-        // SORT
-        // ====================================================
-
-        allPayments.sort(
+        allCollections.sort(
             (
                 first,
                 second
@@ -1165,8 +1342,14 @@ async function loadAllData() {
                     );
 
                 return (
-                    (secondDate?.getTime() || 0) -
-                    (firstDate?.getTime() || 0)
+                    (
+                        secondDate?.getTime() ||
+                        0
+                    ) -
+                    (
+                        firstDate?.getTime() ||
+                        0
+                    )
                 );
 
             }
@@ -1179,10 +1362,10 @@ async function loadAllData() {
 
 
         console.log(
-            "Collection report loaded:",
+            "SR Auto Finance Collection Report loaded:",
             {
-                payments:
-                    allPayments.length,
+                collections:
+                    allCollections.length,
 
                 customers:
                     allCustomers.length,
@@ -1206,12 +1389,14 @@ async function loadAllData() {
         showError(
             "Unable to load collection report."
         );
+
     }
+
 }
 
 
 // ============================================================
-// FILTER OPTIONS
+// SELECT HELPERS
 // ============================================================
 
 function clearSelect(
@@ -1241,71 +1426,46 @@ function clearSelect(
 }
 
 
+// ============================================================
+// POPULATE FILTERS
+// ============================================================
+
 function populateFilters() {
 
-    // ========================================================
-    // STAFF
-    // ========================================================
+    // --------------------------------------------------------
+    // STAFF / OWNER
+    // --------------------------------------------------------
 
     clearSelect(
         staffSelect,
-        "All Staff"
+        "All Collectors"
     );
 
 
-    const staffValues =
+    const collectorValues =
         new Map();
 
 
-    allPayments.forEach(
-        payment => {
+    allCollections.forEach(
+        item => {
 
             if (
-                payment.staffId
+                item.collectorId
             ) {
 
-                staffValues.set(
+                collectorValues.set(
                     String(
-                        payment.staffId
+                        item.collectorId
                     ),
-                    payment.staffName
-                );
-            }
-
-        }
-    );
-
-
-    allStaff.forEach(
-        staff => {
-
-            const id =
-                staff.id ||
-                firstValue(
-                    staff,
-                    [
-                        "staffId",
-                        "staffCode"
-                    ]
+                    `${
+                        item.collectorName ||
+                        "Unknown"
+                    } - ${
+                        item.collectorRole ||
+                        "Staff"
+                    }`
                 );
 
-            const name =
-                firstValue(
-                    staff,
-                    [
-                        "name",
-                        "staffName",
-                        "fullName"
-                    ],
-                    id
-                );
-
-            if (id) {
-
-                staffValues.set(
-                    String(id),
-                    name
-                );
             }
 
         }
@@ -1313,7 +1473,7 @@ function populateFilters() {
 
 
     [
-        ...staffValues.entries()
+        ...collectorValues.entries()
     ]
         .sort(
             (
@@ -1342,8 +1502,7 @@ function populateFilters() {
                     id;
 
                 option.textContent =
-                    name ||
-                    id;
+                    name;
 
                 staffSelect?.appendChild(
                     option
@@ -1353,9 +1512,9 @@ function populateFilters() {
         );
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // CUSTOMER
-    // ========================================================
+    // --------------------------------------------------------
 
     clearSelect(
         customerSelect,
@@ -1367,54 +1526,21 @@ function populateFilters() {
         new Map();
 
 
-    allPayments.forEach(
-        payment => {
+    allCollections.forEach(
+        item => {
 
             if (
-                payment.customerId
+                item.customerId
             ) {
 
                 customerValues.set(
                     String(
-                        payment.customerId
+                        item.customerId
                     ),
-                    payment.customerName
-                );
-            }
-
-        }
-    );
-
-
-    allCustomers.forEach(
-        customer => {
-
-            const id =
-                customer.id ||
-                firstValue(
-                    customer,
-                    [
-                        "customerId"
-                    ]
+                    item.customerName ||
+                    item.customerId
                 );
 
-            const name =
-                firstValue(
-                    customer,
-                    [
-                        "name",
-                        "customerName",
-                        "fullName"
-                    ],
-                    id
-                );
-
-            if (id) {
-
-                customerValues.set(
-                    String(id),
-                    name
-                );
             }
 
         }
@@ -1451,8 +1577,7 @@ function populateFilters() {
                     id;
 
                 option.textContent =
-                    name ||
-                    id;
+                    name;
 
                 customerSelect?.appendChild(
                     option
@@ -1462,9 +1587,9 @@ function populateFilters() {
         );
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // LOAN
-    // ========================================================
+    // --------------------------------------------------------
 
     clearSelect(
         loanSelect,
@@ -1476,56 +1601,26 @@ function populateFilters() {
         new Map();
 
 
-    allPayments.forEach(
-        payment => {
+    allCollections.forEach(
+        item => {
 
             if (
-                payment.loanId
+                item.loanId ||
+                item.loanNumber
             ) {
 
-                loanValues.set(
+                const id =
                     String(
-                        payment.loanId
-                    ),
-                    payment.loanNumber ||
-                    payment.loanId
-                );
-            }
+                        item.loanId ||
+                        item.loanNumber
+                    );
 
-        }
-    );
-
-
-    allLoans.forEach(
-        loan => {
-
-            const id =
-                loan.id ||
-                firstValue(
-                    loan,
-                    [
-                        "loanId",
-                        "loanNumber"
-                    ]
-                );
-
-            const name =
-                firstValue(
-                    loan,
-                    [
-                        "loanId",
-                        "loanNumber",
-                        "loanCode"
-                    ],
+                loanValues.set(
+                    id,
+                    item.loanNumber ||
                     id
                 );
 
-            if (id) {
-
-                loanValues.set(
-                    String(id),
-                    name
-                );
             }
 
         }
@@ -1546,7 +1641,7 @@ function populateFilters() {
                     String(
                         second[1]
                     )
-        )
+                )
         )
         .forEach(
             (
@@ -1562,8 +1657,7 @@ function populateFilters() {
                     id;
 
                 option.textContent =
-                    name ||
-                    id;
+                    name;
 
                 loanSelect?.appendChild(
                     option
@@ -1571,34 +1665,35 @@ function populateFilters() {
 
             }
         );
+
 }
 
 
 // ============================================================
-// APPLY SEARCH
+// SEARCH / FILTER
 // ============================================================
 
 function applySearch() {
 
-    const fromDate =
-        fromDateInput?.value || "";
+    const fromText =
+        fromDateInput?.value ||
+        "";
 
-    const toDate =
-        toDateInput?.value || "";
-
+    const toText =
+        toDateInput?.value ||
+        "";
 
     const from =
         parseDateValue(
-            fromDate
+            fromText
         );
 
     const to =
         parseDateValue(
-            toDate
+            toText
         );
 
 
-    // End date inclusive
     if (to) {
 
         to.setHours(
@@ -1607,36 +1702,41 @@ function applySearch() {
             59,
             999
         );
+
     }
 
 
-    const selectedStaff =
-        staffSelect?.value || "";
+    const selectedCollector =
+        staffSelect?.value ||
+        "";
 
     const selectedCustomer =
-        customerSelect?.value || "";
+        customerSelect?.value ||
+        "";
 
     const selectedLoan =
-        loanSelect?.value || "";
+        loanSelect?.value ||
+        "";
 
 
-    filteredPayments =
-        allPayments.filter(
-            payment => {
+    filteredCollections =
+        allCollections.filter(
+            item => {
 
-                const paymentDate =
+                const itemDate =
                     parseDateValue(
-                        payment.paymentDate
+                        item.paymentDate
                     );
 
 
                 if (
                     from &&
                     (
-                        !paymentDate ||
-                        paymentDate < from
+                        !itemDate ||
+                        itemDate < from
                     )
                 ) {
+
                     return false;
                 }
 
@@ -1644,23 +1744,25 @@ function applySearch() {
                 if (
                     to &&
                     (
-                        !paymentDate ||
-                        paymentDate > to
+                        !itemDate ||
+                        itemDate > to
                     )
                 ) {
+
                     return false;
                 }
 
 
                 if (
-                    selectedStaff &&
+                    selectedCollector &&
                     String(
-                        payment.staffId
+                        item.collectorId
                     ) !==
                     String(
-                        selectedStaff
+                        selectedCollector
                     )
                 ) {
+
                     return false;
                 }
 
@@ -1668,26 +1770,59 @@ function applySearch() {
                 if (
                     selectedCustomer &&
                     String(
-                        payment.customerId
+                        item.customerId
                     ) !==
                     String(
                         selectedCustomer
                     )
                 ) {
+
                     return false;
                 }
 
 
                 if (
-                    selectedLoan &&
-                    String(
-                        payment.loanId
-                    ) !==
-                    String(
-                        selectedLoan
-                    )
+                    selectedLoan
                 ) {
-                    return false;
+
+                    const itemLoan =
+                        String(
+                            item.loanId ||
+                            item.loanNumber ||
+                            ""
+                        );
+
+
+                    if (
+                        itemLoan !==
+                        String(
+                            selectedLoan
+                        )
+                    ) {
+
+                        const loan =
+                            loanMap.get(
+                                String(
+                                    selectedLoan
+                                )
+                            );
+
+
+                        if (
+                            !loan ||
+                            String(
+                                loan.id
+                            ) !==
+                            String(
+                                item.loanDocumentId
+                            )
+                        ) {
+
+                            return false;
+                        }
+
+                    }
+
                 }
 
 
@@ -1698,6 +1833,7 @@ function applySearch() {
 
 
     renderReport();
+
 }
 
 
@@ -1706,51 +1842,42 @@ function applySearch() {
 // ============================================================
 
 function updateSummary(
-    payments
+    records
 ) {
 
-    let due =
-        0;
-
-    let paid =
-        0;
-
-    let pending =
-        0;
-
-    let penalty =
-        0;
-
-    let collection =
-        0;
+    let due = 0;
+    let paid = 0;
+    let pending = 0;
+    let penalty = 0;
+    let total = 0;
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             due +=
                 numberValue(
-                    payment.dueAmount
+                    item.dueAmount
                 );
 
             paid +=
                 numberValue(
-                    payment.paidAmount
+                    item.paidAmount
                 );
 
             pending +=
                 numberValue(
-                    payment.pendingAmount
+                    item.pendingAmount
                 );
 
             penalty +=
                 numberValue(
-                    payment.penalty
+                    item.penalty
                 );
 
-            collection +=
+            total +=
                 numberValue(
-                    payment.totalCollection
+                    item.totalCollection
                 );
 
         }
@@ -1760,36 +1887,52 @@ function updateSummary(
     if (totalDueElement) {
 
         totalDueElement.textContent =
-            formatCurrency(due);
+            formatCurrency(
+                due
+            );
+
     }
 
 
     if (totalPaidElement) {
 
         totalPaidElement.textContent =
-            formatCurrency(paid);
+            formatCurrency(
+                paid
+            );
+
     }
 
 
     if (totalPendingElement) {
 
         totalPendingElement.textContent =
-            formatCurrency(pending);
+            formatCurrency(
+                pending
+            );
+
     }
 
 
     if (totalPenaltyElement) {
 
         totalPenaltyElement.textContent =
-            formatCurrency(penalty);
+            formatCurrency(
+                penalty
+            );
+
     }
 
 
     if (totalCollectionElement) {
 
         totalCollectionElement.textContent =
-            formatCurrency(collection);
+            formatCurrency(
+                total
+            );
+
     }
+
 }
 
 
@@ -1801,11 +1944,12 @@ function setTableHeader(
     headers
 ) {
 
-    if (!reportTableHead) {
+    if (!reportTable) {
+        return;
+    }
 
-        if (!reportTable) {
-            return;
-        }
+
+    if (!reportTableHead) {
 
         reportTableHead =
             document.createElement(
@@ -1816,6 +1960,7 @@ function setTableHeader(
             reportTableHead,
             reportTable.firstChild
         );
+
     }
 
 
@@ -1823,13 +1968,18 @@ function setTableHeader(
         `
         <tr>
             ${
-                headers.map(
-                    header =>
-                        `<th>${escapeHTML(header)}</th>`
-                ).join("")
+                headers
+                    .map(
+                        header =>
+                            `<th>${escapeHTML(
+                                header
+                            )}</th>`
+                    )
+                    .join("")
             }
         </tr>
         `;
+
 }
 
 
@@ -1838,7 +1988,7 @@ function setTableHeader(
 // ============================================================
 
 function renderDateWise(
-    payments
+    records
 ) {
 
     setTableHeader([
@@ -1857,12 +2007,12 @@ function renderDateWise(
         new Map();
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             const key =
                 dateKey(
-                    payment.paymentDate
+                    item.paymentDate
                 ) ||
                 "unknown";
 
@@ -1875,7 +2025,7 @@ function renderDateWise(
                     key,
                     {
                         date:
-                            payment.paymentDate,
+                            item.paymentDate,
 
                         count:
                             0,
@@ -1896,67 +2046,75 @@ function renderDateWise(
                             0
                     }
                 );
+
             }
 
 
-            const item =
+            const group =
                 grouped.get(key);
 
+            group.count++;
 
-            item.count++;
+            group.due +=
+                numberValue(
+                    item.dueAmount
+                );
 
-            item.due +=
-                payment.dueAmount;
+            group.paid +=
+                numberValue(
+                    item.paidAmount
+                );
 
-            item.paid +=
-                payment.paidAmount;
+            group.pending +=
+                numberValue(
+                    item.pendingAmount
+                );
 
-            item.pending +=
-                payment.pendingAmount;
+            group.penalty +=
+                numberValue(
+                    item.penalty
+                );
 
-            item.penalty +=
-                payment.penalty;
-
-            item.total +=
-                payment.totalCollection;
+            group.total +=
+                numberValue(
+                    item.totalCollection
+                );
 
         }
     );
 
 
     const rows =
-        [
-            ...grouped.values()
-        ]
-        .sort(
-            (
-                first,
-                second
-            ) => {
+        [...grouped.values()]
+            .sort(
+                (
+                    first,
+                    second
+                ) => {
 
-                const firstDate =
-                    parseDateValue(
-                        first.date
+                    const firstDate =
+                        parseDateValue(
+                            first.date
+                        );
+
+                    const secondDate =
+                        parseDateValue(
+                            second.date
+                        );
+
+                    return (
+                        (
+                            firstDate?.getTime() ||
+                            0
+                        ) -
+                        (
+                            secondDate?.getTime() ||
+                            0
+                        )
                     );
 
-                const secondDate =
-                    parseDateValue(
-                        second.date
-                    );
-
-                return (
-                    (
-                        firstDate?.getTime() ||
-                        0
-                    ) -
-                    (
-                        secondDate?.getTime() ||
-                        0
-                    )
-                );
-
-            }
-        );
+                }
+            );
 
 
     if (!rows.length) {
@@ -1971,64 +2129,82 @@ function renderDateWise(
 
 
     reportTableBody.innerHTML =
-        rows.map(
-            row =>
-                `
-                <tr>
+        rows
+            .map(
+                row =>
+                    `
+                    <tr>
 
-                    <td>
-                        ${formatDate(row.date)}
-                    </td>
+                        <td>
+                            ${formatDate(
+                                row.date
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatNumber(row.count)}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.count
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.due)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.due
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.paid)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.paid
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.pending)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.pending
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.penalty)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.penalty
+                            )}
+                        </td>
 
-                    <td>
-                        <strong>
-                            ${formatCurrency(row.total)}
-                        </strong>
-                    </td>
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    row.total
+                                )}
+                            </strong>
+                        </td>
 
-                    <td>
-                        <button
-                            class="report-view-btn"
-                            data-date="${escapeHTML(
-                                dateKey(row.date)
-                            )}"
-                        >
-                            View
-                        </button>
-                    </td>
+                        <td>
+                            <button
+                                class="report-view-btn"
+                                data-date="${escapeHTML(
+                                    dateKey(
+                                        row.date
+                                    )
+                                )}"
+                            >
+                                View
+                            </button>
+                        </td>
 
-                </tr>
-                `
-        )
-        .join("");
+                    </tr>
+                    `
+            )
+            .join("");
 
 
     attachDateViewButtons();
+
 }
 
 
 // ============================================================
-// DATE DETAILS
+// DATE DETAIL
 // ============================================================
 
 function attachDateViewButtons() {
@@ -2048,17 +2224,17 @@ function attachDateViewButtons() {
                             button.dataset.date;
 
                         const records =
-                            filteredPayments.filter(
-                                payment =>
+                            filteredCollections.filter(
+                                item =>
                                     dateKey(
-                                        payment.paymentDate
+                                        item.paymentDate
                                     ) ===
                                     selectedDate
                             );
 
+
                         renderDetailTable(
-                            records,
-                            `Collection Details - ${formatDate(selectedDate)}`
+                            records
                         );
 
                     }
@@ -2066,6 +2242,7 @@ function attachDateViewButtons() {
 
             }
         );
+
 }
 
 
@@ -2074,13 +2251,16 @@ function attachDateViewButtons() {
 // ============================================================
 
 function renderDetailTable(
-    payments,
-    title
+    records
 ) {
 
     setTableHeader([
         "DATE",
-        "STAFF",
+        "COLLECTION ID",
+        "RECEIPT",
+        "COLLECTOR",
+        "ROLE",
+        "COLLECTOR ID",
         "CUSTOMER",
         "LOAN",
         "VEHICLE",
@@ -2090,14 +2270,15 @@ function renderDetailTable(
         "PENALTY",
         "TOTAL",
         "MODE",
+        "BALANCE",
         "REMARKS"
     ]);
 
 
-    if (!payments.length) {
+    if (!records.length) {
 
         renderEmpty(
-            12,
+            17,
             "No collection records found."
         );
 
@@ -2106,112 +2287,148 @@ function renderDetailTable(
 
 
     reportTableBody.innerHTML =
-        payments.map(
-            payment =>
-                `
-                <tr>
+        records
+            .map(
+                item =>
+                    `
+                    <tr>
 
-                    <td>
-                        ${formatDate(payment.paymentDate)}
-                    </td>
+                        <td>
+                            ${formatDate(
+                                item.paymentDate
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHTML(
-                            payment.staffName
-                        )}
-                    </td>
+                        <td>
+                            <strong>
+                                ${escapeHTML(
+                                    item.collectionId
+                                )}
+                            </strong>
+                        </td>
 
-                    <td>
-                        <strong>
+                        <td>
                             ${escapeHTML(
-                                payment.customerName
+                                item.receiptNumber
                             )}
-                        </strong>
+                        </td>
 
-                        ${
-                            payment.customerId
-                                ? `
-                                    <div
-                                        style="
-                                            font-size:10px;
-                                            color:#64748b;
-                                        "
-                                    >
-                                        ${escapeHTML(
-                                            payment.customerId
-                                        )}
-                                    </div>
-                                  `
-                                : ""
-                        }
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                item.collectorName
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHTML(
-                            payment.loanNumber
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                item.collectorRole
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHTML(
-                            payment.vehicleNumber ||
-                            "-"
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                item.collectorId
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(
-                            payment.dueAmount
-                        )}
-                    </td>
+                        <td>
+                            <strong>
+                                ${escapeHTML(
+                                    item.customerName
+                                )}
+                            </strong>
 
-                    <td>
-                        ${formatCurrency(
-                            payment.paidAmount
-                        )}
-                    </td>
+                            ${
+                                item.customerId
+                                    ? `
+                                        <div
+                                            style="
+                                                font-size:10px;
+                                                color:#64748b;
+                                            "
+                                        >
+                                            ${escapeHTML(
+                                                item.customerId
+                                            )}
+                                        </div>
+                                      `
+                                    : ""
+                            }
+                        </td>
 
-                    <td>
-                        ${formatCurrency(
-                            payment.pendingAmount
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                item.loanNumber
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(
-                            payment.penalty
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                item.vehicleNumber ||
+                                "-"
+                            )}
+                        </td>
 
-                    <td>
-                        <strong>
+                        <td>
                             ${formatCurrency(
-                                payment.totalCollection
+                                item.dueAmount
                             )}
-                        </strong>
-                    </td>
+                        </td>
 
-                    <td>
-                        ${escapeHTML(
-                            payment.paymentMode
-                        )}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                item.paidAmount
+                            )}
+                        </td>
 
-                    <td>
-                        ${escapeHTML(
-                            payment.remarks
-                        )}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                item.pendingAmount
+                            )}
+                        </td>
 
-                </tr>
-                `
-        )
-        .join("");
+                        <td>
+                            ${formatCurrency(
+                                item.penalty
+                            )}
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    item.totalCollection
+                                )}
+                            </strong>
+                        </td>
+
+                        <td>
+                            ${escapeHTML(
+                                item.paymentMode
+                            )}
+                        </td>
+
+                        <td>
+                            ${formatCurrency(
+                                item.balanceAfterPayment
+                            )}
+                        </td>
+
+                        <td>
+                            ${escapeHTML(
+                                item.remarks
+                            )}
+                        </td>
+
+                    </tr>
+                    `
+            )
+            .join("");
+
 }
 
 
 // ============================================================
-// WEEK WISE
+// WEEK START
 // ============================================================
 
 function getWeekStart(
@@ -2241,11 +2458,16 @@ function getWeekStart(
     );
 
     return result;
+
 }
 
 
+// ============================================================
+// WEEK WISE
+// ============================================================
+
 function renderWeekWise(
-    payments
+    records
 ) {
 
     setTableHeader([
@@ -2263,12 +2485,12 @@ function renderWeekWise(
         new Map();
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             const date =
                 parseDateValue(
-                    payment.paymentDate
+                    item.paymentDate
                 );
 
             if (!date) {
@@ -2276,13 +2498,13 @@ function renderWeekWise(
             }
 
 
-            const weekStart =
-                getWeekStart(date);
+            const start =
+                getWeekStart(
+                    date
+                );
 
             const key =
-                dateKey(
-                    weekStart
-                );
+                dateKey(start);
 
 
             if (
@@ -2292,51 +2514,48 @@ function renderWeekWise(
                 grouped.set(
                     key,
                     {
-                        date:
-                            weekStart,
-
-                        count:
-                            0,
-
-                        due:
-                            0,
-
-                        paid:
-                            0,
-
-                        pending:
-                            0,
-
-                        penalty:
-                            0,
-
-                        total:
-                            0
+                        date: start,
+                        count: 0,
+                        due: 0,
+                        paid: 0,
+                        pending: 0,
+                        penalty: 0,
+                        total: 0
                     }
                 );
+
             }
 
 
-            const item =
+            const group =
                 grouped.get(key);
 
+            group.count++;
 
-            item.count++;
+            group.due +=
+                numberValue(
+                    item.dueAmount
+                );
 
-            item.due +=
-                payment.dueAmount;
+            group.paid +=
+                numberValue(
+                    item.paidAmount
+                );
 
-            item.paid +=
-                payment.paidAmount;
+            group.pending +=
+                numberValue(
+                    item.pendingAmount
+                );
 
-            item.pending +=
-                payment.pendingAmount;
+            group.penalty +=
+                numberValue(
+                    item.penalty
+                );
 
-            item.penalty +=
-                payment.penalty;
-
-            item.total +=
-                payment.totalCollection;
+            group.total +=
+                numberValue(
+                    item.totalCollection
+                );
 
         }
     );
@@ -2366,60 +2585,78 @@ function renderWeekWise(
 
 
     reportTableBody.innerHTML =
-        rows.map(
-            row => {
+        rows
+            .map(
+                row => {
 
-                const weekEnd =
-                    new Date(
-                        row.date
+                    const end =
+                        new Date(
+                            row.date
+                        );
+
+                    end.setDate(
+                        end.getDate() + 6
                     );
 
-                weekEnd.setDate(
-                    weekEnd.getDate() + 6
-                );
 
+                    return `
+                    <tr>
 
-                return `
-                <tr>
+                        <td>
+                            ${formatDate(
+                                row.date
+                            )}
+                            -
+                            ${formatDate(
+                                end
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatDate(row.date)}
-                        -
-                        ${formatDate(weekEnd)}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.count
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatNumber(row.count)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.due
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.due)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.paid
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.paid)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.pending
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.pending)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.penalty
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.penalty)}
-                    </td>
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    row.total
+                                )}
+                            </strong>
+                        </td>
 
-                    <td>
-                        <strong>
-                            ${formatCurrency(row.total)}
-                        </strong>
-                    </td>
+                    </tr>
+                    `;
 
-                </tr>
-                `;
+                }
+            )
+            .join("");
 
-            }
-        )
-        .join("");
 }
 
 
@@ -2428,7 +2665,7 @@ function renderWeekWise(
 // ============================================================
 
 function renderMonthWise(
-    payments
+    records
 ) {
 
     setTableHeader([
@@ -2446,12 +2683,12 @@ function renderMonthWise(
         new Map();
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             const date =
                 parseDateValue(
-                    payment.paymentDate
+                    item.paymentDate
                 );
 
             if (!date) {
@@ -2473,49 +2710,47 @@ function renderMonthWise(
                     key,
                     {
                         date,
-
-                        count:
-                            0,
-
-                        due:
-                            0,
-
-                        paid:
-                            0,
-
-                        pending:
-                            0,
-
-                        penalty:
-                            0,
-
-                        total:
-                            0
+                        count: 0,
+                        due: 0,
+                        paid: 0,
+                        pending: 0,
+                        penalty: 0,
+                        total: 0
                     }
                 );
+
             }
 
 
-            const item =
+            const group =
                 grouped.get(key);
 
+            group.count++;
 
-            item.count++;
+            group.due +=
+                numberValue(
+                    item.dueAmount
+                );
 
-            item.due +=
-                payment.dueAmount;
+            group.paid +=
+                numberValue(
+                    item.paidAmount
+                );
 
-            item.paid +=
-                payment.paidAmount;
+            group.pending +=
+                numberValue(
+                    item.pendingAmount
+                );
 
-            item.pending +=
-                payment.pendingAmount;
+            group.penalty +=
+                numberValue(
+                    item.penalty
+                );
 
-            item.penalty +=
-                payment.penalty;
-
-            item.total +=
-                payment.totalCollection;
+            group.total +=
+                numberValue(
+                    item.totalCollection
+                );
 
         }
     );
@@ -2545,64 +2780,80 @@ function renderMonthWise(
 
 
     reportTableBody.innerHTML =
-        rows.map(
-            row =>
-                `
-                <tr>
+        rows
+            .map(
+                row =>
+                    `
+                    <tr>
 
-                    <td>
-                        ${row.date.toLocaleDateString(
-                            "en-IN",
-                            {
-                                month: "long",
-                                year: "numeric"
-                            }
-                        )}
-                    </td>
+                        <td>
+                            ${row.date.toLocaleDateString(
+                                "en-IN",
+                                {
+                                    month: "long",
+                                    year: "numeric"
+                                }
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatNumber(row.count)}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.count
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.due)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.due
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.paid)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.paid
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.pending)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.pending
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(row.penalty)}
-                    </td>
+                        <td>
+                            ${formatCurrency(
+                                row.penalty
+                            )}
+                        </td>
 
-                    <td>
-                        <strong>
-                            ${formatCurrency(row.total)}
-                        </strong>
-                    </td>
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    row.total
+                                )}
+                            </strong>
+                        </td>
 
-                </tr>
-                `
-        )
-        .join("");
+                    </tr>
+                    `
+            )
+            .join("");
+
 }
 
 
 // ============================================================
-// STAFF WISE
+// STAFF / OWNER WISE
 // ============================================================
 
 function renderStaffWise(
-    payments
+    records
 ) {
 
     setTableHeader([
-        "STAFF",
+        "COLLECTOR",
+        "ROLE",
+        "COLLECTOR ID",
         "COLLECTIONS",
         "CUSTOMERS",
         "EMI PAID",
@@ -2615,12 +2866,12 @@ function renderStaffWise(
         new Map();
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             const key =
-                payment.staffId ||
-                payment.staffName ||
+                item.collectorId ||
+                item.collectorName ||
                 "unknown";
 
 
@@ -2632,7 +2883,13 @@ function renderStaffWise(
                     key,
                     {
                         name:
-                            payment.staffName,
+                            item.collectorName,
+
+                        role:
+                            item.collectorRole,
+
+                        id:
+                            item.collectorId,
 
                         count:
                             0,
@@ -2650,34 +2907,41 @@ function renderStaffWise(
                             0
                     }
                 );
+
             }
 
 
-            const item =
+            const group =
                 grouped.get(key);
 
-
-            item.count++;
+            group.count++;
 
             if (
-                payment.customerId
+                item.customerId
             ) {
 
-                item.customers.add(
+                group.customers.add(
                     String(
-                        payment.customerId
+                        item.customerId
                     )
                 );
+
             }
 
-            item.paid +=
-                payment.paidAmount;
+            group.paid +=
+                numberValue(
+                    item.paidAmount
+                );
 
-            item.penalty +=
-                payment.penalty;
+            group.penalty +=
+                numberValue(
+                    item.penalty
+                );
 
-            item.total +=
-                payment.totalCollection;
+            group.total +=
+                numberValue(
+                    item.totalCollection
+                );
 
         }
     );
@@ -2703,8 +2967,8 @@ function renderStaffWise(
     if (!rows.length) {
 
         renderEmpty(
-            6,
-            "No staff collection records found."
+            8,
+            "No collector collection records found."
         );
 
         return;
@@ -2712,55 +2976,69 @@ function renderStaffWise(
 
 
     reportTableBody.innerHTML =
-        rows.map(
-            row =>
-                `
-                <tr>
+        rows
+            .map(
+                row =>
+                    `
+                    <tr>
 
-                    <td>
-                        <strong>
+                        <td>
+                            <strong>
+                                ${escapeHTML(
+                                    row.name
+                                )}
+                            </strong>
+                        </td>
+
+                        <td>
                             ${escapeHTML(
-                                row.name
+                                row.role
                             )}
-                        </strong>
-                    </td>
+                        </td>
 
-                    <td>
-                        ${formatNumber(
-                            row.count
-                        )}
-                    </td>
+                        <td>
+                            ${escapeHTML(
+                                row.id
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatNumber(
-                            row.customers.size
-                        )}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.count
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(
-                            row.paid
-                        )}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.customers.size
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatCurrency(
-                            row.penalty
-                        )}
-                    </td>
-
-                    <td>
-                        <strong>
+                        <td>
                             ${formatCurrency(
-                                row.total
+                                row.paid
                             )}
-                        </strong>
-                    </td>
+                        </td>
 
-                </tr>
-                `
-        )
-        .join("");
+                        <td>
+                            ${formatCurrency(
+                                row.penalty
+                            )}
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    row.total
+                                )}
+                            </strong>
+                        </td>
+
+                    </tr>
+                    `
+            )
+            .join("");
+
 }
 
 
@@ -2769,7 +3047,7 @@ function renderStaffWise(
 // ============================================================
 
 function renderCustomerWise(
-    payments
+    records
 ) {
 
     setTableHeader([
@@ -2787,12 +3065,12 @@ function renderCustomerWise(
         new Map();
 
 
-    payments.forEach(
-        payment => {
+    records.forEach(
+        item => {
 
             const key =
-                payment.customerId ||
-                payment.customerName ||
+                item.customerId ||
+                item.customerName ||
                 "unknown";
 
 
@@ -2804,7 +3082,7 @@ function renderCustomerWise(
                     key,
                     {
                         name:
-                            payment.customerName,
+                            item.customerName,
 
                         loans:
                             new Set(),
@@ -2825,39 +3103,50 @@ function renderCustomerWise(
                             0
                     }
                 );
+
             }
 
 
-            const item =
+            const group =
                 grouped.get(key);
 
-
-            item.count++;
+            group.count++;
 
 
             if (
-                payment.loanId
+                item.loanId ||
+                item.loanNumber
             ) {
 
-                item.loans.add(
+                group.loans.add(
                     String(
-                        payment.loanId
+                        item.loanId ||
+                        item.loanNumber
                     )
                 );
+
             }
 
 
-            item.paid +=
-                payment.paidAmount;
+            group.paid +=
+                numberValue(
+                    item.paidAmount
+                );
 
-            item.penalty +=
-                payment.penalty;
+            group.penalty +=
+                numberValue(
+                    item.penalty
+                );
 
-            item.pending +=
-                payment.pendingAmount;
+            group.pending +=
+                numberValue(
+                    item.pendingAmount
+                );
 
-            item.total +=
-                payment.totalCollection;
+            group.total +=
+                numberValue(
+                    item.totalCollection
+                );
 
         }
     );
@@ -2892,66 +3181,68 @@ function renderCustomerWise(
 
 
     reportTableBody.innerHTML =
-        rows.map(
-            row =>
-                `
-                <tr>
+        rows
+            .map(
+                row =>
+                    `
+                    <tr>
 
-                    <td>
-                        <strong>
-                            ${escapeHTML(
-                                row.name
+                        <td>
+                            <strong>
+                                ${escapeHTML(
+                                    row.name
+                                )}
+                            </strong>
+                        </td>
+
+                        <td>
+                            ${formatNumber(
+                                row.loans.size
                             )}
-                        </strong>
-                    </td>
+                        </td>
 
-                    <td>
-                        ${formatNumber(
-                            row.loans.size
-                        )}
-                    </td>
+                        <td>
+                            ${formatNumber(
+                                row.count
+                            )}
+                        </td>
 
-                    <td>
-                        ${formatNumber(
-                            row.count
-                        )}
-                    </td>
-
-                    <td>
-                        ${formatCurrency(
-                            row.paid
-                        )}
-                    </td>
-
-                    <td>
-                        ${formatCurrency(
-                            row.penalty
-                        )}
-                    </td>
-
-                    <td>
-                        ${formatCurrency(
-                            row.pending
-                        )}
-                    </td>
-
-                    <td>
-                        <strong>
+                        <td>
                             ${formatCurrency(
-                                row.total
+                                row.paid
                             )}
-                        </strong>
-                    </td>
+                        </td>
 
-                </tr>
-                `
-        )
-        .join("");
+                        <td>
+                            ${formatCurrency(
+                                row.penalty
+                            )}
+                        </td>
+
+                        <td>
+                            ${formatCurrency(
+                                row.pending
+                            )}
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${formatCurrency(
+                                    row.total
+                                )}
+                            </strong>
+                        </td>
+
+                    </tr>
+                    `
+            )
+            .join("");
+
 }
 
 
 // ============================================================
-// RENDER REPORT
+// MAIN RENDER
 // ============================================================
 
 function renderReport() {
@@ -2973,6 +3264,7 @@ function renderReport() {
                 "tbody"
             );
 
+
         if (!reportTableBody) {
 
             reportTableBody =
@@ -2983,12 +3275,14 @@ function renderReport() {
             reportTable.appendChild(
                 reportTableBody
             );
+
         }
+
     }
 
 
     updateSummary(
-        filteredPayments
+        filteredCollections
     );
 
 
@@ -2999,7 +3293,7 @@ function renderReport() {
         case "week":
 
             renderWeekWise(
-                filteredPayments
+                filteredCollections
             );
 
             break;
@@ -3008,7 +3302,7 @@ function renderReport() {
         case "month":
 
             renderMonthWise(
-                filteredPayments
+                filteredCollections
             );
 
             break;
@@ -3017,7 +3311,7 @@ function renderReport() {
         case "staff":
 
             renderStaffWise(
-                filteredPayments
+                filteredCollections
             );
 
             break;
@@ -3026,7 +3320,7 @@ function renderReport() {
         case "customer":
 
             renderCustomerWise(
-                filteredPayments
+                filteredCollections
             );
 
             break;
@@ -3035,11 +3329,13 @@ function renderReport() {
         default:
 
             renderDateWise(
-                filteredPayments
+                filteredCollections
             );
 
             break;
+
     }
+
 }
 
 
@@ -3069,11 +3365,14 @@ function renderEmpty(
                     color:#64748b;
                 "
             >
-                ${escapeHTML(message)}
+                ${escapeHTML(
+                    message
+                )}
             </td>
 
         </tr>
         `;
+
 }
 
 
@@ -3093,7 +3392,7 @@ function showLoading() {
         <tr>
 
             <td
-                colspan="12"
+                colspan="17"
                 style="
                     text-align:center;
                     padding:30px;
@@ -3105,6 +3404,7 @@ function showLoading() {
 
         </tr>
         `;
+
 }
 
 
@@ -3126,18 +3426,21 @@ function showError(
         <tr>
 
             <td
-                colspan="12"
+                colspan="17"
                 style="
                     text-align:center;
                     padding:30px;
                     color:#dc2626;
                 "
             >
-                ${escapeHTML(message)}
+                ${escapeHTML(
+                    message
+                )}
             </td>
 
         </tr>
         `;
+
 }
 
 
@@ -3260,6 +3563,7 @@ function setupViewButtons() {
 
         }
     );
+
 }
 
 
@@ -3271,7 +3575,9 @@ if (searchButton) {
 
     searchButton.addEventListener(
         "click",
-        () => {
+        event => {
+
+            event.preventDefault();
 
             currentView =
                 "date";
@@ -3280,6 +3586,7 @@ if (searchButton) {
 
         }
     );
+
 }
 
 
@@ -3302,8 +3609,6 @@ if (searchButton) {
                 "change",
                 () => {
 
-                    // Do not automatically change view
-                    // when dropdown changes.
                     applySearch();
 
                 }
@@ -3321,32 +3626,42 @@ if (printButton) {
 
     printButton.addEventListener(
         "click",
-        () => {
+        event => {
+
+            event.preventDefault();
 
             window.print();
 
         }
     );
+
 }
 
 
 // ============================================================
-// DOWNLOAD CSV
+// CSV
 // ============================================================
 
 if (downloadButton) {
 
     downloadButton.addEventListener(
         "click",
-        downloadCSV
+        event => {
+
+            event.preventDefault();
+
+            downloadCSV();
+
+        }
     );
+
 }
 
 
 function downloadCSV() {
 
     if (
-        !filteredPayments.length
+        !filteredCollections.length
     ) {
 
         alert(
@@ -3362,7 +3677,11 @@ function downloadCSV() {
 
     rows.push([
         "Date",
-        "Staff",
+        "Collection ID",
+        "Receipt Number",
+        "Collector",
+        "Collector Role",
+        "Collector ID",
         "Customer",
         "Customer ID",
         "Loan",
@@ -3373,48 +3692,56 @@ function downloadCSV() {
         "Penalty",
         "Total Collection",
         "Payment Mode",
-        "Receipt",
-        "Balance",
+        "Balance After Payment",
+        "Reference Number",
         "Remarks"
     ]);
 
 
-    filteredPayments.forEach(
-        payment => {
+    filteredCollections.forEach(
+        item => {
 
             rows.push([
 
                 formatDate(
-                    payment.paymentDate
+                    item.paymentDate
                 ),
 
-                payment.staffName,
+                item.collectionId,
 
-                payment.customerName,
+                item.receiptNumber,
 
-                payment.customerId,
+                item.collectorName,
 
-                payment.loanNumber,
+                item.collectorRole,
 
-                payment.vehicleNumber,
+                item.collectorId,
 
-                payment.dueAmount,
+                item.customerName,
 
-                payment.paidAmount,
+                item.customerId,
 
-                payment.pendingAmount,
+                item.loanNumber,
 
-                payment.penalty,
+                item.vehicleNumber,
 
-                payment.totalCollection,
+                item.dueAmount,
 
-                payment.paymentMode,
+                item.paidAmount,
 
-                payment.receiptNumber,
+                item.pendingAmount,
 
-                payment.balanceAfterPayment,
+                item.penalty,
 
-                payment.remarks
+                item.totalCollection,
+
+                item.paymentMode,
+
+                item.balanceAfterPayment,
+
+                item.referenceNumber,
+
+                item.remarks
 
             ]);
 
@@ -3426,17 +3753,18 @@ function downloadCSV() {
         rows
             .map(
                 row =>
-                    row.map(
-                        value =>
-                            `"${String(
-                                value ?? ""
-                            )
-                            .replace(
-                                /"/g,
-                                '""'
-                            )}"`
-                    )
-                    .join(",")
+                    row
+                        .map(
+                            value =>
+                                `"${String(
+                                    value ?? ""
+                                )
+                                    .replace(
+                                        /"/g,
+                                        '""'
+                                    )}"`
+                        )
+                        .join(",")
             )
             .join("\n");
 
@@ -3480,15 +3808,15 @@ function downloadCSV() {
 
     link.remove();
 
-
     URL.revokeObjectURL(
         url
     );
+
 }
 
 
 // ============================================================
-// INITIAL DATE
+// DEFAULT DATE
 // ============================================================
 
 function setDefaultDates() {
@@ -3500,6 +3828,7 @@ function setDefaultDates() {
 
         fromDateInput.value =
             getFirstDayOfMonth();
+
     }
 
 
@@ -3510,8 +3839,34 @@ function setDefaultDates() {
 
         toDateInput.value =
             getToday();
+
     }
+
 }
+
+
+// ============================================================
+// GLOBAL ACCESS
+// ============================================================
+
+window.collectionReport = {
+
+    reload:
+        loadAllData,
+
+    refresh:
+        loadAllData,
+
+    applyFilters:
+        applySearch,
+
+    getData:
+        () =>
+            [
+                ...filteredCollections
+            ]
+
+};
 
 
 // ============================================================
