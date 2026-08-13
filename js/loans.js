@@ -1307,7 +1307,36 @@ if (
     );
 
 }
+// =====================================================
+// EDIT LOAN
+// =====================================================
 
+window.editLoan =
+    function (
+        loanDocumentId
+    ) {
+
+        if (!loanDocumentId) {
+
+            console.error(
+                "Edit Loan: Firestore document ID missing."
+            );
+
+            return;
+
+        }
+
+
+        // Open the same loan form
+        // with the Firestore document ID.
+        window.location.href =
+            `loan-form.html?editId=${
+                encodeURIComponent(
+                    loanDocumentId
+                )
+            }`;
+
+    };
 
 // =====================================================
 // VIEW LOAN
