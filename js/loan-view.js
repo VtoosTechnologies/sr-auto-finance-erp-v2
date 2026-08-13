@@ -2401,45 +2401,52 @@ function getPaymentAmount(
     payment
 ) {
 
-    // =====================================================
-    // ACTUAL REPAYMENT / COLLECTION AMOUNT
-    // =====================================================
+    /*
+     * =====================================================
+     * COLLECTION PAYMENT AMOUNT
+     * =====================================================
+     *
+     * For OWNER / STAFF collections:
+     *
+     * paidAmount / amount are the actual
+     * collection amount.
+     *
+     * Do NOT check emiPaid / amountReceived first,
+     * because old collection records may contain
+     * those fields as 0.
+     */
+
+    if (
+        payment &&
+        String(
+            payment.source || ""
+        ).toUpperCase() ===
+        "COLLECTION"
+    ) {
+
+        return getNumber(
+            payment.paidAmount,
+            payment.amount
+        );
+
+    }
+
+
+    /*
+     * =====================================================
+     * NORMAL PAYMENT RECORD
+     * =====================================================
+     */
 
     return getNumber(
-
-        // Staff payment fields
         payment.emiPaid,
-
         payment.amountReceived,
-
         payment.paidAmount,
-
         payment.paymentAmount,
-
-        payment.amount,
-
-        // Owner collection fields
-        payment.totalCollection,
-        payment.collectionAmount,
-
-        payment.collectedAmount,
-
-        payment.amountCollected,
-        payment.totalReceived,
-
-        payment.emiAmount,
-
-        payment.installmentAmount,
-
-        payment.installment,
-
-        // Final fallback
-        payment.receivedAmount
-
+        payment.amount
     );
 
 }
-
 function getPaymentPenalty(
     payment
 ) {
