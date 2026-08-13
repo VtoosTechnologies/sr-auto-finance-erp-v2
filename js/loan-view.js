@@ -2452,17 +2452,18 @@ async function loadPayments() {
 
     repaymentPayments = [];
 
-
     if (
-        !loanDocumentId
+        !loanDocumentId ||
+        !currentLoan
     ) {
-
         return [];
-
     }
 
-
     try {
+
+        // =====================================================
+        // LOAD STAFF PAYMENTS
+        // =====================================================
 
         const paymentsRef =
             collection(
@@ -2470,46 +2471,76 @@ async function loadPayments() {
                 "payments"
             );
 
+        // =====================================================
+        // LOAD OWNER / STAFF COLLECTIONS
+        // =====================================================
 
-        const possibleQueries = [
-
-            query(
-                paymentsRef,
-                where(
-                    "loanDocumentId",
-                    "==",
-                    loanDocumentId
-                )
-            ),
-
-            query(
-                paymentsRef,
-                where(
-                    "loanId",
-                    "==",
-                    loanDocumentId
-                )
-            )
-
-        ];
-
+        const collectionsRef =
+            collection(
+                db,
+                "collections"
+            );
 
         const resultMap =
             new Map();
 
+        const loanNumber =
+            firstValue(
+                currentLoan,
+                [
+                    "loanId",
+                    "loanNumber",
+                    "loanCode"
+                ]
+            );
+
+        // =====================================================
+        // PAYMENTS COLLECTION QUERIES
+        // =====================================================
+
+        const paymentQueries = [
+
+            ["loanDocumentId", loanDocumentId],
+
+            ["loanId", loanDocumentId],
+
+            ["loanId", loanNumber],
+
+            ["loanNumber", loanNumber],
+
+            ["loanCode", loanNumber]
+
+        ];
 
         for (
-            const paymentQuery
-            of possibleQueries
+            const [
+                field,
+                value
+            ]
+            of paymentQueries
         ) {
+
+            if (
+                value === undefined ||
+                value === null ||
+                String(value).trim() === ""
+            ) {
+                continue;
+            }
 
             try {
 
                 const snapshot =
                     await getDocs(
-                        paymentQuery
+                        query(
+                            paymentsRef,
+                            where(
+                                field,
+                                "==",
+                                value
+                            )
+                        )
                     );
-
 
                 snapshot.forEach(
                     paymentSnap => {
@@ -2517,12 +2548,14 @@ async function loadPayments() {
                         resultMap.set(
                             paymentSnap.id,
                             {
-
                                 id:
                                     paymentSnap.id,
 
-                                ...paymentSnap.data()
+                                ...paymentSnap.data(),
 
+                                // Existing payments collection
+                                source:
+                                    "PAYMENT"
                             }
                         );
 
@@ -2534,7 +2567,7 @@ async function loadPayments() {
             ) {
 
                 console.warn(
-                    "Payment query skipped:",
+                    `Payment query skipped for ${field}:`,
                     queryError
                 );
 
@@ -2542,16 +2575,99 @@ async function loadPayments() {
 
         }
 
+        // =====================================================
+        // OWNER / STAFF COLLECTION QUERIES
+        // =====================================================
+
+        const collectionQueries = [
+
+            ["loanDocumentId", loanDocumentId],
+
+            ["loanId", loanDocumentId],
+
+            ["loanId", loanNumber],
+
+            ["loanNumber", loanNumber],
+
+            ["loanCode", loanNumber]
+
+        ];
+
+        for (
+            const [
+                field,
+                value
+            ]
+            of collectionQueries
+        ) {
+
+            if (
+                value === undefined ||
+                value === null ||
+                String(value).trim() === ""
+            ) {
+                continue;
+            }
+
+            try {
+
+                const snapshot =
+                    await getDocs(
+                        query(
+                            collectionsRef,
+                            where(
+                                field,
+                                "==",
+                                value
+                            )
+                        )
+                    );
+
+                snapshot.forEach(
+                    collectionSnap => {
+
+                        resultMap.set(
+                            collectionSnap.id,
+                            {
+                                id:
+                                    collectionSnap.id,
+
+                                ...collectionSnap.data(),
+
+                                // Master collections collection
+                                source:
+                                    "COLLECTION"
+                            }
+                        );
+
+                    }
+                );
+
+            } catch (
+                queryError
+            ) {
+
+                console.warn(
+                    `Collection query skipped for ${field}:`,
+                    queryError
+                );
+
+            }
+
+        }
+
+        // =====================================================
+        // FINAL PAYMENT + COLLECTION LIST
+        // =====================================================
 
         repaymentPayments =
             Array.from(
                 resultMap.values()
             );
 
-
-        /*
-         * Sort oldest payment first.
-         */
+        // =====================================================
+        // SORT OLDEST FIRST
+        // =====================================================
 
         repaymentPayments.sort(
             (
@@ -2566,7 +2682,6 @@ async function loadPayments() {
                         )
                     );
 
-
                 const secondDate =
                     toScheduleDate(
                         getPaymentDate(
@@ -2574,30 +2689,20 @@ async function loadPayments() {
                         )
                     );
 
-
                 if (
                     !firstDate &&
                     !secondDate
                 ) {
-
                     return 0;
-
                 }
-
 
                 if (!firstDate) {
-
                     return 1;
-
                 }
-
 
                 if (!secondDate) {
-
                     return -1;
-
                 }
-
 
                 return (
                     firstDate -
@@ -2607,6 +2712,10 @@ async function loadPayments() {
             }
         );
 
+        console.log(
+            "Loan repayment records loaded:",
+            repaymentPayments
+        );
 
         return repaymentPayments;
 
@@ -2615,17 +2724,17 @@ async function loadPayments() {
     ) {
 
         console.error(
-            "Payments loading error:",
+            "Payments / Collections loading error:",
             error
         );
 
+        repaymentPayments = [];
 
         return [];
 
     }
 
 }
-
 
 // =====================================================
 // INTEREST CALCULATION HELPERS
