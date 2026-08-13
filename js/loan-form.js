@@ -13,7 +13,6 @@ import {
     doc,
     getDocs,
     getDoc,
-    setDoc,
     runTransaction,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
@@ -50,9 +49,7 @@ const selectedCustomerStatus =
     document.getElementById("selectedCustomerStatus");
 
 
-// =====================================================
-// RELOAN
-// =====================================================
+// ReLoan
 
 const reloanSection =
     document.getElementById("reloanSection");
@@ -82,9 +79,7 @@ const previousLoanCustomer =
     document.getElementById("previousLoanCustomer");
 
 
-// =====================================================
-// VEHICLE
-// =====================================================
+// Vehicle
 
 const vehicleType =
     document.getElementById("vehicleType");
@@ -132,9 +127,7 @@ const downPayment =
     document.getElementById("downPayment");
 
 
-// =====================================================
-// LOAN
-// =====================================================
+// Loan
 
 const loanAmount =
     document.getElementById("loanAmount");
@@ -184,9 +177,7 @@ const docOther =
     document.getElementById("docOther");
 
 
-// =====================================================
-// ACTION
-// =====================================================
+// Actions
 
 const saveLoanBtn =
     document.getElementById("saveLoanBtn");
@@ -216,24 +207,17 @@ function setDefaultDates() {
         new Date();
 
     const dateString =
-        today
-            .toISOString()
+        today.toISOString()
             .split("T")[0];
 
-
     if (loanDate) {
-
         loanDate.value =
             dateString;
-
     }
 
-
     if (firstDueDate) {
-
         firstDueDate.value =
             dateString;
-
     }
 
 }
@@ -301,7 +285,7 @@ function clearMessage() {
 
 
 // =====================================================
-// NORMALIZE
+// NORMALIZE TEXT
 // =====================================================
 
 function normalizeText(value) {
@@ -324,18 +308,24 @@ async function loadCustomers() {
     try {
 
         customerSelect.innerHTML = `
+
             <option value="">
                 Loading customers...
             </option>
+
         `;
+
+
+        const customersRef =
+            collection(
+                db,
+                "customers"
+            );
 
 
         const snapshot =
             await getDocs(
-                collection(
-                    db,
-                    "customers"
-                )
+                customersRef
             );
 
 
@@ -403,9 +393,11 @@ async function loadCustomers() {
 
 
         customerSelect.innerHTML = `
+
             <option value="">
                 Select Customer
             </option>
+
         `;
 
 
@@ -455,9 +447,11 @@ async function loadCustomers() {
         if (!customers.length) {
 
             customerSelect.innerHTML = `
+
                 <option value="">
                     No active customers found
                 </option>
+
             `;
 
         }
@@ -472,9 +466,11 @@ async function loadCustomers() {
 
 
         customerSelect.innerHTML = `
+
             <option value="">
                 Unable to load customers
             </option>
+
         `;
 
     }
@@ -498,16 +494,11 @@ async function handleCustomerSelection() {
             "show"
         );
 
-
-        if (
-            loanType.value ===
-            "reloan"
-        ) {
+        if (loanType.value === "reloan") {
 
             resetPreviousLoanSection();
 
         }
-
 
         return;
 
@@ -517,8 +508,7 @@ async function handleCustomerSelection() {
     const customer =
         customers.find(
             item =>
-                item.id ===
-                selectedId
+                item.id === selectedId
         );
 
 
@@ -563,8 +553,7 @@ async function handleCustomerSelection() {
 
 
     if (
-        loanType.value ===
-        "reloan"
+        loanType.value === "reloan"
     ) {
 
         await loadPreviousLoans(
@@ -576,6 +565,10 @@ async function handleCustomerSelection() {
 }
 
 
+// =====================================================
+// CUSTOMER EVENT
+// =====================================================
+
 customerSelect.addEventListener(
     "change",
     handleCustomerSelection
@@ -583,7 +576,7 @@ customerSelect.addEventListener(
 
 
 // =====================================================
-// LOAN TYPE
+// LOAN TYPE CHANGE
 // =====================================================
 
 loanType.addEventListener(
@@ -597,10 +590,7 @@ loanType.addEventListener(
             loanType.value;
 
 
-        if (
-            type ===
-            "reloan"
-        ) {
+        if (type === "reloan") {
 
             reloanSection.classList.add(
                 "show"
@@ -619,9 +609,7 @@ loanType.addEventListener(
                 "Optional for ReLoan";
 
 
-            if (
-                customerSelect.value
-            ) {
+            if (customerSelect.value) {
 
                 await loadPreviousLoans(
                     customerSelect.value
@@ -632,6 +620,7 @@ loanType.addEventListener(
                 resetPreviousLoanSection();
 
             }
+
 
         } else {
 
@@ -670,9 +659,11 @@ function resetPreviousLoanSection() {
 
 
     previousLoanSelect.innerHTML = `
+
         <option value="">
             Select previous closed loan
         </option>
+
     `;
 
 
@@ -684,22 +675,17 @@ function resetPreviousLoanSection() {
     previousLoanId.textContent =
         "-";
 
-
     previousLoanAmount.textContent =
         "₹0";
-
 
     previousLoanStatus.textContent =
         "-";
 
-
     previousLoanClosedDate.textContent =
         "-";
 
-
     previousLoanClosingAmount.textContent =
         "₹0";
-
 
     previousLoanCustomer.textContent =
         "-";
@@ -720,12 +706,16 @@ async function loadPreviousLoans(
         resetPreviousLoanSection();
 
 
+        const loansRef =
+            collection(
+                db,
+                "loans"
+            );
+
+
         const snapshot =
             await getDocs(
-                collection(
-                    db,
-                    "loans"
-                )
+                loansRef
             );
 
 
@@ -758,7 +748,7 @@ async function loadPreviousLoans(
 
                 if (
                     loanCustomerDocumentId ===
-                    customerDocumentId &&
+                        customerDocumentId &&
                     closed
                 ) {
 
@@ -780,14 +770,20 @@ async function loadPreviousLoans(
         previousLoans.sort(
             (a, b) => {
 
-                return String(
-                    b.loanDate ||
-                    ""
-                ).localeCompare(
+                const dateA =
                     String(
                         a.loanDate ||
                         ""
-                    )
+                    );
+
+                const dateB =
+                    String(
+                        b.loanDate ||
+                        ""
+                    );
+
+                return dateB.localeCompare(
+                    dateA
                 );
 
             }
@@ -837,13 +833,14 @@ async function loadPreviousLoans(
         ) {
 
             previousLoanSelect.innerHTML = `
+
                 <option value="">
                     No completed previous loan found
                 </option>
+
             `;
 
         }
-
 
     } catch (error) {
 
@@ -888,8 +885,7 @@ previousLoanSelect.addEventListener(
         const loan =
             previousLoans.find(
                 item =>
-                    item.id ===
-                    selectedId
+                    item.id === selectedId
             );
 
 
@@ -898,42 +894,73 @@ previousLoanSelect.addEventListener(
         }
 
 
-        previousLoanId.textContent =
+        const loanId =
             loan.loanId ||
             loan.id ||
             "-";
 
 
-        previousLoanAmount.textContent =
-            formatCurrency(
+        const amount =
+            Number(
                 loan.loanAmount ||
                 loan.principalAmount ||
                 0
             );
 
 
-        previousLoanStatus.textContent =
+        const status =
             loan.status ||
             "-";
 
 
-        previousLoanClosedDate.textContent =
+        const closedDate =
             loan.closedDate ||
             loan.closingDate ||
+            loan.updatedAt ||
             "-";
 
 
-        previousLoanClosingAmount.textContent =
-            formatCurrency(
+        const closingAmount =
+            Number(
                 loan.agreedClosingAmount ||
                 loan.closingAmount ||
                 0
             );
 
 
-        previousLoanCustomer.textContent =
+        const customerName =
             loan.customerName ||
             "-";
+
+
+        previousLoanId.textContent =
+            loanId;
+
+
+        previousLoanAmount.textContent =
+            formatCurrency(
+                amount
+            );
+
+
+        previousLoanStatus.textContent =
+            status;
+
+
+        previousLoanClosedDate.textContent =
+            typeof closedDate === "string"
+                ? closedDate
+                : "-";
+
+
+        previousLoanClosingAmount.textContent =
+            formatCurrency(
+                closingAmount
+            );
+
+
+        previousLoanCustomer.textContent =
+            customerName;
 
 
         previousLoanInfo.classList.add(
@@ -945,7 +972,7 @@ previousLoanSelect.addEventListener(
 
 
 // =====================================================
-// CALCULATE LOAN
+// CALCULATION
 // =====================================================
 
 function calculateLoan() {
@@ -956,8 +983,7 @@ function calculateLoan() {
         ) || 0;
 
 
-    // Annual interest rate
-    const annualRate =
+    const rate =
         Number(
             interestRate.value
         ) || 0;
@@ -982,33 +1008,19 @@ function calculateLoan() {
     let installment = 0;
 
 
-    // =================================================
-    // FLAT INTEREST
-    // Annual Rate based calculation
-    // =================================================
+    // -----------------------------------------------
+    // Flat Interest
+    // -----------------------------------------------
 
     if (
         interestType.value ===
         "Flat"
     ) {
 
-        /*
-         * Example:
-         *
-         * Principal = 60,000
-         * Annual Rate = 24%
-         * Tenure = 24 months
-         *
-         * Interest =
-         * 60,000 × 24/100 × 24/12
-         *
-         * = 28,800
-         */
-
         interest =
             principal *
-            (annualRate / 100) *
-            (periods / 12);
+            (rate / 100) *
+            periods;
 
 
         totalPayable =
@@ -1016,39 +1028,31 @@ function calculateLoan() {
             interest;
 
 
-        installment =
-            periods > 0
-                ? totalPayable / periods
-                : 0;
+        if (periods > 0) {
+
+            installment =
+                totalPayable /
+                periods;
+
+        }
 
     }
 
 
-    // =================================================
-    // REDUCING BALANCE
-    // Annual Rate converted to Monthly Rate
-    // =================================================
+    // -----------------------------------------------
+    // Reducing Interest
+    // -----------------------------------------------
 
     else {
 
         if (
             principal > 0 &&
-            annualRate > 0 &&
+            rate > 0 &&
             periods > 0
         ) {
 
-            /*
-             * Annual 24%
-             *
-             * Monthly rate =
-             * 24 / 12 = 2%
-             *
-             * Decimal monthly rate =
-             * 2 / 100 = 0.02
-             */
-
             const monthlyRate =
-                (annualRate / 12) / 100;
+                rate / 100;
 
 
             const numerator =
@@ -1069,10 +1073,8 @@ function calculateLoan() {
 
             installment =
                 denominator !== 0
-                    ? numerator /
-                      denominator
-                    : principal /
-                      periods;
+                    ? numerator / denominator
+                    : principal / periods;
 
 
             totalPayable =
@@ -1104,18 +1106,9 @@ function calculateLoan() {
     }
 
 
-    // =================================================
-    // NET DISBURSEMENT
-    // =================================================
-
     const netDisbursement =
-        principal -
-        fee;
+        principal - fee;
 
-
-    // =================================================
-    // DISPLAY CALCULATION
-    // =================================================
 
     document.getElementById(
         "calcPrincipal"
@@ -1183,8 +1176,9 @@ function calculateLoan() {
 
 }
 
+
 // =====================================================
-// LIVE CALCULATION
+// LIVE CALCULATION EVENTS
 // =====================================================
 
 [
@@ -1212,7 +1206,7 @@ function calculateLoan() {
 
 
 // =====================================================
-// LOAN PREFIX
+// GET LOAN PREFIX
 // =====================================================
 
 async function getLoanPrefix() {
@@ -1242,11 +1236,17 @@ async function getLoanPrefix() {
 
 
             return (
+
                 data.loanPrefix ||
+
                 data.loanCodePrefix ||
+
                 data.prefixes?.loan ||
+
                 data.prefixes?.loanNo ||
+
                 "LN"
+
             );
 
         }
@@ -1302,11 +1302,13 @@ async function generateLoanId(
 
         nextNumber =
             Number(
+
                 data.current ??
                 data.value ??
                 data.number ??
                 data.lastNumber ??
                 0
+
             ) + 1;
 
     }
@@ -1333,20 +1335,22 @@ async function generateLoanId(
         await getLoanPrefix();
 
 
-    return (
-        `${prefix}${String(
+    const number =
+        String(
             nextNumber
         ).padStart(
             6,
             "0"
-        )}`
-    );
+        );
+
+
+    return `${prefix}${number}`;
 
 }
 
 
 // =====================================================
-// VEHICLE DUPLICATE CHECK
+// CHECK DUPLICATES
 // =====================================================
 
 async function checkVehicleDuplicates() {
@@ -1397,8 +1401,7 @@ async function checkVehicleDuplicates() {
 
 
     for (
-        const loanDoc of
-        snapshot.docs
+        const loanDoc of snapshot.docs
     ) {
 
         const loan =
@@ -1451,8 +1454,7 @@ async function checkVehicleDuplicates() {
         if (
             bookingId &&
             existingBooking &&
-            bookingId ===
-            existingBooking
+            bookingId === existingBooking
         ) {
 
             return (
@@ -1465,8 +1467,7 @@ async function checkVehicleDuplicates() {
         if (
             chassis &&
             existingChassis &&
-            chassis ===
-            existingChassis
+            chassis === existingChassis
         ) {
 
             return (
@@ -1479,8 +1480,7 @@ async function checkVehicleDuplicates() {
         if (
             engine &&
             existingEngine &&
-            engine ===
-            existingEngine
+            engine === existingEngine
         ) {
 
             return (
@@ -1493,8 +1493,7 @@ async function checkVehicleDuplicates() {
         if (
             vehicleNo &&
             existingVehicleNo &&
-            vehicleNo ===
-            existingVehicleNo
+            vehicleNo === existingVehicleNo
         ) {
 
             return (
@@ -1512,7 +1511,7 @@ async function checkVehicleDuplicates() {
 
 
 // =====================================================
-// VALIDATE LOAN
+// VALIDATE FORM
 // =====================================================
 
 function validateLoanForm() {
@@ -1521,79 +1520,51 @@ function validateLoanForm() {
         loanType.value;
 
 
-    if (
-        !customerSelect.value
-    ) {
+    if (!customerSelect.value) {
 
-        return (
-            "Please select a customer."
-        );
+        return "Please select a customer.";
 
     }
 
 
-    if (
-        !vehicleType.value
-    ) {
+    if (!vehicleType.value) {
 
-        return (
-            "Please select vehicle type."
-        );
+        return "Please select vehicle type.";
 
     }
 
 
-    if (
-        !vehicleBrand.value.trim()
-    ) {
+    if (!vehicleBrand.value.trim()) {
 
-        return (
-            "Please enter vehicle brand."
-        );
+        return "Please enter vehicle brand.";
 
     }
 
 
-    if (
-        !vehicleModel.value.trim()
-    ) {
+    if (!vehicleModel.value.trim()) {
 
-        return (
-            "Please enter vehicle model."
-        );
+        return "Please enter vehicle model.";
 
     }
 
 
-    if (
-        !chassisNumber.value.trim()
-    ) {
+    if (!chassisNumber.value.trim()) {
 
-        return (
-            "Please enter chassis number."
-        );
+        return "Please enter chassis number.";
 
     }
 
 
-    if (
-        !engineNumber.value.trim()
-    ) {
+    if (!engineNumber.value.trim()) {
 
-        return (
-            "Please enter engine number."
-        );
+        return "Please enter engine number.";
 
     }
 
 
-    if (
-        !showroomName.value.trim()
-    ) {
+    if (!showroomName.value.trim()) {
 
-        return (
-            "Please enter showroom name."
-        );
+        return "Please enter showroom name.";
 
     }
 
@@ -1603,9 +1574,7 @@ function validateLoanForm() {
         !showroomBookingId.value.trim()
     ) {
 
-        return (
-            "Showroom Booking ID is required for New Loan."
-        );
+        return "Showroom Booking ID is required for New Loan.";
 
     }
 
@@ -1669,13 +1638,9 @@ function validateLoanForm() {
         ) || 0;
 
 
-    if (
-        principal <= 0
-    ) {
+    if (principal <= 0) {
 
-        return (
-            "Please enter a valid loan amount."
-        );
+        return "Please enter a valid loan amount.";
 
     }
 
@@ -1686,13 +1651,9 @@ function validateLoanForm() {
         ) || 0;
 
 
-    if (
-        rate < 0
-    ) {
+    if (rate < 0) {
 
-        return (
-            "Interest rate cannot be negative."
-        );
+        return "Interest rate cannot be negative.";
 
     }
 
@@ -1703,24 +1664,16 @@ function validateLoanForm() {
         ) || 0;
 
 
-    if (
-        periods <= 0
-    ) {
+    if (periods <= 0) {
 
-        return (
-            "Please enter a valid tenure."
-        );
+        return "Please enter a valid tenure.";
 
     }
 
 
-    if (
-        !loanDate.value
-    ) {
+    if (!loanDate.value) {
 
-        return (
-            "Please select loan date."
-        );
+        return "Please select loan date.";
 
     }
 
@@ -1731,268 +1684,330 @@ function validateLoanForm() {
 
 
 // =====================================================
-// DOCUMENT DEFINITIONS
+// COLLECT DOCUMENT DETAILS
 // =====================================================
 
-function getRequiredDocuments() {
+function getDocumentDetails() {
 
-    return [
+    return {
 
-        {
-            key: "aadhaar",
-            name: "Aadhaar Card",
-            requiredForClosure: true,
-            selectedStatus:
-                docAadhaar?.value ||
-                "pending"
-        },
+        aadhaar:
+            docAadhaar?.value || "pending",
 
-        {
-            key: "pan",
-            name: "PAN Card",
-            requiredForClosure: true,
-            selectedStatus:
-                docPan?.value ||
-                "pending"
-        },
+        pan:
+            docPan?.value || "pending",
 
-        {
-            key: "rcBook",
-            name: "RC Book",
-            requiredForClosure: true,
-            selectedStatus:
-                docRc?.value ||
-                "pending"
-        },
+        rcBook:
+            docRc?.value || "pending",
 
-        {
-            key: "insurance",
-            name: "Insurance",
-            requiredForClosure: true,
-            selectedStatus:
-                docInsurance?.value ||
-                "pending"
-        },
+        insurance:
+            docInsurance?.value || "pending",
 
-        {
-            key: "saleInvoice",
-            name: "Sale Invoice",
-            requiredForClosure: true,
-            selectedStatus:
-                docInvoice?.value ||
-                "pending"
-        }
+        saleInvoice:
+            docInvoice?.value || "pending",
 
-    ];
+        other:
+            docOther?.value.trim() || ""
+
+    };
 
 }
 
 
 // =====================================================
-// CREATE AUTOMATIC DOCUMENT RECORDS
+// BUSINESS FUND HELPERS
+// =====================================================
+//
+// Available Fund = Owner Investment
+//              - Loan Net Disbursement
+//              + Customer Collections
+//
+// Owner investments: ownerInvestments
+// Loan disbursement: loans.netDisbursement
+// Collections: collections
 // =====================================================
 
-async function createLoanDocuments(
-    loanRef,
-    generatedLoanId,
-    customer
-) {
+function numberValue(...values) {
 
-    const documentsRef =
-        collection(
-            db,
-            "documents"
-        );
+    for (const value of values) {
 
+        if (
+            value === null ||
+            value === undefined ||
+            value === ""
+        ) {
 
-    const definitions =
-        getRequiredDocuments();
+            continue;
+
+        }
 
 
-    for (
-        const item of
-        definitions
-    ) {
-
-        const documentRef =
-            doc(
-                documentsRef
-            );
+        const number =
+            Number(value);
 
 
-        const status =
-            item.selectedStatus ===
-            "received"
-                ? "Received"
-                : "Pending";
+        if (
+            Number.isFinite(number)
+        ) {
 
+            return number;
 
-        const holder =
-            status === "Received"
-                ? "Office"
-                : "Customer";
-
-
-        const today =
-            loanDate.value ||
-            new Date()
-                .toISOString()
-                .split("T")[0];
-
-
-        const history = [
-
-            {
-
-                action:
-                    status ===
-                    "Received"
-                        ? "Document Received"
-                        : "Document Created",
-
-                status:
-                    status,
-
-                currentHolder:
-                    holder,
-
-                staffId:
-                    "",
-
-                staffName:
-                    "",
-
-                date:
-                    today,
-
-                remarks:
-                    status ===
-                    "Received"
-                        ? "Received during loan creation."
-                        : "Automatically created with loan."
-
-            }
-
-        ];
-
-
-        await setDoc(
-            documentRef,
-            {
-
-                // ---------------------------------------
-                // DOCUMENT
-                // ---------------------------------------
-
-                documentId:
-                    documentRef.id,
-
-                documentType:
-                    item.name,
-
-                documentKey:
-                    item.key,
-
-                requiredForClosure:
-                    item.requiredForClosure,
-
-                // ---------------------------------------
-                // LOAN LINK
-                // ---------------------------------------
-
-                loanDocumentId:
-                    loanRef.id,
-
-                loanId:
-                    generatedLoanId,
-
-                // ---------------------------------------
-                // CUSTOMER LINK
-                // ---------------------------------------
-
-                customerDocumentId:
-                    customer.id,
-
-                customerId:
-                    customer.customerId ||
-                    customer.customerCode ||
-                    customer.id,
-
-                customerName:
-                    customer.name ||
-                    customer.customerName ||
-                    "",
-
-                // ---------------------------------------
-                // STATUS
-                // ---------------------------------------
-
-                status:
-                    status,
-
-                currentHolder:
-                    holder,
-
-                // ---------------------------------------
-                // DATES
-                // ---------------------------------------
-
-                receivedDate:
-                    status === "Received"
-                        ? today
-                        : null,
-
-                issuedDate:
-                    null,
-
-                returnedDate:
-                    null,
-
-                // ---------------------------------------
-                // STAFF
-                // ---------------------------------------
-
-                staffId:
-                    "",
-
-                staffCode:
-                    "",
-
-                staffName:
-                    "",
-
-                // ---------------------------------------
-                // HISTORY
-                // ---------------------------------------
-
-                history:
-                    history,
-
-                lastAction:
-                    status === "Received"
-                        ? "Document Received"
-                        : "Document Created",
-
-                lastActionDate:
-                    today,
-
-                // ---------------------------------------
-                // META
-                // ---------------------------------------
-
-                createdAt:
-                    serverTimestamp(),
-
-                updatedAt:
-                    serverTimestamp(),
-
-                createdBy:
-                    currentUser.uid
-
-            }
-        );
+        }
 
     }
+
+
+    return 0;
+
+}
+
+
+function isExcludedInvestmentStatus(
+    status
+) {
+
+    return [
+
+        "cancelled",
+        "canceled",
+        "reversed",
+        "deleted",
+        "inactive"
+
+    ].includes(
+
+        String(
+            status || ""
+        )
+            .trim()
+            .toLowerCase()
+
+    );
+
+}
+
+
+function getCollectionAmount(
+    record
+) {
+
+    return numberValue(
+
+        record?.totalCollection,
+        record?.paidAmount,
+        record?.collectionAmount,
+        record?.amount,
+        record?.paymentAmount
+
+    );
+
+}
+
+
+function getLoanDisbursementAmount(
+    loan
+) {
+
+    return numberValue(
+
+        loan?.netDisbursement,
+        loan?.disbursedAmount
+
+    );
+
+}
+
+
+async function getBusinessFundSnapshot() {
+
+    const ownerInvestmentsQuery =
+        collection(
+            db,
+            "ownerInvestments"
+        );
+
+
+    const loansQuery =
+        collection(
+            db,
+            "loans"
+        );
+
+
+    const collectionsQuery =
+        collection(
+            db,
+            "collections"
+        );
+
+
+    const [
+        investmentsSnapshot,
+        loansSnapshot,
+        collectionsSnapshot
+    ] = await Promise.all([
+
+        getDocs(
+            ownerInvestmentsQuery
+        ),
+
+        getDocs(
+            loansQuery
+        ),
+
+        getDocs(
+            collectionsQuery
+        )
+
+    ]);
+
+
+    let totalInvested = 0;
+
+    let totalDisbursed = 0;
+
+    let totalCollected = 0;
+
+
+    investmentsSnapshot.forEach(
+        investmentDoc => {
+
+            const investment =
+                investmentDoc.data();
+
+
+            const status =
+                String(
+                    investment.status ||
+                    "active"
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            if (
+                isExcludedInvestmentStatus(
+                    status
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            totalInvested +=
+                numberValue(
+
+                    investment.investmentAmount,
+                    investment.amount
+
+                );
+
+        }
+    );
+
+
+    loansSnapshot.forEach(
+        loanDoc => {
+
+            const loan =
+                loanDoc.data();
+
+
+            const status =
+                String(
+                    loan.status ||
+                    ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            if (
+                [
+                    "cancelled",
+                    "canceled"
+                ].includes(status)
+            ) {
+
+                return;
+
+            }
+
+
+            totalDisbursed +=
+                getLoanDisbursementAmount(
+                    loan
+                );
+
+        }
+    );
+
+
+    collectionsSnapshot.forEach(
+        collectionDoc => {
+
+            const record =
+                collectionDoc.data();
+
+
+            const status =
+                String(
+                    record.status ||
+                    "success"
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            if (
+                [
+                    "reversed",
+                    "cancelled",
+                    "canceled",
+                    "failed",
+                    "deleted"
+                ].includes(status)
+            ) {
+
+                return;
+
+            }
+
+
+            totalCollected +=
+                getCollectionAmount(
+                    record
+                );
+
+        }
+    );
+
+
+    const availableFund =
+        Math.max(
+
+            totalInvested -
+            totalDisbursed +
+            totalCollected,
+
+            0
+
+        );
+
+
+    return {
+
+        totalInvested,
+
+        totalDisbursed,
+
+        totalCollected,
+
+        availableFund
+
+    };
 
 }
 
@@ -2028,8 +2043,7 @@ async function saveLoan() {
     const customer =
         customers.find(
             item =>
-                item.id ===
-                selectedId
+                item.id === selectedId
         );
 
 
@@ -2047,16 +2061,11 @@ async function saveLoan() {
     saveLoanBtn.disabled =
         true;
 
-
     saveLoanBtn.textContent =
         "Checking...";
 
 
     try {
-
-        // ---------------------------------------------
-        // DUPLICATE CHECK
-        // ---------------------------------------------
 
         const duplicateMessage =
             await checkVehicleDuplicates();
@@ -2073,9 +2082,17 @@ async function saveLoan() {
         }
 
 
-        // ---------------------------------------------
-        // CALCULATION
-        // ---------------------------------------------
+        const rate =
+            Number(
+                interestRate.value
+            ) || 0;
+
+
+        const periods =
+            Number(
+                tenure.value
+            ) || 0;
+
 
         const calculation =
             calculateLoan();
@@ -2099,9 +2116,59 @@ async function saveLoan() {
             "Creating Loan...";
 
 
-        // ---------------------------------------------
-        // CREATE LOAN REFERENCE
-        // ---------------------------------------------
+        // =================================================
+        // BUSINESS FUND CHECK
+        // =================================================
+
+        const fundSnapshot =
+            await getBusinessFundSnapshot();
+
+
+        const requiredFund =
+            Number(
+                calculation.netDisbursement
+            ) || 0;
+
+
+        if (
+            requiredFund <= 0
+        ) {
+
+            showMessage(
+                "Net disbursement must be greater than zero."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            requiredFund >
+            fundSnapshot.availableFund
+        ) {
+
+            const shortage =
+                requiredFund -
+                fundSnapshot.availableFund;
+
+
+            showMessage(
+
+                `Insufficient Business Fund. Available: ${formatCurrency(
+                    fundSnapshot.availableFund
+                )} | Required: ${formatCurrency(
+                    requiredFund
+                )} | Shortage: ${formatCurrency(
+                    shortage
+                )}`
+
+            );
+
+            return;
+
+        }
+
 
         const loanRef =
             doc(
@@ -2112,16 +2179,16 @@ async function saveLoan() {
             );
 
 
-        // ---------------------------------------------
-        // CREATE LOAN + COUNTER
-        // ---------------------------------------------
-
-        const generatedLoanId =
+        const loanId =
             await runTransaction(
-                db,
-                async transaction => {
 
-                    const generatedId =
+                db,
+
+                async (
+                    transaction
+                ) => {
+
+                    const generatedLoanId =
                         await generateLoanId(
                             transaction
                         );
@@ -2146,22 +2213,25 @@ async function saveLoan() {
 
 
                     transaction.set(
+
                         loanRef,
+
                         {
 
-                            // =========================
+                            // ---------------------------------
                             // LOAN IDENTIFICATION
-                            // =========================
+                            // ---------------------------------
 
                             loanId:
-                                generatedId,
+                                generatedLoanId,
 
                             loanType:
                                 type,
 
-                            // =========================
+
+                            // ---------------------------------
                             // CUSTOMER
-                            // =========================
+                            // ---------------------------------
 
                             customerId:
                                 customerId,
@@ -2175,9 +2245,10 @@ async function saveLoan() {
                             customerMobile:
                                 customerMobile,
 
-                            // =========================
-                            // RELOAN
-                            // =========================
+
+                            // ---------------------------------
+                            // RELOAN LINK
+                            // ---------------------------------
 
                             previousLoanId:
                                 previousLoan
@@ -2192,9 +2263,18 @@ async function saveLoan() {
                                     ? previousLoan.id
                                     : null,
 
-                            // =========================
+
+                            // ---------------------------------
+                            // DOCUMENTS
+                            // ---------------------------------
+
+                            documents:
+                                getDocumentDetails(),
+
+
+                            // ---------------------------------
                             // VEHICLE
-                            // =========================
+                            // ---------------------------------
 
                             vehicleType:
                                 vehicleType.value,
@@ -2255,9 +2335,10 @@ async function saveLoan() {
                                     downPayment.value
                                 ) || 0,
 
-                            // =========================
+
+                            // ---------------------------------
                             // LOAN
-                            // =========================
+                            // ---------------------------------
 
                             loanAmount:
                                 calculation.principal,
@@ -2265,25 +2346,15 @@ async function saveLoan() {
                             principalAmount:
                                 calculation.principal,
 
-                           interestRate:
-    Number(
-        interestRate.value
-    ) || 0,
+                            interestRate:
+                                rate,
 
-interestRatePeriod:
-    "Yearly",
-                       interestRateMonthly:
-    (
-        Number(
-            interestRate.value
-        ) || 0
-    ) / 12,     
+                            interestType:
+                                interestType.value,
 
-interestType:
-    interestType.value,
+                            interestAmount:
+                                calculation.interest,
 
-interestAmount:
-    calculation.interest,
                             totalPayable:
                                 calculation.totalPayable,
 
@@ -2291,9 +2362,7 @@ interestAmount:
                                 calculation.installment,
 
                             tenure:
-                                Number(
-                                    tenure.value
-                                ) || 0,
+                                periods,
 
                             repaymentFrequency:
                                 repaymentFrequency.value,
@@ -2304,6 +2373,32 @@ interestAmount:
                             netDisbursement:
                                 calculation.netDisbursement,
 
+
+                            // ---------------------------------
+                            // BUSINESS FUND CONTROL
+                            // ---------------------------------
+
+                            fundSource:
+                                "BUSINESS_FUND",
+
+                            fundTransactionType:
+                                "LOAN_DISBURSEMENT",
+
+                            fundAmount:
+                                calculation.netDisbursement,
+
+                            fundBalanceBefore:
+                                fundSnapshot.availableFund,
+
+                            fundBalanceAfter:
+                                fundSnapshot.availableFund -
+                                calculation.netDisbursement,
+
+
+                            // ---------------------------------
+                            // PAYMENT STATUS
+                            // ---------------------------------
+
                             amountPaid:
                                 0,
 
@@ -2313,9 +2408,10 @@ interestAmount:
                             outstandingAmount:
                                 calculation.totalPayable,
 
-                            // =========================
+
+                            // ---------------------------------
                             // DATES
-                            // =========================
+                            // ---------------------------------
 
                             loanDate:
                                 loanDate.value,
@@ -2324,9 +2420,10 @@ interestAmount:
                                 firstDueDate.value ||
                                 loanDate.value,
 
-                            // =========================
+
+                            // ---------------------------------
                             // STATUS
-                            // =========================
+                            // ---------------------------------
 
                             status:
                                 "Active",
@@ -2334,19 +2431,10 @@ interestAmount:
                             active:
                                 true,
 
-                            // =========================
-                            // DOCUMENT CONTROL
-                            // =========================
 
-                            documentsCreated:
-                                true,
-
-                           documentsStatus:
-    "Pending",
-
-                            // =========================
+                            // ---------------------------------
                             // META
-                            // =========================
+                            // ---------------------------------
 
                             createdAt:
                                 serverTimestamp(),
@@ -2358,72 +2446,167 @@ interestAmount:
                                 currentUser.uid
 
                         }
+
                     );
 
 
-                    return generatedId;
+                    // =================================================
+                    // BUSINESS FUND LEDGER ENTRY
+                    // =================================================
+
+                    const fundTransactionRef =
+                        doc(
+                            collection(
+                                db,
+                                "fundTransactions"
+                            )
+                        );
+
+
+                    transaction.set(
+
+                        fundTransactionRef,
+
+                        {
+
+                            transactionType:
+                                "LOAN_DISBURSEMENT",
+
+                            type:
+                                "DEBIT",
+
+                            direction:
+                                "DEBIT",
+
+                            source:
+                                "loan",
+
+                            sourceType:
+                                type,
+
+                            loanId:
+                                generatedLoanId,
+
+                            loanDocumentId:
+                                loanRef.id,
+
+                            customerId:
+                                customerId,
+
+                            customerName:
+                                customerName,
+
+                            amount:
+                                calculation.netDisbursement,
+
+                            principalAmount:
+                                calculation.principal,
+
+                            processingFee:
+                                calculation.fee,
+
+                            transactionDate:
+                                loanDate.value,
+
+                            status:
+                                "posted",
+
+                            referenceNumber:
+                                generatedLoanId,
+
+                            remarks:
+                                `${type === "reloan"
+                                    ? "ReLoan"
+                                    : "New Loan"} disbursement`,
+
+                            createdByUid:
+                                currentUser.uid,
+
+                            createdByEmail:
+                                currentUser.email ||
+                                "",
+
+                            createdAt:
+                                serverTimestamp(),
+
+                            updatedAt:
+                                serverTimestamp()
+
+                        }
+
+                    );
+
+
+                    return generatedLoanId;
 
                 }
+
             );
 
 
-        // ---------------------------------------------
-        // CREATE DOCUMENTS
-        // ---------------------------------------------
-
-        await createLoanDocuments(
-            loanRef,
-            generatedLoanId,
-            customer
-        );
-
-
-        // ---------------------------------------------
-        // SUCCESS
-        // ---------------------------------------------
-
         showMessage(
-            `${type === "reloan" ? "ReLoan" : "Loan"} ${generatedLoanId} created successfully with document records.`,
+
+            `${type === "reloan"
+                ? "ReLoan"
+                : "Loan"} ${loanId} created successfully.`,
+
             "success"
+
         );
 
 
         loanForm.reset();
 
 
+        // =================================================
+        // RESET DOCUMENT FIELDS
+        // =================================================
+
         if (docAadhaar) {
+
             docAadhaar.value =
                 "pending";
+
         }
 
 
         if (docPan) {
+
             docPan.value =
                 "pending";
+
         }
 
 
         if (docRc) {
+
             docRc.value =
                 "pending";
+
         }
 
 
         if (docInsurance) {
+
             docInsurance.value =
                 "pending";
+
         }
 
 
         if (docInvoice) {
+
             docInvoice.value =
                 "pending";
+
         }
 
 
         if (docOther) {
+
             docOther.value =
                 "";
+
         }
 
 
@@ -2456,13 +2639,16 @@ interestAmount:
 
 
         setTimeout(
+
             function () {
 
                 window.location.href =
                     "loans.html";
 
             },
+
             1200
+
         );
 
 
@@ -2475,15 +2661,16 @@ interestAmount:
 
 
         showMessage(
-            "Unable to create loan. Please try again."
-        );
 
+            error?.message ||
+            "Unable to create loan. Please try again."
+
+        );
 
     } finally {
 
         saveLoanBtn.disabled =
             false;
-
 
         saveLoanBtn.textContent =
             "Create Loan";
@@ -2498,7 +2685,9 @@ interestAmount:
 // =====================================================
 
 loanForm.addEventListener(
+
     "submit",
+
     async function(event) {
 
         event.preventDefault();
@@ -2518,6 +2707,7 @@ loanForm.addEventListener(
         await saveLoan();
 
     }
+
 );
 
 
@@ -2526,7 +2716,9 @@ loanForm.addEventListener(
 // =====================================================
 
 onAuthStateChanged(
+
     auth,
+
     async function(user) {
 
         if (!user) {
@@ -2545,9 +2737,12 @@ onAuthStateChanged(
 
         setDefaultDates();
 
+
         calculateLoan();
+
 
         await loadCustomers();
 
     }
+
 );
